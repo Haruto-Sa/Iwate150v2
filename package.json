@@ -6,18 +6,33 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "storage:migrate": "bun run scripts/migrate_storage_assets.ts",
+    "storage:verify": "bun run scripts/verify_storage_links.ts",
+    "add": "liftkit add"
   },
   "dependencies": {
+    "@csstools/normalize.css": "^12.1.1",
+    "@material/material-color-utilities": "^0.4.0",
+    "@mediapipe/camera_utils": "^0.3.1640029074",
+    "@mediapipe/face_mesh": "^0.4.1633559619",
+    "@supabase/supabase-js": "^2.87.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.563.0",
     "next": "16.0.8",
     "react": "19.2.1",
-    "react-dom": "19.2.1"
+    "react-dom": "19.2.1",
+    "react-leaflet": "^5.0.0",
+    "three": "^0.169.0"
   },
   "devDependencies": {
+    "@chainlift/liftkit": "^0.2.0",
     "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.12",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.169.0",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.8",

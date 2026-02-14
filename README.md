@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Iwate150 (Next.js + Supabase + Leaflet)
 
-## Getting Started
+岩手県の観光スポットを紹介する「Iwate150」を、Next.js + Supabase + Leaflet + OSM で再構築したバージョンです。Vercel デプロイ前提、App Router + TypeScript + Tailwind 構成。既存の Flask/MySQL 実装は `legacy/` に退避してあります。
 
-First, run the development server:
+- 日本語 README（本ファイル）
+- 英語ダイジェスト: `docs/README.en.md`
+- Supabase 移行手順: `docs/supabase.md`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## ディレクトリ構成（抜粋）
+```
+.
+├── src/
+│   ├── app/                 # App Router pages
+│   │   ├── page.tsx         # Home
+│   │   ├── map/page.tsx     # Leaflet + OSM
+│   │   ├── spots/page.tsx   # 一覧・検索
+│   │   ├── spots/[id]/page.tsx
+│   │   └── ar/page.tsx      # AR/3D プレースホルダ
+│   ├── components/          # UI/レイアウト/マップ/スポットカード
+│   └── lib/                 # supabaseClient（モックfallback）、types、config
+├── public/
+│   ├── images/spots/        # 観光スポット画像（legacy から移動）
+│   ├── images/cities/       # 市町村アイコン
+│   ├── images/other/        # その他アイコン
+│   └── models/              # 3Dモデル（.obj など）
+├── supabase/
+│   ├── schema.sql           # スキーマ
+│   ├── seed.sql             # サンプルデータ
+│   └── data/                # legacy CSV を整形した一括インポート用データ
+└── legacy/                  # 旧 Flask/MySQL 実装・DB CSV
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## セットアップ
+### 1. 依存インストール
+```bash
+bun install   # bun 推奨（なければ npm/pnpm/yarn でも可）
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. 開発サーバ
+```bash
+bun dev
+# または npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. 環境変数
+`.env.local`（または Vercel 環境変数）に以下を設定:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-## Learn More
+未設定の場合はモックデータで表示されます（map/spots/AR が動作するフェイルセーフ）。
 
-To learn more about Next.js, take a look at the following resources:
+## Supabase へのスキーマ/シード適用
+`supabase/schema.sql` → `supabase/seed.sql` の順に適用してください。
+- Supabase Dashboard の SQL Editor でコピペ実行
+- もしくは Supabase CLI: `supabase db push --file supabase/schema.sql` / `supabase db push --file supabase/seed.sql`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### legacy CSV を Supabase へ移す場合
+- 既に整形済み CSV を `supabase/data/` に用意（city / genre / spot / event）。
+- 変換スクリプト: `python scripts/convert_legacy_to_supabase.py`（再生成可）。
+- Supabase Dashboard の「Table editor > Import data」で CSV をインポートするとフルデータを投入できます。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+詳細手順は `docs/supabase.md` を参照。
 
-## Deploy on Vercel
+## ページ概要
+- `/` : Iwate150 コンセプト。Map/Spots/AR/Events への導線。
+- `/map` : Leaflet + OSM。Supabase から取得したスポットをマーカー表示。
+- `/spots` : 一覧 + キーワード検索 + ジャンル/市町村フィルタ（初期はフロントフィルタ）。
+- `/spots/[id]` : スポット詳細（画像/緯度経度/model_path を表示）。
+- `/ar` : model_path を持つスポットのプレースホルダ一覧。将来の AR.js / three.js 連携を想定。
+- `/login` : Supabase Auth (メール+パスワード) 用。環境変数未設定時はモックのみ。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 画像・3Dモデル
+- `legacy/flask_app/static/images/*` を `public/images/*` へ整理済み。
+- `legacy/flask_app/static/models/*` を `public/models/` へコピー済み。
+- Next.js は `public/` を直接参照するため、ランタイムで legacy に依存しません。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Vercel デプロイのメモ
+- App Router 構成のため、Vercel は自動検出でデプロイ可能。
+- 環境変数を Vercel に設定すれば Supabase へ接続。
+- SSR + クライアントコンポーネント混在のため、Leaflet 部分はクライアントコンポーネントで dynamic import 済み。
+
+## ライセンス / クレジット
+- 地図タイル: OpenStreetMap
+- フレームワーク: Next.js, Leaflet, Supabase
+
+## 今後の拡張メモ
+- Supabase Storage への画像/モデル移行
+- スタンプラリー（`stamps` テーブルを利用）
+- three.js / AR.js / locAR.js との連携
+- 検索を Supabase 側クエリに寄せる（フロントフィルタから移行）

@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
+/* LiftKit デザイントークン（golden-ratio スペーシング・カラー変数） */
+@import "../lib/css/liftkitvars.css";
+@import "../lib/css/background-colors.css";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* LiftKit primary をプロジェクトの emerald テーマに合わせてオーバーライド */
+  --light__primary_lkv: #10b981;
+  --light__onprimary_lkv: #ffffff;
+  --lk-primary: #10b981;
+  --lk-onprimary: #ffffff;
 }
 
 @theme inline {

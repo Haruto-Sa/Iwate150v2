@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useAuthSession } from "@/components/auth/SessionProvider";
 import { Button } from "@/components/ui/Button";
 
@@ -8,9 +9,31 @@ type Props = {
   children: React.ReactNode;
 };
 
+/**
+ * 認証なしで表示できる公開認証ルートかを判定する。
+ *
+ * @param pathname - 現在のパス名
+ * @returns 公開認証ルートなら true
+ * @example
+ * isPublicAuthRoute("/login"); // true
+ */
+function isPublicAuthRoute(pathname: string): boolean {
+  return pathname === "/login" || pathname.startsWith("/login/");
+}
+
+/**
+ * 認証状態に応じてページ表示可否を制御するゲートコンポーネント。
+ *
+ * @param props - 子要素を含むプロパティ
+ * @returns 認証済みまたは公開対象なら子要素、未認証なら認証案内UI
+ * @example
+ * <AuthGate>{children}</AuthGate>
+ */
 export function AuthGate({ children }: Props) {
   const { user, status } = useAuthSession();
+  const pathname = usePathname();
   const [guestAllowed, setGuestAllowed] = useState(false);
+  const publicAuthRoute = isPublicAuthRoute(pathname);
 
   useEffect(() => {
     const guest = localStorage.getItem("iwate150_guest") === "1";
@@ -28,9 +51,9 @@ export function AuthGate({ children }: Props) {
   const envConfigured = Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
-  const allowed = Boolean(user) || guestAllowed || !envConfigured;
+  const allowed = publicAuthRoute || Boolean(user) || guestAllowed || !envConfigured;
 
-  if (status === "loading") {
+  if (status === "loading" && !publicAuthRoute) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-blue-50 text-sm text-zinc-700">
         認証状態を確認しています...
@@ -73,5 +96,4 @@ export function AuthGate({ children }: Props) {
 
   return <>{children}</>;
 }
-
 

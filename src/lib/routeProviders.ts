@@ -73,19 +73,23 @@ export function resolveProvider(mode: RouteMode): {
 // ---------------------------------------------------------------------------
 
 /**
- * OSRM の外部表示 URL を生成する
+ * OSRM(無料) の外部表示 URL を生成する。
+ *
+ * API エンドポイントではなく OpenStreetMap の directions 画面を開く。
+ * これにより JSON レスポンスがそのまま表示される問題を回避する。
  *
  * @param origin - 出発地の緯度経度
  * @param destination - 目的地の緯度経度
- * @returns OSRM ルーティング URL（ブラウザで開く用）
+ * @returns OpenStreetMap directions URL
  * @example
  * const url = buildOsrmUrl({ lat: 39.7, lng: 141.1 }, { lat: 39.8, lng: 141.2 });
- * // => "https://router.project-osrm.org/route/v1/driving/141.1,39.7;141.2,39.8?overview=full"
+ * // => "https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=39.7%2C141.1%3B39.8%2C141.2"
  */
 export function buildOsrmUrl(origin: LatLng, destination: LatLng): string {
-  // OSRM 形式: /route/v1/{profile}/{lng},{lat};{lng},{lat}
-  const coords = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
-  return `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full`;
+  const route = encodeURIComponent(
+    `${origin.lat},${origin.lng};${destination.lat},${destination.lng}`
+  );
+  return `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${route}`;
 }
 
 /**

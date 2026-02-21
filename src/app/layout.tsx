@@ -40,8 +40,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <body className={`${display.variable} ${body.variable} antialiased`}>
+    <html lang="ja" suppressHydrationWarning>
+      <body suppressHydrationWarning className={`${display.variable} ${body.variable} antialiased`}>
         <SessionProvider>
           <div className="grain" />
           <div className="flex min-h-screen flex-col bg-transparent text-[#0f1c1a]">

@@ -6,6 +6,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthSession } from "@/components/auth/SessionProvider";
 import { Button } from "@/components/ui/Button";
+import {
+  getConfiguredOAuthProviders,
+  getOAuthProviderLabel,
+  isUnsupportedOAuthProviderError,
+  normalizeAuthError,
+  type OAuthProvider,
+} from "@/lib/auth";
 
 /**
  * ログイン/新規登録ページ。
@@ -26,6 +33,8 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
   const canUseSupabaseAuth = useMemo(() => Boolean(supabase), [supabase]);
+  const oauthProviders = useMemo(() => getConfiguredOAuthProviders(), []);
+  const [disabledOauthProviders, setDisabledOauthProviders] = useState<OAuthProvider[]>([]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -48,7 +57,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signUp({ email, password });
       setLoading(false);
       if (error) {
-        setMessage(error.message);
+        setMessage(normalizeAuthError(error.message));
       } else {
         setMessage("確認メールを送信しました。メール内のリンクをクリック後、ログインしてください。");
       }
@@ -59,7 +68,7 @@ export default function LoginPage() {
 
     setLoading(false);
     if (error) {
-      setMessage(error.message);
+      setMessage(normalizeAuthError(error.message));
     } else {
       await refreshSession();
       setMessage("ログインしました。");
@@ -80,6 +89,12 @@ export default function LoginPage() {
       setMessage("環境変数が未設定のため OAuth を実行できません。");
       return;
     }
+    if (disabledOauthProviders.includes(provider)) {
+      setMessage(
+        `${getOAuthProviderLabel(provider)} ログインは未有効のため無効化されています。Supabase Dashboard の Authentication > Providers を確認してください。`
+      );
+      return;
+    }
     setMessage(null);
     const redirectTo = `${window.location.origin}/login`;
     const { error } = await supabase.auth.signInWithOAuth({
@@ -87,7 +102,13 @@ export default function LoginPage() {
       options: { redirectTo },
     });
     if (error) {
-      setMessage(error.message);
+      const normalized = normalizeAuthError(error.message, provider);
+      setMessage(normalized);
+      if (isUnsupportedOAuthProviderError(error.message)) {
+        setDisabledOauthProviders((prev) => (
+          prev.includes(provider) ? prev : [...prev, provider]
+        ));
+      }
     }
   };
 
@@ -174,22 +195,28 @@ export default function LoginPage() {
 
       <div className="space-y-2">
         {canUseSupabaseAuth ? (
-          <>
-            <Button
-              variant="outline"
-              onClick={() => handleOAuth("google")}
-              className="w-full"
-            >
-              Google で続ける
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleOAuth("github")}
-              className="w-full"
-            >
-              GitHub で続ける
-            </Button>
-          </>
+          oauthProviders.length > 0 ? (
+            <>
+              {oauthProviders.map((provider) => (
+                <Button
+                  key={provider}
+                  variant="outline"
+                  disabled={loading || disabledOauthProviders.includes(provider)}
+                  onClick={() => handleOAuth(provider)}
+                  className="w-full"
+                >
+                  {getOAuthProviderLabel(provider)} で続ける
+                </Button>
+              ))}
+              <p className="text-center text-xs text-zinc-500">
+                OAuth ボタンが無効な場合は Supabase Dashboard の Authentication &gt; Providers を確認してください。
+              </p>
+            </>
+          ) : (
+            <p className="text-center text-xs text-zinc-500">
+              OAuth プロバイダが未設定です。`NEXT_PUBLIC_SUPABASE_OAUTH_PROVIDERS` を確認してください。
+            </p>
+          )
         ) : (
           <p className="text-center text-xs text-zinc-500">
             Supabase Auth が未設定です。`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` を確認してください。

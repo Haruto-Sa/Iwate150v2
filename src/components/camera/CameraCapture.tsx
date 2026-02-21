@@ -10,6 +10,7 @@ import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
 import * as THREE from "three";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 
 type Detection = { x: number; y: number; width: number; height: number } | null;
 
@@ -17,6 +18,9 @@ type FaceMeshInstance = import("@mediapipe/face_mesh").FaceMesh;
 type FaceMeshResults = import("@mediapipe/face_mesh").Results;
 type MediaPipeCamera = import("@mediapipe/camera_utils").Camera;
 type FaceResultsHandler = (results: FaceMeshResults) => void;
+type ModelFormat = "obj" | "fbx";
+type ModelLoadStatus = "idle" | "loading" | "ready" | "error";
+type ModelSource = { modelUrl: string; mtlUrl: string | null };
 
 const MEDIAPIPE_FACE_MESH_ASSET_BASE =
   process.env.NEXT_PUBLIC_MEDIAPIPE_FACE_MESH_ASSET_BASE ?? "/mediapipe/face_mesh";
@@ -51,6 +55,45 @@ function resetMediaPipeSolutionGlobals(): void {
   const globalScope = globalThis as typeof globalThis & Record<string, unknown>;
   globalScope.createMediapipeSolutionsWasm = undefined;
   globalScope.createMediapipeSolutionsPackedAssets = undefined;
+}
+
+/**
+ * モデルURLから読み込みフォーマットを判定する。
+ *
+ * @param modelPath - モデルパス
+ * @returns `obj` または `fbx`
+ * @example
+ * const format = resolveModelFormat("/models/goshodon.obj");
+ */
+function resolveModelFormat(modelPath: string): ModelFormat {
+  const stripped = modelPath.split("?")[0]?.split("#")[0] ?? modelPath;
+  return stripped.toLowerCase().endsWith(".fbx") ? "fbx" : "obj";
+}
+
+/**
+ * Storage相対パスからローカルpublic参照URLを作成する。
+ *
+ * @param path - `models/...` 形式のパス
+ * @returns `/models/...` 形式のURL
+ * @example
+ * const local = toLocalAssetUrl("models/goshodon.obj");
+ */
+function toLocalAssetUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
+/**
+ * キャラクターIDから表示名を解決する。
+ *
+ * @param id - キャラクターID
+ * @returns 表示名
+ * @example
+ * const name = getCharacterNameById("goshodon");
+ */
+function getCharacterNameById(id: string): string {
+  return characters.find((character) => character.id === id)?.name ?? id;
 }
 
 let sharedFaceMesh: FaceMeshInstance | null = null;
@@ -145,6 +188,7 @@ export function CameraCapture() {
   const faceMeshRef = useRef<FaceMeshInstance | null>(null);
   const mediaPipeCameraRef = useRef<MediaPipeCamera | null>(null);
   const modelMapRef = useRef<Record<string, THREE.Object3D>>({});
+  const modelSourceMapRef = useRef<Record<string, ModelSource>>({});
   const detectionRef = useRef<Detection>(null);
   const loadingSetRef = useRef<Set<string>>(new Set());
   const lastDetStateUpdateRef = useRef(0);
@@ -157,14 +201,25 @@ export function CameraCapture() {
   const [detection, setDetection] = useState<Detection>(null);
   const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [modelLoaded, setModelLoaded] = useState(false);
+  const [modelStatusMap, setModelStatusMap] = useState<Record<string, ModelLoadStatus>>({});
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const facingModeRef = useRef<"user" | "environment">("user");
   const router = useRouter();
 
-  const selectedCharacterObjects = useMemo(
-    () => characters.filter((c) => selectedModels.includes(c.id)),
-    [selectedModels]
+  const selectedModelsReady = useMemo(
+    () => selectedModels.length > 0 && selectedModels.every((id) => modelStatusMap[id] === "ready"),
+    [modelStatusMap, selectedModels]
+  );
+  const selectedModelErrors = useMemo(
+    () => selectedModels.filter((id) => modelStatusMap[id] === "error"),
+    [modelStatusMap, selectedModels]
+  );
+  const selectedModelsLoading = useMemo(
+    () => selectedModels.some((id) => {
+      const statusForId = modelStatusMap[id];
+      return statusForId === "loading" || statusForId === "idle" || statusForId === undefined;
+    }),
+    [modelStatusMap, selectedModels]
   );
 
   // Initialize Three.js scene
@@ -202,19 +257,23 @@ export function CameraCapture() {
   // Load 3D model（二重ロード防止: ロード中・既にロード済みは skip）
   const loadModel = useCallback((id: string, modelPath: string, mtlPath?: string | null) => {
     if (!sceneRef.current) return;
+    if (modelMapRef.current[id]) {
+      setModelStatusMap((prev) => (prev[id] === "ready" ? prev : { ...prev, [id]: "ready" }));
+      return;
+    }
     if (loadingSetRef.current.has(id)) return;
-    if (modelMapRef.current[id]) return;
 
     loadingSetRef.current.add(id);
-    setModelLoaded(false);
-    const loader = new OBJLoader();
+    setModelStatusMap((prev) => ({ ...prev, [id]: "loading" }));
+    const modelFormat = resolveModelFormat(modelPath);
 
     const onModelLoaded = (object: THREE.Object3D) => {
       loadingSetRef.current.delete(id);
       const box = new THREE.Box3().setFromObject(object);
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const normalizeScale = 1.0 / maxDim;
+      // 極端に大きい/小さいモデルでも顔追従時に視認しやすいよう下限スケールを持たせる
+      const normalizeScale = Math.max(0.012, 1.0 / maxDim);
       object.scale.setScalar(normalizeScale);
 
       box.setFromObject(object);
@@ -226,39 +285,51 @@ export function CameraCapture() {
 
       modelMapRef.current[id] = object;
       sceneRef.current?.add(object);
-      setModelLoaded(true);
+      setModelStatusMap((prev) => ({ ...prev, [id]: "ready" }));
     };
 
     let retryCount = 0;
     const maxRetries = 2;
-    const onLoadError = () => {
-      loadingSetRef.current.delete(id);
-      if (retryCount < maxRetries) {
-        retryCount++;
-        loadingSetRef.current.add(id);
-        loader.load(modelPath, onModelLoaded, undefined, onLoadError);
-      } else {
-        console.warn(`[loadModel] ${id} のロードに失敗しました`);
+    const loadOnce = () => {
+      const onLoadError = () => {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          loadOnce();
+          return;
+        }
+        loadingSetRef.current.delete(id);
+        setModelStatusMap((prev) => ({ ...prev, [id]: "error" }));
+        console.warn(`[loadModel] ${id} のロードに失敗しました`, { modelPath, modelFormat });
+      };
+
+      if (modelFormat === "fbx") {
+        const fbxLoader = new FBXLoader();
+        fbxLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
+        return;
       }
+
+      const objLoader = new OBJLoader();
+      if (mtlPath) {
+        const mtlLoader = new MTLLoader();
+        mtlLoader.load(
+          mtlPath,
+          (materials) => {
+            materials.preload();
+            objLoader.setMaterials(materials);
+            objLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
+          },
+          undefined,
+          () => {
+            objLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
+          }
+        );
+        return;
+      }
+
+      objLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
     };
 
-    if (mtlPath) {
-      const mtlLoader = new MTLLoader();
-      mtlLoader.load(
-        mtlPath,
-        (materials) => {
-          materials.preload();
-          loader.setMaterials(materials);
-          loader.load(modelPath, onModelLoaded, undefined, onLoadError);
-        },
-        undefined,
-        () => {
-          loader.load(modelPath, onModelLoaded, undefined, onLoadError);
-        }
-      );
-    } else {
-      loader.load(modelPath, onModelLoaded, undefined, onLoadError);
-    }
+    loadOnce();
   }, []);
 
   // FaceMesh result handler（detectionRefは毎フレーム更新、setDetectionは100msスロットル）
@@ -352,11 +423,17 @@ export function CameraCapture() {
         initThreeScene();
         const resolvedCatalog = await Promise.all(
           characterModelCatalog.map(async (modelInfo) => {
+            const [signedModelUrl, signedMtlUrl] = await Promise.all([
+              resolveClientStorageUrl(modelInfo.model_path, "model"),
+              resolveClientStorageUrl(modelInfo.mtl_path, "model"),
+            ]);
             const resolvedModelUrl =
-              (await resolveClientStorageUrl(modelInfo.model_path, "model")) ??
+              toLocalAssetUrl(modelInfo.model_path) ??
+              signedModelUrl ??
               getModelUrl(modelInfo.model_path);
             const resolvedMtlUrl =
-              (await resolveClientStorageUrl(modelInfo.mtl_path, "model")) ??
+              toLocalAssetUrl(modelInfo.mtl_path) ??
+              signedMtlUrl ??
               getModelUrl(modelInfo.mtl_path);
             return {
               id: modelInfo.id,
@@ -365,10 +442,18 @@ export function CameraCapture() {
             };
           })
         );
+        const nextSourceMap: Record<string, ModelSource> = {};
+        const nextStatusMap: Record<string, ModelLoadStatus> = {};
         resolvedCatalog.forEach((item) => {
-          if (!item.modelUrl) return;
-          loadModel(item.id, item.modelUrl, item.mtlUrl);
+          if (!item.modelUrl) {
+            nextStatusMap[item.id] = "error";
+            return;
+          }
+          nextSourceMap[item.id] = { modelUrl: item.modelUrl, mtlUrl: item.mtlUrl ?? null };
+          nextStatusMap[item.id] = modelMapRef.current[item.id] ? "ready" : "idle";
         });
+        modelSourceMapRef.current = nextSourceMap;
+        setModelStatusMap((prev) => ({ ...prev, ...nextStatusMap }));
 
         // FaceMesh: singleton 取得。初回エラー時は再生成を1回試みる
         if (!faceMeshRef.current) {
@@ -448,6 +533,33 @@ export function CameraCapture() {
   useEffect(() => {
     if (status === "idle") startCamera();
   }, [status, startCamera]);
+
+  // 選択モデルを優先して読み込む（初回表示の遅延/失敗を軽減）
+  useEffect(() => {
+    if (status !== "ready") return;
+
+    selectedModels.forEach((id) => {
+      const currentStatus = modelStatusMap[id];
+      if (modelMapRef.current[id]) {
+        setModelStatusMap((prev) => (
+          prev[id] === "ready" ? prev : { ...prev, [id]: "ready" }
+        ));
+        return;
+      }
+
+      const source = modelSourceMapRef.current[id];
+      if (!source) {
+        if (currentStatus !== "error") {
+          setModelStatusMap((prev) => ({ ...prev, [id]: "error" }));
+        }
+        return;
+      }
+
+      if (currentStatus === "loading" || currentStatus === "ready") return;
+      if (currentStatus === "error") return;
+      loadModel(id, source.modelUrl, source.mtlUrl);
+    });
+  }, [loadModel, modelStatusMap, selectedModels, status]);
 
 
   // selectedModelsをrefで保持（render loop内で参照するため）
@@ -563,7 +675,7 @@ export function CameraCapture() {
     return () => {
       cancelAnimationFrame(animFrame);
     };
-  }, [status, modelLoaded]);
+  }, [status]);
 
   // Cleanup
   useEffect(() => {
@@ -577,11 +689,6 @@ export function CameraCapture() {
       faceMeshRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Handle model change（事前ロード済みのため visible は render loop のみで制御）
-  useEffect(() => {
-    if (status !== "ready") return;
-  }, [selectedModels, status]);
 
   // Capture photo
   const handleCapture = () => {
@@ -682,7 +789,7 @@ export function CameraCapture() {
           )}
         </div>
 
-        {status === "ready" && detection && modelLoaded && selectedModels.length > 0 && (
+        {status === "ready" && detection && selectedModelsReady && selectedModels.length > 0 && (
           <div
             className="absolute rounded-full bg-gradient-to-br from-emerald-300 to-amber-200 px-3 py-1 text-xs font-semibold text-[#0f1c1a] shadow-lg transition"
             style={{
@@ -691,7 +798,7 @@ export function CameraCapture() {
               transform: "translate(-50%, -50%)",
             }}
           >
-            {selectedModels.map((id) => characters.find((c) => c.id === id)?.name).join(" / ")}
+            {selectedModels.map((id) => getCharacterNameById(id)).join(" / ")}
           </div>
         )}
 
@@ -737,11 +844,14 @@ export function CameraCapture() {
               key={c.id}
               variant={active ? "primary" : "ghost"}
               size="sm"
-              onClick={() =>
+              onClick={() => {
                 setSelectedModels((prev) =>
                   active ? prev.filter((id) => id !== c.id) : [...prev, c.id]
-                )
-              }
+                );
+                if (!active) {
+                  setModelStatusMap((prev) => ({ ...prev, [c.id]: "idle" }));
+                }
+              }}
               disabled={isDisabled}
               className="gap-2"
             >
@@ -768,6 +878,17 @@ export function CameraCapture() {
       {errorMessage && (
         <div className="rounded-xl border border-amber-200/60 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           {errorMessage}
+        </div>
+      )}
+      {selectedModels.length > 0 && selectedModelsLoading && (
+        <div className="rounded-xl border border-sky-200/60 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+          モデルを読み込み中です。初回は数秒かかることがあります。
+        </div>
+      )}
+      {selectedModelErrors.length > 0 && (
+        <div className="rounded-xl border border-rose-200/60 bg-rose-50 px-3 py-2 text-xs text-rose-900">
+          モデル読み込みに失敗: {selectedModelErrors.map((id) => getCharacterNameById(id)).join(" / ")}
+          。一度選択を外して再度選択してください。
         </div>
       )}
     </div>

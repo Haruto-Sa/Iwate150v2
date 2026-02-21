@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { Minus, Plus, RotateCw, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CharacterRenderProfile } from "@/lib/types";
@@ -24,12 +25,14 @@ type Props = {
   renderProfile?: CharacterRenderProfile;
   controlsPlacement?: "overlay" | "bottom" | "none";
   className?: string;
+  candidateRetryCount?: number;
+  autoRetryCount?: number;
 };
 
 type ModelLoadAttemptFailure = {
   modelUrl: string;
   mtlUrl: string | null;
-  stage: "mtl+obj" | "obj";
+  stage: "mtl+obj" | "obj" | "fbx";
   error: unknown;
 };
 
@@ -37,14 +40,23 @@ type ModelLoadError = Error & {
   failures?: ModelLoadAttemptFailure[];
 };
 
+type ViewerErrorType = "model" | "webgl";
+
 const FALLBACK_DARK_GRAY = 0x555555;
 /** 白背景でも識別しやすいよう、近白色マテリアルに割り当てる色 */
 const FALLBACK_LIGHT_GRAY = 0x888888;
 /** シーン背景色（純白を避けて白モデルでも視認できるようにする） */
 const SCENE_BG_COLOR = 0xf0f2ef;
+/** ローカル配信モデルの読み込みタイムアウト（ミリ秒） */
+const LOCAL_LOAD_TIMEOUT_MS = 30_000;
+/** リモート配信モデルの読み込みタイムアウト（ミリ秒） */
+const REMOTE_LOAD_TIMEOUT_MS = 45_000;
+/** 各候補URLに対するデフォルトリトライ回数 */
+const DEFAULT_CANDIDATE_RETRY_COUNT = 2;
+/** 読み込み失敗時のデフォルト自動再試行回数 */
+const DEFAULT_AUTO_RETRY_COUNT = 1;
 
-/** 各候補URL読み込みのタイムアウト（ミリ秒） */
-const LOAD_TIMEOUT_MS = 15_000;
+type ModelFormat = "obj" | "fbx";
 
 /**
  * Promise にタイムアウトを設定する。
@@ -67,20 +79,80 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 }
 
 /**
+ * 候補URLがローカル配信かどうかを推定する。
+ *
+ * @param url - モデル/MTL URL
+ * @returns ローカル配信なら true
+ * @example
+ * const local = isLikelyLocalAssetUrl("/models/wanko1.obj");
+ */
+function isLikelyLocalAssetUrl(url: string): boolean {
+  if (url.startsWith("/")) return true;
+  try {
+    const parsed = new URL(url);
+    if (typeof window === "undefined") return false;
+    return parsed.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 候補URLに応じた読み込みタイムアウト値を返す。
+ *
+ * @param url - モデル/MTL URL
+ * @returns タイムアウト（ミリ秒）
+ * @example
+ * const timeout = getLoadTimeoutMs("/models/wanko1.obj");
+ */
+function getLoadTimeoutMs(url: string): number {
+  return isLikelyLocalAssetUrl(url) ? LOCAL_LOAD_TIMEOUT_MS : REMOTE_LOAD_TIMEOUT_MS;
+}
+
+/**
+ * 失敗時に一定回数まで再試行する。
+ *
+ * @param task - 実行する非同期処理
+ * @param retryCount - リトライ回数（初回実行を除く）
+ * @returns 実行結果
+ * @example
+ * const value = await withRetries(() => fetcher(), 2);
+ */
+async function withRetries<T>(
+  task: () => Promise<T>,
+  retryCount: number,
+): Promise<T> {
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+    try {
+      return await task();
+    } catch (error) {
+      lastError = error;
+      if (attempt >= retryCount) break;
+    }
+  }
+  throw lastError;
+}
+
+/**
  * MTL ファイルをロードする。
  *
  * @param url - MTL URL
+ * @param timeoutMs - タイムアウト（ミリ秒）
  * @returns material creator
  * @example
- * const materials = await loadMtlMaterials("/models/a.mtl");
+ * const materials = await loadMtlMaterials("/models/a.mtl", 30000);
  */
-function loadMtlMaterials(url: string): Promise<MTLLoader.MaterialCreator> {
+function loadMtlMaterials(
+  url: string,
+  timeoutMs: number,
+): Promise<MTLLoader.MaterialCreator> {
   return withTimeout(
     new Promise((resolve, reject) => {
       const loader = new MTLLoader();
       loader.load(url, resolve, undefined, reject);
     }),
-    LOAD_TIMEOUT_MS,
+    timeoutMs,
     `MTL ${url}`,
   );
 }
@@ -89,13 +161,15 @@ function loadMtlMaterials(url: string): Promise<MTLLoader.MaterialCreator> {
  * OBJ ファイルをロードする。
  *
  * @param modelUrl - OBJ URL
+ * @param timeoutMs - タイムアウト（ミリ秒）
  * @param materials - 事前ロード済み MTL
  * @returns OBJ group
  * @example
- * const obj = await loadObjModel("/models/a.obj", materials);
+ * const obj = await loadObjModel("/models/a.obj", 30000, materials);
  */
 function loadObjModel(
   modelUrl: string,
+  timeoutMs: number,
   materials?: MTLLoader.MaterialCreator
 ): Promise<THREE.Group> {
   return withTimeout(
@@ -107,33 +181,88 @@ function loadObjModel(
       }
       loader.load(modelUrl, resolve, undefined, reject);
     }),
-    LOAD_TIMEOUT_MS,
+    timeoutMs,
     `OBJ ${modelUrl}`,
   );
 }
 
 /**
+ * FBX ファイルをロードする。
+ *
+ * @param modelUrl - FBX URL
+ * @param timeoutMs - タイムアウト（ミリ秒）
+ * @returns FBX group
+ * @example
+ * const object = await loadFbxModel("/models/character.fbx", 45000);
+ */
+function loadFbxModel(modelUrl: string, timeoutMs: number): Promise<THREE.Group> {
+  return withTimeout(
+    new Promise((resolve, reject) => {
+      const loader = new FBXLoader();
+      loader.load(modelUrl, resolve, undefined, reject);
+    }),
+    timeoutMs,
+    `FBX ${modelUrl}`,
+  );
+}
+
+/**
+ * URL 文字列からモデル形式を推定する。
+ *
+ * @param modelUrl - モデルURL
+ * @returns `obj` または `fbx`
+ * @example
+ * const format = resolveModelFormat("/models/character.fbx");
+ */
+function resolveModelFormat(modelUrl: string): ModelFormat {
+  const stripped = modelUrl.split("?")[0]?.split("#")[0] ?? modelUrl;
+  return stripped.toLowerCase().endsWith(".fbx") ? "fbx" : "obj";
+}
+
+/**
  * モデル候補を順に試行して最初に読める組み合わせを返す。
  *
- * @param modelCandidates - OBJ候補
+ * @param modelCandidates - モデル候補
  * @param mtlCandidates - MTL候補
+ * @param retryCount - 候補ごとのリトライ回数
  * @returns 読み込み済みオブジェクト
  * @example
- * const object = await loadModelFromCandidates(models, mtls);
+ * const object = await loadModelFromCandidates(models, mtls, 2);
  */
 async function loadModelFromCandidates(
   modelCandidates: string[],
-  mtlCandidates: string[]
+  mtlCandidates: string[],
+  retryCount: number,
 ): Promise<THREE.Group> {
   let lastError: unknown = null;
   const failures: ModelLoadAttemptFailure[] = [];
 
   for (const modelUrl of modelCandidates) {
+    const modelFormat = resolveModelFormat(modelUrl);
+    const modelTimeout = getLoadTimeoutMs(modelUrl);
+
+    if (modelFormat === "fbx") {
+      try {
+        return await withRetries(
+          () => loadFbxModel(modelUrl, modelTimeout),
+          retryCount,
+        );
+      } catch (error) {
+        lastError = error;
+        failures.push({ modelUrl, mtlUrl: null, stage: "fbx", error });
+        console.warn("[CharacterViewer] fbx load failed", { modelUrl, error });
+      }
+      continue;
+    }
+
     if (mtlCandidates.length > 0) {
       for (const mtlUrl of mtlCandidates) {
+        const timeoutMs = Math.max(modelTimeout, getLoadTimeoutMs(mtlUrl));
         try {
-          const materials = await loadMtlMaterials(mtlUrl);
-          return await loadObjModel(modelUrl, materials);
+          return await withRetries(async () => {
+            const materials = await loadMtlMaterials(mtlUrl, timeoutMs);
+            return await loadObjModel(modelUrl, timeoutMs, materials);
+          }, retryCount);
         } catch (error) {
           lastError = error;
           failures.push({ modelUrl, mtlUrl, stage: "mtl+obj", error });
@@ -143,7 +272,10 @@ async function loadModelFromCandidates(
     }
 
     try {
-      return await loadObjModel(modelUrl);
+      return await withRetries(
+        () => loadObjModel(modelUrl, modelTimeout),
+        retryCount,
+      );
     } catch (error) {
       lastError = error;
       failures.push({ modelUrl, mtlUrl: null, stage: "obj", error });
@@ -228,10 +360,10 @@ function applyLegacyMeshFixes(
           : 0;
         if (forceDoubleSide) material.side = THREE.DoubleSide;
         if (hasColor && typed.color && !hasMap && colorLuma < 0.05) {
-          // 近黒色 → ダークグレーに変換（背景色との区別）
+          // 近黒色 -> ダークグレーに変換（背景色との区別）
           typed.color.setHex(FALLBACK_DARK_GRAY);
         } else if (hasColor && typed.color && !hasMap && colorLuma > 0.95) {
-          // 近白色 → ライトグレーに変換（MTL マテリアル名不一致時のデフォルト白対策）
+          // 近白色 -> ライトグレーに変換（マテリアル不一致時の白飛び対策）
           typed.color.setHex(FALLBACK_LIGHT_GRAY);
         } else if (!hasColor && !hasMap && typed.color) {
           typed.color.setHex(FALLBACK_DARK_GRAY);
@@ -260,22 +392,19 @@ function applyLegacyMeshFixes(
  *
  * @param object - 3Dオブジェクト
  * @param profile - モデル表示プロファイル
- * @param baseScaleRef - 基準スケール参照
- * @returns なし
+ * @returns センタリング後に加算する位置オフセット
  * @example
- * applyRenderProfile(object, profile, baseScaleRef);
+ * const offset = applyRenderProfile(object, profile);
  */
 function applyRenderProfile(
   object: THREE.Object3D,
   profile: CharacterRenderProfile | undefined,
-  baseScaleRef: { current: number }
-): void {
-  if (!profile) return;
+): THREE.Vector3 {
+  if (!profile) return new THREE.Vector3();
 
   const scaleMultiplier = profile.scaleMultiplier ?? 1;
   if (scaleMultiplier !== 1) {
     object.scale.multiplyScalar(scaleMultiplier);
-    baseScaleRef.current *= scaleMultiplier;
   }
 
   if (profile.rotation) {
@@ -284,11 +413,11 @@ function applyRenderProfile(
     object.rotation.z += profile.rotation.z ?? 0;
   }
 
-  if (profile.positionOffset) {
-    object.position.x += profile.positionOffset.x ?? 0;
-    object.position.y += profile.positionOffset.y ?? 0;
-    object.position.z += profile.positionOffset.z ?? 0;
-  }
+  return new THREE.Vector3(
+    profile.positionOffset?.x ?? 0,
+    profile.positionOffset?.y ?? 0,
+    profile.positionOffset?.z ?? 0,
+  );
 }
 
 export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function CharacterViewer(
@@ -299,6 +428,8 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     renderProfile,
     controlsPlacement = "overlay",
     className = "",
+    candidateRetryCount = DEFAULT_CANDIDATE_RETRY_COUNT,
+    autoRetryCount = DEFAULT_AUTO_RETRY_COUNT,
   }: Props,
   ref
 ) {
@@ -306,10 +437,14 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
   const objectRef = useRef<THREE.Object3D | null>(null);
   const baseScaleRef = useRef(1);
   const rotatingRef = useRef(true);
+  const autoRetriedSessionKeyRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [errorType, setErrorType] = useState<ViewerErrorType | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isRotating, setIsRotating] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
+  const [autoRetryNonce, setAutoRetryNonce] = useState(0);
   const [failedModelCandidate, setFailedModelCandidate] = useState<string | null>(null);
   const [failedMtlCandidate, setFailedMtlCandidate] = useState<string | null>(null);
 
@@ -331,6 +466,15 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     () => JSON.stringify([normalizedModelCandidates, normalizedMtlCandidates]),
     [normalizedModelCandidates, normalizedMtlCandidates]
   );
+  const viewerSessionKey = useMemo(
+    () => `${characterId ?? "unknown"}:${candidatesKey}`,
+    [characterId, candidatesKey]
+  );
+
+  useEffect(() => {
+    autoRetriedSessionKeyRef.current = null;
+    setAutoRetryNonce(0);
+  }, [viewerSessionKey]);
 
   useEffect(() => {
     rotatingRef.current = isRotating;
@@ -339,11 +483,15 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
   useEffect(() => {
     if (!mountRef.current) return;
     if (normalizedModelCandidates.length === 0) {
+      setErrorType("model");
+      setErrorMessage("有効なモデル候補URLがありません。");
       setStatus("error");
       return;
     }
 
     setStatus("loading");
+    setErrorType(null);
+    setErrorMessage(null);
     setFailedModelCandidate(null);
     setFailedMtlCandidate(null);
     const width = mountRef.current.clientWidth || 320;
@@ -355,11 +503,21 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.01, 500);
     camera.position.set(0, 1.2, 3.4);
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: false,
-      powerPreference: "high-performance",
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+        powerPreference: "high-performance",
+      });
+    } catch (error) {
+      console.error("[CharacterViewer] WebGL renderer init failed", error);
+      setErrorType("webgl");
+      setErrorMessage("この端末/ブラウザでは WebGL を初期化できませんでした。");
+      setStatus("error");
+      return;
+    }
+
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(SCENE_BG_COLOR, 1);
@@ -385,22 +543,28 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     let cancelled = false;
 
     const fitAndCenterObject = (object: THREE.Object3D) => {
-      const box = new THREE.Box3().setFromObject(object);
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      object.updateMatrixWorld(true);
+
+      const initialBox = new THREE.Box3().setFromObject(object);
+      const initialSize = initialBox.getSize(new THREE.Vector3());
+      const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z) || 1;
       const targetSize = 3.2;
       const fittedScale = targetSize / maxDim;
       baseScaleRef.current = fittedScale;
       setZoom(1);
       object.scale.setScalar(fittedScale);
 
-      box.setFromObject(object);
-      const center = box.getCenter(new THREE.Vector3());
+      object.updateMatrixWorld(true);
+      const scaledBox = new THREE.Box3().setFromObject(object);
+      const center = scaledBox.getCenter(new THREE.Vector3());
       object.position.sub(center);
-      const fittedSize = box.getSize(new THREE.Vector3());
-      const fittedMax = Math.max(fittedSize.x, fittedSize.y, fittedSize.z) || 1;
 
-      const distance = Math.max(3.8, fittedMax * 2.2);
+      object.updateMatrixWorld(true);
+      const centeredBox = new THREE.Box3().setFromObject(object);
+      const centeredSize = centeredBox.getSize(new THREE.Vector3());
+      const centeredMax = Math.max(centeredSize.x, centeredSize.y, centeredSize.z) || 1;
+
+      const distance = Math.max(3.8, centeredMax * 2.2);
       camera.position.set(0, distance * 0.16, distance);
       controls.target.set(0, 0, 0);
       controls.minDistance = distance * 0.55;
@@ -411,45 +575,46 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     const addModel = (object: THREE.Object3D) => {
       if (cancelled) return;
       applyLegacyMeshFixes(object, renderProfile);
+      const profileOffset = applyRenderProfile(object, renderProfile);
       fitAndCenterObject(object);
-      applyRenderProfile(object, renderProfile, baseScaleRef);
+      if (profileOffset.lengthSq() > 0) {
+        object.position.add(profileOffset);
+        object.updateMatrixWorld(true);
+      }
       objectRef.current = object;
       scene.add(object);
-
-      // デバッグ: メッシュ数とマテリアル色をログ出力
-      let meshCount = 0;
-      object.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          meshCount++;
-          const mesh = child as THREE.Mesh;
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          mats.forEach((mat) => {
-            const typed = mat as THREE.Material & { color?: THREE.Color };
-            if (typed.color) {
-              console.info(
-                `[CharacterViewer] mesh=${mesh.name || "(unnamed)"} color=#${typed.color.getHexString()} type=${mat.type}`
-              );
-            }
-          });
-        }
-      });
-      console.info(`[CharacterViewer] model added: ${meshCount} meshes, id=${characterId}`);
-
       setStatus("ready");
     };
 
-    loadModelFromCandidates(normalizedModelCandidates, normalizedMtlCandidates)
+    loadModelFromCandidates(
+      normalizedModelCandidates,
+      normalizedMtlCandidates,
+      Math.max(0, Math.floor(candidateRetryCount)),
+    )
       .then((object) => addModel(object))
       .catch((error) => {
         const errorWithMeta = error as ModelLoadError;
         const failures = errorWithMeta.failures ?? [];
         const failedCandidate = failures.length > 0 ? failures[failures.length - 1] : null;
         console.warn("[CharacterViewer] all candidates failed", { characterId, error, failures });
-        if (!cancelled) {
-          setFailedModelCandidate(failedCandidate?.modelUrl ?? normalizedModelCandidates[0] ?? null);
-          setFailedMtlCandidate(failedCandidate?.mtlUrl ?? normalizedMtlCandidates[0] ?? null);
-          setStatus("error");
+        if (cancelled) return;
+
+        const normalizedAutoRetryCount = Math.max(0, Math.floor(autoRetryCount));
+        const canAutoRetry =
+          normalizedAutoRetryCount > 0 &&
+          autoRetriedSessionKeyRef.current !== viewerSessionKey &&
+          autoRetryNonce < normalizedAutoRetryCount;
+        if (canAutoRetry) {
+          autoRetriedSessionKeyRef.current = viewerSessionKey;
+          setAutoRetryNonce((value) => value + 1);
+          return;
         }
+
+        setFailedModelCandidate(failedCandidate?.modelUrl ?? normalizedModelCandidates[0] ?? null);
+        setFailedMtlCandidate(failedCandidate?.mtlUrl ?? normalizedMtlCandidates[0] ?? null);
+        setErrorType("model");
+        setErrorMessage(null);
+        setStatus("error");
       });
 
     let frame = 0;
@@ -471,11 +636,21 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
-    window.addEventListener("resize", handleResize);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => handleResize());
+      resizeObserver.observe(mountRef.current);
+    } else {
+      window.addEventListener("resize", handleResize);
+    }
 
     return () => {
       cancelled = true;
-      window.removeEventListener("resize", handleResize);
+      resizeObserver?.disconnect();
+      if (!resizeObserver) {
+        window.removeEventListener("resize", handleResize);
+      }
       cancelAnimationFrame(frame);
       controls.dispose();
       renderer.dispose();
@@ -488,7 +663,16 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- candidatesKey は normalizedModel/MtlCandidates の値ベースのキー
-  }, [characterId, candidatesKey, reloadKey, renderProfile]);
+  }, [
+    characterId,
+    candidatesKey,
+    reloadKey,
+    autoRetryNonce,
+    viewerSessionKey,
+    renderProfile,
+    candidateRetryCount,
+    autoRetryCount,
+  ]);
 
   /**
    * モデルスケールを変更する。
@@ -507,6 +691,11 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
 
   const handleScaleUp = () => applyScale(zoom * 1.15);
   const handleScaleDown = () => applyScale(zoom * 0.87);
+  const handleRetry = () => {
+    autoRetriedSessionKeyRef.current = null;
+    setAutoRetryNonce(0);
+    setReloadKey((value) => value + 1);
+  };
 
   /**
    * モデル自動回転をトグルする。
@@ -538,8 +727,17 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       {status !== "ready" && (
         <div className="absolute inset-0 grid place-items-center">
           <div className="rounded-2xl border border-emerald-900/10 bg-white/90 px-4 py-2 text-center text-xs font-medium text-emerald-900/80 shadow-sm">
-            <p>{status === "loading" ? "モデルを読み込み中..." : "モデルを表示できませんでした"}</p>
-            {status === "error" && (
+            <p>
+              {status === "loading"
+                ? "モデルを読み込み中..."
+                : errorType === "webgl"
+                  ? "WebGL の初期化に失敗しました"
+                  : "モデルを表示できませんでした"}
+            </p>
+            {status === "error" && errorMessage && (
+              <p className="mt-1 text-[11px] text-emerald-900/70">{errorMessage}</p>
+            )}
+            {status === "error" && errorType === "model" && (
               <>
                 <p className="mt-1 text-[11px] text-emerald-900/70">
                   model: {formatCandidateLabel(failedModelCandidate)}
@@ -552,7 +750,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setReloadKey((value) => value + 1)}
+                  onClick={handleRetry}
                   className="mt-2 gap-1"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />

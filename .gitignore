@@ -85,3 +85,6 @@ rules/
 CLAUDE.md
 AGENTS.md
 GEMINI.md
+
+documents/
+public/db/

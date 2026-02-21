@@ -10,6 +10,8 @@ type SignedCacheEntry = { url: string; expiresAt: number };
 
 const CACHE_KEY = "iwate150_signed_url_cache_v1";
 const CACHE_REFRESH_MARGIN_MS = 5 * 60 * 1000;
+/** createSignedUrl API 呼び出しのタイムアウト（ミリ秒） */
+const SIGNED_URL_REQUEST_TIMEOUT_MS = 5_000;
 const memoryCache = new Map<string, SignedCacheEntry>();
 
 /**
@@ -143,23 +145,39 @@ export async function resolveClientStorageUrl(
   if (!supabase) return publicUrl;
 
   const expiresIn = getSignedTtlSeconds();
-  const { data, error } = await supabase.storage.from(
-    process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ??
-      process.env.SUPABASE_STORAGE_BUCKET ??
-      "iwate150data"
-  ).createSignedUrl(objectPath, expiresIn);
 
-  if (error || !data?.signedUrl) {
+  // createSignedUrl がハングする場合に備えてタイムアウトを設定
+  try {
+    const result = await Promise.race([
+      supabase.storage.from(
+        process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ??
+          process.env.SUPABASE_STORAGE_BUCKET ??
+          "iwate150data"
+      ).createSignedUrl(objectPath, expiresIn),
+      new Promise<{ data: null; error: Error }>((resolve) =>
+        setTimeout(() => {
+          console.warn(`[storageSignedClient] createSignedUrl timeout: ${objectPath}`);
+          resolve({ data: null, error: new Error("signed url timeout") });
+        }, SIGNED_URL_REQUEST_TIMEOUT_MS),
+      ),
+    ]);
+
+    const { data, error } = result;
+    if (error || !data?.signedUrl) {
+      return publicUrl;
+    }
+
+    const entry: SignedCacheEntry = {
+      url: data.signedUrl,
+      expiresAt: Date.now() + expiresIn * 1000,
+    };
+    memoryCache.set(cacheKey, entry);
+    persistCacheToLocalStorage();
+    return entry.url;
+  } catch (err) {
+    console.warn(`[storageSignedClient] createSignedUrl error: ${objectPath}`, err);
     return publicUrl;
   }
-
-  const entry: SignedCacheEntry = {
-    url: data.signedUrl,
-    expiresAt: Date.now() + expiresIn * 1000,
-  };
-  memoryCache.set(cacheKey, entry);
-  persistCacheToLocalStorage();
-  return entry.url;
 }
 
 /**

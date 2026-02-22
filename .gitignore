@@ -88,3 +88,7 @@ GEMINI.md
 
 documents/
 public/db/
+
+# DB スキーマと SQL マイグレーション
+supabase/schema.sql
+supabase/*.sql

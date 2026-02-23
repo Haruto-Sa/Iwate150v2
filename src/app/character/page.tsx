@@ -131,26 +131,27 @@ export default function CharacterPage() {
       />
 
       <section className="rounded-3xl border border-emerald-900/10 bg-white p-4 shadow-xl ring-1 ring-emerald-900/10 sm:p-5">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,16rem),1fr] lg:items-start">
-          <div className="space-y-3">
-            <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-emerald-900/10 bg-gradient-to-b from-[#eef3f1] to-emerald-50">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem),1fr] lg:items-start">
+          <div className="mx-auto w-full max-w-sm space-y-3 lg:mx-0">
+            <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-emerald-900/10 bg-gradient-to-b from-[#eef3f1] to-emerald-50">
               <CharacterViewer
                 characterId={selected.id}
                 modelCandidates={modelCandidates}
                 mtlCandidates={mtlCandidates}
                 renderProfile={selected.renderProfile}
+                disableProfilePositionOffset
                 controlsPlacement="bottom"
                 candidateRetryCount={2}
                 autoRetryCount={1}
                 className="h-full min-h-0"
               />
             </div>
-            <p className="text-xs text-emerald-900/65">
-              画面下のボタンで拡大・縮小・回転を操作できます。
+            <p className="text-center text-xs leading-relaxed text-emerald-900/65 lg:text-left">
+              画面下のボタンで拡大・縮小・回転・リセットを操作できます。
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <div className="flex items-start gap-3">
               {thumbnailUrl ? (
                 <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-emerald-900/10 bg-white">
@@ -163,21 +164,25 @@ export default function CharacterPage() {
               )}
 
               <div className="space-y-1">
-                <p className="text-base font-semibold text-emerald-950">{selected.name}</p>
+                <p className="break-words text-base font-semibold leading-tight text-emerald-950">
+                  {selected.name}
+                </p>
                 <p className="inline-flex items-center gap-1 text-xs text-emerald-900/70">
                   <MapPin className="h-3.5 w-3.5" />
-                  {selected.region}
+                  <span className="break-words">{selected.region}</span>
                 </p>
               </div>
             </div>
 
-            <p className="text-sm leading-relaxed text-emerald-900/85">{selected.description}</p>
+            <p className="break-words text-sm leading-relaxed text-emerald-900/85">
+              {selected.description}
+            </p>
 
             <div className="flex flex-wrap gap-2">
               {(selected.tags ?? []).map((tag) => (
                 <span
                   key={`${selected.id}-${tag}`}
-                  className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] uppercase tracking-wide text-emerald-900 ring-1 ring-emerald-200/60"
+                  className="break-words rounded-full bg-emerald-50 px-2 py-1 text-[11px] uppercase tracking-wide text-emerald-900 ring-1 ring-emerald-200/60"
                 >
                   {tag}
                 </span>
@@ -198,11 +203,11 @@ export default function CharacterPage() {
                 variant={active ? "primary" : "outline"}
                 size="sm"
                 onClick={() => setSelectedId(character.id)}
-                className="text-left"
+                className="h-full min-h-14 text-left"
               >
-                <div>
-                  <p className="text-sm font-semibold">{character.name}</p>
-                  <p className="text-xs opacity-70">{character.region}</p>
+                <div className="min-w-0">
+                  <p className="break-words text-sm font-semibold leading-tight">{character.name}</p>
+                  <p className="break-words text-xs opacity-70">{character.region}</p>
                 </div>
               </Button>
             );

@@ -8,7 +8,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
-import { Minus, Plus, RotateCw, RefreshCw } from "lucide-react";
+import { Minus, Plus, RotateCw, RefreshCw, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CharacterRenderProfile } from "@/lib/types";
 
@@ -16,6 +16,7 @@ export type CharacterViewerHandle = {
   scaleUp: () => void;
   scaleDown: () => void;
   toggleRotation: () => boolean;
+  resetView: () => void;
 };
 
 type Props = {
@@ -23,6 +24,7 @@ type Props = {
   modelCandidates: string[];
   mtlCandidates?: string[];
   renderProfile?: CharacterRenderProfile;
+  disableProfilePositionOffset?: boolean;
   controlsPlacement?: "overlay" | "bottom" | "none";
   className?: string;
   candidateRetryCount?: number;
@@ -407,6 +409,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     modelCandidates,
     mtlCandidates = [],
     renderProfile,
+    disableProfilePositionOffset = false,
     controlsPlacement = "overlay",
     className = "",
     candidateRetryCount = DEFAULT_CANDIDATE_RETRY_COUNT,
@@ -416,8 +419,15 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
 ) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const objectRef = useRef<THREE.Object3D | null>(null);
+  const cameraInstanceRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const controlsInstanceRef = useRef<OrbitControls | null>(null);
+  const profileOffsetRef = useRef(new THREE.Vector3());
   const baseScaleRef = useRef(1);
   const rotatingRef = useRef(true);
+  /** リセット時に復元するカメラ距離 */
+  const initialCameraDistanceRef = useRef(3.8);
+  /** リセット時に復元するオブジェクト初期回転 */
+  const initialObjectRotationRef = useRef(new THREE.Euler());
   const autoRetriedSessionKeyRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorType, setErrorType] = useState<ViewerErrorType | null>(null);
@@ -479,6 +489,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
 
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.01, 500);
     camera.position.set(0, 1.2, 3.4);
+    cameraInstanceRef.current = camera;
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -516,10 +527,15 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     controls.enableDamping = true;
     controls.enablePan = false;
     controls.target.set(0, 0, 0);
+    controlsInstanceRef.current = controls;
 
     let cancelled = false;
 
     const fitAndCenterObject = (object: THREE.Object3D) => {
+      const activeCamera = cameraInstanceRef.current;
+      const activeControls = controlsInstanceRef.current;
+      if (!activeCamera || !activeControls) return;
+
       object.updateMatrixWorld(true);
 
       const initialBox = new THREE.Box3().setFromObject(object);
@@ -542,22 +558,27 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       const centeredMax = Math.max(centeredSize.x, centeredSize.y, centeredSize.z) || 1;
 
       const distance = Math.max(3.8, centeredMax * 2.2);
-      camera.position.set(0, distance * 0.16, distance);
-      controls.target.set(0, 0, 0);
-      controls.minDistance = distance * 0.55;
-      controls.maxDistance = distance * 3;
-      camera.lookAt(0, 0, 0);
+      initialCameraDistanceRef.current = distance;
+      activeCamera.position.set(0, distance * 0.16, distance);
+      activeControls.target.set(0, 0, 0);
+      activeControls.minDistance = distance * 0.55;
+      activeControls.maxDistance = distance * 3;
+      activeCamera.lookAt(0, 0, 0);
+
+      if (profileOffsetRef.current.lengthSq() > 0) {
+        object.position.add(profileOffsetRef.current);
+        object.updateMatrixWorld(true);
+      }
+      activeControls.update();
     };
 
     const addModel = (object: THREE.Object3D) => {
       if (cancelled) return;
       applyLegacyMeshFixes(object, renderProfile);
       const profileOffset = applyRenderProfile(object, renderProfile);
+      profileOffsetRef.current = disableProfilePositionOffset ? new THREE.Vector3() : profileOffset;
       fitAndCenterObject(object);
-      if (profileOffset.lengthSq() > 0) {
-        object.position.add(profileOffset);
-        object.updateMatrixWorld(true);
-      }
+      initialObjectRotationRef.current = object.rotation.clone();
       objectRef.current = object;
       scene.add(object);
       setStatus("ready");
@@ -609,6 +630,9 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      if (objectRef.current) {
+        fitAndCenterObject(objectRef.current);
+      }
     };
 
     let resizeObserver: ResizeObserver | null = null;
@@ -628,6 +652,9 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       cancelAnimationFrame(frame);
       controls.dispose();
       renderer.dispose();
+      controlsInstanceRef.current = null;
+      cameraInstanceRef.current = null;
+      profileOffsetRef.current = new THREE.Vector3();
       if (objectRef.current) {
         scene.remove(objectRef.current);
         objectRef.current = null;
@@ -644,6 +671,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     autoRetryNonce,
     viewerSessionKey,
     renderProfile,
+    disableProfilePositionOffset,
     candidateRetryCount,
     autoRetryCount,
   ]);
@@ -672,6 +700,27 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
   };
 
   /**
+   * カメラ・ズーム・回転を初期正面位置にリセットし、自動回転を停止する。
+   *
+   * @returns なし
+   * @example
+   * handleReset();
+   */
+  const handleReset = () => {
+    if (!objectRef.current || !cameraInstanceRef.current || !controlsInstanceRef.current) return;
+    const initialRot = initialObjectRotationRef.current;
+    objectRef.current.rotation.set(initialRot.x, initialRot.y, initialRot.z);
+    objectRef.current.scale.setScalar(baseScaleRef.current);
+    setZoom(1);
+    const dist = initialCameraDistanceRef.current;
+    cameraInstanceRef.current.position.set(0, dist * 0.16, dist);
+    controlsInstanceRef.current.target.set(0, 0, 0);
+    controlsInstanceRef.current.update();
+    rotatingRef.current = false;
+    setIsRotating(false);
+  };
+
+  /**
    * モデル自動回転をトグルする。
    *
    * @returns 切り替え後の状態
@@ -689,6 +738,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     scaleUp: handleScaleUp,
     scaleDown: handleScaleDown,
     toggleRotation,
+    resetView: handleReset,
   }));
 
   const renderOverlayControls = controlsPlacement === "overlay" || controlsPlacement === "bottom";
@@ -743,9 +793,9 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
           }`}
         >
           <div
-            className={`pointer-events-auto gap-2 bg-white/85 text-emerald-900 shadow-lg shadow-emerald-200/50 backdrop-blur ${
+            className={`pointer-events-auto gap-1 bg-white/85 text-emerald-900 shadow-lg shadow-emerald-200/50 backdrop-blur ${
               controlsPlacement === "bottom"
-                ? "grid grid-cols-3 rounded-2xl p-2"
+                ? "grid grid-cols-4 rounded-2xl p-2"
                 : "flex rounded-full px-2 py-1"
             }`}
           >
@@ -753,28 +803,37 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               variant="ghost"
               size="sm"
               onClick={handleScaleDown}
-              className="justify-center gap-1 active:scale-95"
+              className="justify-center gap-0.5 active:scale-95"
             >
-              <Minus className="h-4 w-4" />
-              縮小
+              <Minus className="h-3.5 w-3.5" />
+              <span className="text-[11px]">縮小</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleRotation}
-              className="justify-center gap-1 active:scale-95"
+              className="justify-center gap-0.5 active:scale-95"
             >
-              <RotateCw className="h-4 w-4" />
-              {isRotating ? "停止" : "回転"}
+              <RotateCw className="h-3.5 w-3.5" />
+              <span className="text-[11px]">{isRotating ? "停止" : "回転"}</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleScaleUp}
-              className="justify-center gap-1 active:scale-95"
+              className="justify-center gap-0.5 active:scale-95"
             >
-              <Plus className="h-4 w-4" />
-              拡大
+              <Plus className="h-3.5 w-3.5" />
+              <span className="text-[11px]">拡大</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="justify-center gap-0.5 active:scale-95"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span className="text-[11px]">リセット</span>
             </Button>
           </div>
         </div>

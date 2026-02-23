@@ -48,9 +48,9 @@ const FALLBACK_LIGHT_GRAY = 0x888888;
 /** シーン背景色（純白を避けて白モデルでも視認できるようにする） */
 const SCENE_BG_COLOR = 0xf0f2ef;
 /** ローカル配信モデルの読み込みタイムアウト（ミリ秒） */
-const LOCAL_LOAD_TIMEOUT_MS = 30_000;
+const LOCAL_LOAD_TIMEOUT_MS = 45_000;
 /** リモート配信モデルの読み込みタイムアウト（ミリ秒） */
-const REMOTE_LOAD_TIMEOUT_MS = 45_000;
+const REMOTE_LOAD_TIMEOUT_MS = 12_000;
 /** 各候補URLに対するデフォルトリトライ回数 */
 const DEFAULT_CANDIDATE_RETRY_COUNT = 2;
 /** 読み込み失敗時のデフォルト自動再試行回数 */
@@ -290,25 +290,6 @@ async function loadModelFromCandidates(
 }
 
 /**
- * モデルURLを短い表示用文字列へ整形する。
- *
- * @param url - 対象URL
- * @returns 表示用テキスト
- * @example
- * formatCandidateLabel("https://example.com/storage/v1/object/public/iwate150data/models/a.obj");
- */
-function formatCandidateLabel(url: string | null): string {
-  if (!url) return "-";
-  try {
-    const parsed = new URL(url);
-    const compact = `${parsed.hostname}${parsed.pathname}`;
-    return compact.length > 120 ? `${compact.slice(0, 117)}...` : compact;
-  } catch {
-    return url.length > 120 ? `${url.slice(0, 117)}...` : url;
-  }
-}
-
-/**
  * モデルへ legacy 互換のメッシュ補正を適用する。
  *
  * @param object - 3Dオブジェクト
@@ -445,8 +426,6 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
   const [zoom, setZoom] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
   const [autoRetryNonce, setAutoRetryNonce] = useState(0);
-  const [failedModelCandidate, setFailedModelCandidate] = useState<string | null>(null);
-  const [failedMtlCandidate, setFailedMtlCandidate] = useState<string | null>(null);
 
   const normalizedModelCandidates = useMemo(
     () => [...new Set(modelCandidates.filter((url): url is string => Boolean(url)))],
@@ -484,7 +463,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     if (!mountRef.current) return;
     if (normalizedModelCandidates.length === 0) {
       setErrorType("model");
-      setErrorMessage("有効なモデル候補URLがありません。");
+      setErrorMessage("モデルデータを確認できませんでした。");
       setStatus("error");
       return;
     }
@@ -492,8 +471,6 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     setStatus("loading");
     setErrorType(null);
     setErrorMessage(null);
-    setFailedModelCandidate(null);
-    setFailedMtlCandidate(null);
     const width = mountRef.current.clientWidth || 320;
     const height = mountRef.current.clientHeight || 220;
 
@@ -513,7 +490,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     } catch (error) {
       console.error("[CharacterViewer] WebGL renderer init failed", error);
       setErrorType("webgl");
-      setErrorMessage("この端末/ブラウザでは WebGL を初期化できませんでした。");
+      setErrorMessage("この端末では3D表示に対応していない可能性があります。");
       setStatus("error");
       return;
     }
@@ -595,7 +572,6 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       .catch((error) => {
         const errorWithMeta = error as ModelLoadError;
         const failures = errorWithMeta.failures ?? [];
-        const failedCandidate = failures.length > 0 ? failures[failures.length - 1] : null;
         console.warn("[CharacterViewer] all candidates failed", { characterId, error, failures });
         if (cancelled) return;
 
@@ -610,10 +586,8 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
           return;
         }
 
-        setFailedModelCandidate(failedCandidate?.modelUrl ?? normalizedModelCandidates[0] ?? null);
-        setFailedMtlCandidate(failedCandidate?.mtlUrl ?? normalizedMtlCandidates[0] ?? null);
         setErrorType("model");
-        setErrorMessage(null);
+        setErrorMessage("読み込みに時間がかかっています。時間をおいて再試行してください。");
         setStatus("error");
       });
 
@@ -724,39 +698,40 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       className={`relative h-full min-h-[16rem] w-full overflow-hidden rounded-xl bg-[#f0f2ef] ${className}`}
     >
       <div ref={mountRef} className="h-full w-full" />
-      {status !== "ready" && (
+      {status === "loading" && (
         <div className="absolute inset-0 grid place-items-center">
-          <div className="rounded-2xl border border-emerald-900/10 bg-white/90 px-4 py-2 text-center text-xs font-medium text-emerald-900/80 shadow-sm">
-            <p>
-              {status === "loading"
-                ? "モデルを読み込み中..."
-                : errorType === "webgl"
-                  ? "WebGL の初期化に失敗しました"
-                  : "モデルを表示できませんでした"}
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
+            <p className="text-xs font-medium text-emerald-900/70">
+              3Dモデルを読み込み中...
             </p>
-            {status === "error" && errorMessage && (
+            <p className="text-[11px] text-emerald-900/45">
+              しばらくお待ちください
+            </p>
+          </div>
+        </div>
+      )}
+      {status === "error" && (
+        <div className="absolute inset-0 grid place-items-center">
+          <div className="rounded-2xl border border-emerald-900/10 bg-white/90 px-4 py-3 text-center text-xs font-medium text-emerald-900/80 shadow-sm">
+            <p>
+              {errorType === "webgl"
+                ? "この端末では3D表示を開始できませんでした"
+                : "モデルを表示できませんでした"}
+            </p>
+            {errorMessage && (
               <p className="mt-1 text-[11px] text-emerald-900/70">{errorMessage}</p>
             )}
-            {status === "error" && errorType === "model" && (
-              <>
-                <p className="mt-1 text-[11px] text-emerald-900/70">
-                  model: {formatCandidateLabel(failedModelCandidate)}
-                </p>
-                {failedMtlCandidate && (
-                  <p className="mt-1 text-[11px] text-emerald-900/70">
-                    mtl: {formatCandidateLabel(failedMtlCandidate)}
-                  </p>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRetry}
-                  className="mt-2 gap-1"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  再試行
-                </Button>
-              </>
+            {errorType === "model" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+                className="mt-2 gap-1"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                再試行
+              </Button>
             )}
           </div>
         </div>

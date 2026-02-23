@@ -55,8 +55,8 @@ export function LegacyCalendarBoard({ events }: Props) {
             <CalendarDays className="h-5 w-5" />
           </span>
           <div>
-            <p className="font-display text-xl text-emerald-950">Legacyイベント一覧</p>
-            <p className="text-xs text-emerald-900/65">日ごとの縦長タイムライン表示</p>
+            <p className="font-display text-xl text-emerald-950">イベント一覧</p>
+            <p className="text-xs text-emerald-900/65">日ごとの縦スクロール表示</p>
           </div>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-emerald-900/10 bg-emerald-50 px-2 py-1 text-sm text-emerald-900/80">

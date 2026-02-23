@@ -11,7 +11,7 @@ type SignedCacheEntry = { url: string; expiresAt: number };
 const CACHE_KEY = "iwate150_signed_url_cache_v1";
 const CACHE_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 /** createSignedUrl API 呼び出しのタイムアウト（ミリ秒） */
-const SIGNED_URL_REQUEST_TIMEOUT_MS = 5_000;
+const SIGNED_URL_REQUEST_TIMEOUT_MS = 20_000;
 const memoryCache = new Map<string, SignedCacheEntry>();
 
 /**

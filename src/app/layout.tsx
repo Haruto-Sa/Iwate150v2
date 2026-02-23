@@ -31,7 +31,7 @@ const body = Noto_Sans_JP({
 export const metadata: Metadata = {
   title: "Iwate150",
   description:
-    "Iwate tourism guide with maps, spots search, and AR-ready structure built on Next.js, Supabase, and Leaflet.",
+    "岩手の観光地やイベントを地図・検索・ARで楽しめる観光ガイドアプリ。",
 };
 
 export default function RootLayout({

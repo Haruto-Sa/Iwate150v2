@@ -5,22 +5,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { characters } from "@/lib/characters";
 import { SectionTitle } from "@/components/ui/SectionTitle";
-import { Sparkles, Image as ImageIcon, MapPin, Box } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Sparkles, Image as ImageIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { CharacterViewer } from "@/components/character/CharacterViewer";
-import { getImageUrl, getModelUrl } from "@/lib/storage";
+import { getImageUrl } from "@/lib/storage";
 import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
 
-/** Storage URL 解決のタイムアウト（ミリ秒）。ハング防止用 */
-const STORAGE_RESOLVE_TIMEOUT_MS = 8_000;
-
-type CharacterResolvedAsset = {
-  modelUrl: string | null;
-  mtlUrl: string | null;
-  thumbnailUrl: string | null;
-};
-
-type CharacterResolvedAssetMap = Record<string, CharacterResolvedAsset>;
+/** サムネイル Storage URL 解決のタイムアウト（ミリ秒） */
+const STORAGE_RESOLVE_TIMEOUT_MS = 20_000;
 
 /**
  * 候補URL配列を重複なく組み立てる。
@@ -28,7 +21,7 @@ type CharacterResolvedAssetMap = Record<string, CharacterResolvedAsset>;
  * @param values - URL候補
  * @returns 重複除去済みURL配列
  * @example
- * const urls = buildUniqueCandidates([signedUrl, publicUrl, localUrl]);
+ * const urls = buildUniqueCandidates([localUrl]);
  */
 function buildUniqueCandidates(values: Array<string | null | undefined>): string[] {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
@@ -49,24 +42,22 @@ function toLocalAssetUrl(path: string | null | undefined): string | null {
 }
 
 /**
- * タイムアウト付きで Storage URL を解決する。
+ * サムネイル画像のみタイムアウト付きで Storage URL を解決する。
  *
  * @param path - Storage path
- * @param type - asset type
  * @returns 解決済みURL。失敗/タイムアウト時は null
  * @example
- * const modelUrl = await resolveWithTimeout("models/wanko1.obj", "model");
+ * const url = await resolveThumbnailWithTimeout("images/other/wanko.png");
  */
-function resolveWithTimeout(
+function resolveThumbnailWithTimeout(
   path: string | null | undefined,
-  type: "model" | "image",
 ): Promise<string | null> {
   if (!path) return Promise.resolve(null);
   return Promise.race([
-    resolveClientStorageUrl(path, type),
+    resolveClientStorageUrl(path, "image"),
     new Promise<null>((resolve) =>
       setTimeout(() => {
-        console.warn(`[character] storage resolve timeout for ${path}`);
+        console.warn(`[character] thumbnail resolve timeout for ${path}`);
         resolve(null);
       }, STORAGE_RESOLVE_TIMEOUT_MS),
     ),
@@ -74,198 +65,150 @@ function resolveWithTimeout(
 }
 
 /**
- * キャラクターIDごとの解決済みURL保持用Mapを初期化する。
+ * キャラクターページ。
  *
- * @returns 全キャラクター分を `null` で初期化したMap
- * @example
- * const initialMap = createInitialResolvedAssetMap();
- */
-function createInitialResolvedAssetMap(): CharacterResolvedAssetMap {
-  return Object.fromEntries(
-    characters.map((character) => [
-      character.id,
-      { modelUrl: null, mtlUrl: null, thumbnailUrl: null } satisfies CharacterResolvedAsset,
-    ]),
-  );
-}
-
-/**
- * キャラクター一覧ページ。
+ * 選択中キャラクターを大きく表示し、切り替えボタンで表示対象を変更できる。
  *
- * legacy の character 実装に合わせ、キャラクターごとに独立した Three.js ビューを表示する。
- *
- * @returns キャラクター画面
+ * @returns CharacterPage コンポーネント
  * @example
  * return <CharacterPage />;
  */
 export default function CharacterPage() {
-  const [resolvedAssetsById, setResolvedAssetsById] =
-    useState<CharacterResolvedAssetMap>(() => createInitialResolvedAssetMap());
+  const [selectedId, setSelectedId] = useState<string | null>(characters[0]?.id ?? null);
+  const [resolvedThumbnailUrl, setResolvedThumbnailUrl] = useState<string | null>(null);
+
+  const selected = useMemo(
+    () => characters.find((character) => character.id === selectedId) ?? characters[0] ?? null,
+    [selectedId],
+  );
 
   useEffect(() => {
     let cancelled = false;
+    if (!selected) return;
 
-    setResolvedAssetsById(createInitialResolvedAssetMap());
+    setResolvedThumbnailUrl(null);
 
-    Promise.all(
-      characters.map(async (character) => {
-        const [modelUrl, mtlUrl, thumbnailUrl] = await Promise.all([
-          resolveWithTimeout(character.model_path, "model"),
-          resolveWithTimeout(character.mtl_path, "model"),
-          resolveWithTimeout(character.thumbnail, "image"),
-        ]);
-
-        return [
-          character.id,
-          {
-            modelUrl,
-            mtlUrl,
-            thumbnailUrl,
-          } satisfies CharacterResolvedAsset,
-        ] as const;
-      }),
-    )
-      .then((entries) => {
+    resolveThumbnailWithTimeout(selected.thumbnail)
+      .then((url) => {
         if (cancelled) return;
-        setResolvedAssetsById((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+        setResolvedThumbnailUrl(url);
       })
       .catch((error) => {
-        console.warn("[character] storage url resolve failed", error);
+        console.warn("[character] thumbnail resolve failed", error);
       });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [selected]);
 
-  const modelCandidatesById = useMemo(() => {
-    const entries = characters.map((character) => {
-      const resolved = resolvedAssetsById[character.id];
-      return [
-        character.id,
-        buildUniqueCandidates([
-          // ローカルファイルを最優先（legacy互換の安定表示）
-          toLocalAssetUrl(character.model_path),
-          resolved?.modelUrl,
-          getModelUrl(character.model_path),
-        ]),
-      ] as const;
-    });
+  if (!selected) {
+    return (
+      <div className="space-y-6">
+        <SectionTitle
+          label="ゆるキャラ"
+          description="キャラクター情報を準備中です。"
+          icon={Sparkles}
+        />
+      </div>
+    );
+  }
 
-    return Object.fromEntries(entries) as Record<string, string[]>;
-  }, [resolvedAssetsById]);
-
-  const mtlCandidatesById = useMemo(() => {
-    const entries = characters.map((character) => {
-      const resolved = resolvedAssetsById[character.id];
-      return [
-        character.id,
-        buildUniqueCandidates([
-          // ローカルファイルを最優先（legacy互換の安定表示）
-          toLocalAssetUrl(character.mtl_path),
-          resolved?.mtlUrl,
-          getModelUrl(character.mtl_path),
-        ]),
-      ] as const;
-    });
-
-    return Object.fromEntries(entries) as Record<string, string[]>;
-  }, [resolvedAssetsById]);
-
-  const thumbnailById = useMemo(() => {
-    const entries = characters.map((character) => {
-      const resolved = resolvedAssetsById[character.id];
-      return [character.id, resolved?.thumbnailUrl ?? getImageUrl(character.thumbnail)] as const;
-    });
-
-    return Object.fromEntries(entries) as Record<string, string | null>;
-  }, [resolvedAssetsById]);
+  const modelCandidates = buildUniqueCandidates([
+    toLocalAssetUrl(selected.model_path),
+  ]);
+  const mtlCandidates = buildUniqueCandidates([
+    toLocalAssetUrl(selected.mtl_path),
+  ]);
+  const thumbnailUrl = resolvedThumbnailUrl ?? getImageUrl(selected.thumbnail);
 
   return (
     <div className="space-y-6">
       <SectionTitle
         label="ゆるキャラ"
-        description="legacy の character 画面に合わせて、キャラクターごとに独立した3D表示と説明を並べています。"
+        description="お気に入りのキャラクターを選んで、3Dモデルをじっくり操作できます。"
         icon={Sparkles}
       />
 
-      <div className="space-y-6">
-        {characters.map((character) => {
-          const modelCandidates = modelCandidatesById[character.id] ?? [];
-          const mtlCandidates = mtlCandidatesById[character.id] ?? [];
-          const thumbnailUrl = thumbnailById[character.id];
+      <section className="rounded-3xl border border-emerald-900/10 bg-white p-4 shadow-xl ring-1 ring-emerald-900/10 sm:p-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,16rem),1fr] lg:items-start">
+          <div className="space-y-3">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-emerald-900/10 bg-gradient-to-b from-[#eef3f1] to-emerald-50">
+              <CharacterViewer
+                characterId={selected.id}
+                modelCandidates={modelCandidates}
+                mtlCandidates={mtlCandidates}
+                renderProfile={selected.renderProfile}
+                controlsPlacement="bottom"
+                candidateRetryCount={2}
+                autoRetryCount={1}
+                className="h-full min-h-0"
+              />
+            </div>
+            <p className="text-xs text-emerald-900/65">
+              画面下のボタンで拡大・縮小・回転を操作できます。
+            </p>
+          </div>
 
-          return (
-            <section
-              key={character.id}
-              className="rounded-3xl border border-emerald-900/10 bg-white p-4 shadow-xl ring-1 ring-emerald-900/10 sm:p-5"
-            >
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem),1fr] lg:items-start">
-                <div className="space-y-3">
-                  <div className="relative aspect-square overflow-hidden rounded-2xl border border-emerald-900/10 bg-gradient-to-b from-[#eef3f1] to-emerald-50">
-                    {modelCandidates.length > 0 ? (
-                      <CharacterViewer
-                        characterId={character.id}
-                        modelCandidates={modelCandidates}
-                        mtlCandidates={mtlCandidates}
-                        renderProfile={character.renderProfile}
-                        controlsPlacement="bottom"
-                        className="h-full min-h-0"
-                      />
-                    ) : (
-                      <div className="grid h-full place-items-center text-xs text-emerald-900/65">
-                        3Dモデル未登録
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-emerald-900/65">
-                    拡大・縮小・回転は各キャラクターのビュー内ボタンで操作できます。
-                  </p>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              {thumbnailUrl ? (
+                <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-emerald-900/10 bg-white">
+                  <Image src={thumbnailUrl} alt={selected.name} fill className="object-cover" />
                 </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    {thumbnailUrl ? (
-                      <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-emerald-900/10 bg-white">
-                        <Image src={thumbnailUrl} alt={character.name} fill className="object-cover" />
-                      </div>
-                    ) : (
-                      <div className="grid h-16 w-16 place-items-center rounded-lg border border-emerald-900/10 bg-emerald-50 text-emerald-700">
-                        <ImageIcon className="h-4 w-4" />
-                      </div>
-                    )}
-
-                    <div className="space-y-1">
-                      <p className="text-base font-semibold text-emerald-950">{character.name}</p>
-                      <p className="inline-flex items-center gap-1 text-xs text-emerald-900/70">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {character.region}
-                      </p>
-                      <p className="inline-flex items-center gap-1 break-all text-xs text-emerald-900/65">
-                        <Box className="h-3.5 w-3.5" />
-                        {character.model_path ?? "未登録"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-sm leading-relaxed text-emerald-900/85">{character.description}</p>
-
-                  <div className="flex flex-wrap gap-2">
-                    {(character.tags ?? []).map((tag) => (
-                      <span
-                        key={`${character.id}-${tag}`}
-                        className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] uppercase tracking-wide text-emerald-900 ring-1 ring-emerald-200/60"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+              ) : (
+                <div className="grid h-16 w-16 place-items-center rounded-lg border border-emerald-900/10 bg-emerald-50 text-emerald-700">
+                  <ImageIcon className="h-4 w-4" />
                 </div>
+              )}
+
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-emerald-950">{selected.name}</p>
+                <p className="inline-flex items-center gap-1 text-xs text-emerald-900/70">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {selected.region}
+                </p>
               </div>
-            </section>
-          );
-        })}
-      </div>
+            </div>
+
+            <p className="text-sm leading-relaxed text-emerald-900/85">{selected.description}</p>
+
+            <div className="flex flex-wrap gap-2">
+              {(selected.tags ?? []).map((tag) => (
+                <span
+                  key={`${selected.id}-${tag}`}
+                  className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] uppercase tracking-wide text-emerald-900 ring-1 ring-emerald-200/60"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-emerald-900/10 bg-white p-3 ring-1 ring-emerald-900/10">
+        <p className="mb-2 text-sm text-emerald-900/80">キャラクターを選ぶ</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {characters.map((character) => {
+            const active = character.id === selected.id;
+            return (
+              <Button
+                key={character.id}
+                variant={active ? "primary" : "outline"}
+                size="sm"
+                onClick={() => setSelectedId(character.id)}
+                className="text-left"
+              >
+                <div>
+                  <p className="text-sm font-semibold">{character.name}</p>
+                  <p className="text-xs opacity-70">{character.region}</p>
+                </div>
+              </Button>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

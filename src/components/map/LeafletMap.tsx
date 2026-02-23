@@ -2,8 +2,8 @@
 
 import "leaflet/dist/leaflet.css";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
-import { Icon, divIcon } from "leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Icon, divIcon, latLngBounds } from "leaflet";
 import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { Spot } from "@/lib/types";
@@ -23,6 +23,56 @@ const Marker = dynamic(async () => (await import("react-leaflet")).Marker, {
 const Popup = dynamic(async () => (await import("react-leaflet")).Popup, {
   ssr: false,
 });
+
+type AutoFitMapViewProps = {
+  points: Array<{ lat: number; lng: number }>;
+  fitKey: string;
+};
+
+const AutoFitMapView = dynamic<AutoFitMapViewProps>(
+  async () => {
+    const { useMap } = await import("react-leaflet");
+
+    /**
+     * 表示対象ポイントに合わせて地図表示範囲を自動調整する。
+     *
+     * @param props - 自動フィット設定
+     * @returns 描画要素なし
+     */
+    function AutoFitMapViewInner({ points, fitKey }: AutoFitMapViewProps) {
+      const map = useMap();
+      const pointsRef = useRef(points);
+
+      useEffect(() => {
+        pointsRef.current = points;
+      }, [points]);
+
+      useEffect(() => {
+        const nextPoints = pointsRef.current;
+        if (nextPoints.length === 0) return;
+
+        if (nextPoints.length === 1) {
+          const only = nextPoints[0];
+          const targetZoom = Math.min(map.getMaxZoom() ?? 18, 14);
+          map.setView([only.lat, only.lng], targetZoom, { animate: false });
+          return;
+        }
+
+        const bounds = latLngBounds(nextPoints.map((point) => [point.lat, point.lng] as [number, number]));
+        map.fitBounds(bounds, {
+          animate: false,
+          padding: [24, 24],
+          maxZoom: 14,
+        });
+      }, [fitKey, map]);
+
+      return null;
+    }
+
+    return AutoFitMapViewInner;
+  },
+  { ssr: false }
+);
 
 type Props = {
   center: { lat: number; lng: number };
@@ -95,6 +145,26 @@ export function LeafletMap({
     );
   }, [showUser, userPosition]);
 
+  const markerPointsKey = useMemo(
+    () => markers.map((spot) => `${spot.id}:${spot.lat.toFixed(6)}:${spot.lng.toFixed(6)}`).join("|"),
+    [markers]
+  );
+  const fitUserPos = useMemo(
+    () => (userPos ? { lat: userPos.lat, lng: userPos.lng } : null),
+    [Boolean(userPos)]
+  );
+  const fitKey = useMemo(
+    () => `${markerPointsKey}|user:${showUser && fitUserPos ? "1" : "0"}`,
+    [fitUserPos, markerPointsKey, showUser]
+  );
+  const fitPoints = useMemo(() => {
+    const points = markers.map((spot) => ({ lat: spot.lat, lng: spot.lng }));
+    if (showUser && fitUserPos) {
+      points.push(fitUserPos);
+    }
+    return points;
+  }, [fitKey, fitUserPos, markers, showUser]);
+
   return (
     <div className="h-[60vh] w-full overflow-hidden rounded-2xl border border-white/10 shadow-xl ring-1 ring-white/10">
       <MapContainer
@@ -105,6 +175,7 @@ export function LeafletMap({
         scrollWheelZoom
       >
         <TileLayer url={MAP_TILE_URL} attribution={MAP_TILE_ATTRIBUTION} />
+        <AutoFitMapView points={fitPoints} fitKey={fitKey} />
         {markers.map((spot) => {
           const imagePath = spot.image_thumb_path ?? spot.image_path ?? null;
           const imageUrl = imagePath

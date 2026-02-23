@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LeafletMap } from "@/components/map/LeafletMap";
-import { MORIOKA_STATION, ROUTE_CONFIG } from "@/lib/config";
+import { MORIOKA_STATION } from "@/lib/config";
 import { Spot } from "@/lib/types";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { SlidersHorizontal, MapPin, Navigation } from "lucide-react";
 import { haversineDistance } from "@/lib/geo";
-import { buildRouteUrl, type RouteMode } from "@/lib/routeProviders";
+import { buildRouteUrl } from "@/lib/routeProviders";
 
 type Props = {
   spots: Spot[];
@@ -84,7 +84,6 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
   const [nearbyTargetCount, setNearbyTargetCount] = useState<number>(DEFAULT_TARGET_NEARBY_COUNT);
   const [maxSearchRadius, setMaxSearchRadius] = useState<number>(DEFAULT_MAX_SEARCH_RADIUS);
 
-  const [routeMode, setRouteMode] = useState<RouteMode>(ROUTE_CONFIG.defaultMode);
   const [routeNotice, setRouteNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -173,7 +172,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
    */
   const handleRouteRequest = useCallback(
     (destination: { lat: number; lng: number }) => {
-      const result = buildRouteUrl(routeMode, userPos, destination);
+      const result = buildRouteUrl("free", userPos, destination);
       if (result.ok) {
         if (result.fellBack) {
           setRouteNotice(result.reason);
@@ -185,14 +184,14 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
         setRouteNotice(result.error);
       }
     },
-    [routeMode, userPos]
+    [userPos]
   );
 
   return (
     <div className="space-y-8">
       <SectionTitle
         label="マップ"
-        description="現在地が取れない場合は盛岡駅を基準に、近傍探索の件数と半径を調整して表示します。"
+        description="現在地または盛岡駅を基準に、近くの観光地を地図で探せます。"
         icon={MapPin}
       />
 
@@ -214,7 +213,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
               onChange={(event) => setAutoUpdate(event.target.checked)}
               className="accent-emerald-500"
             />
-            map使用中は位置情報を自動更新
+            地図表示中は位置情報を自動更新
           </label>
           <Button
             variant="outline"
@@ -239,20 +238,9 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
           >
             現在地を更新
           </Button>
-          <div className="flex items-center gap-2 text-sm text-emerald-900/85">
+          <div className="flex items-center gap-2 text-sm text-emerald-900/80">
             <Navigation className="h-4 w-4 text-emerald-700" />
-            <span>ルート</span>
-            <select
-              value={routeMode}
-              onChange={(event) => {
-                setRouteMode(event.target.value as RouteMode);
-                setRouteNotice(null);
-              }}
-              className="rounded-md border border-emerald-900/15 bg-white px-2 py-1 text-emerald-900"
-            >
-              <option value="free">無料 (OSRM)</option>
-              <option value="paid">有料 (ORS)</option>
-            </select>
+            <span>ルート検索は地図アプリで案内を開きます</span>
           </div>
         </div>
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">

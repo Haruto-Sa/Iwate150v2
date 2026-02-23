@@ -48,7 +48,7 @@ export default function LoginPage() {
     setMessage(null);
 
     if (!supabase) {
-      setMessage("環境変数が未設定のため Supabase Auth を実行できません。");
+      setMessage("現在ログイン機能を利用できません。しばらくしてからお試しください。");
       setLoading(false);
       return;
     }
@@ -86,12 +86,12 @@ export default function LoginPage() {
    */
   const handleOAuth = async (provider: "google" | "github") => {
     if (!supabase) {
-      setMessage("環境変数が未設定のため OAuth を実行できません。");
+      setMessage("現在このログイン方法を利用できません。");
       return;
     }
     if (disabledOauthProviders.includes(provider)) {
       setMessage(
-        `${getOAuthProviderLabel(provider)} ログインは未有効のため無効化されています。Supabase Dashboard の Authentication > Providers を確認してください。`
+        `${getOAuthProviderLabel(provider)} ログインは現在利用できません。`
       );
       return;
     }
@@ -128,7 +128,7 @@ export default function LoginPage() {
       <div className="space-y-1 text-center">
         <h1 className="text-2xl font-bold text-zinc-900">ログイン</h1>
         <p className="text-sm text-zinc-600">
-          メール+パスワード認証を利用します。
+          メールアドレスまたは外部アカウントでログインできます。
         </p>
         <p className="text-sm text-zinc-600">
           イベント主導の旅プランをそのまま地図・カメラ・スタンプへ繋げられるアプリです。ログインすると保存やシェアが便利になります。
@@ -209,23 +209,23 @@ export default function LoginPage() {
                 </Button>
               ))}
               <p className="text-center text-xs text-zinc-500">
-                OAuth ボタンが無効な場合は Supabase Dashboard の Authentication &gt; Providers を確認してください。
+                外部アカウントのログインが使えない場合は、別の方法でログインしてください。
               </p>
             </>
           ) : (
             <p className="text-center text-xs text-zinc-500">
-              OAuth プロバイダが未設定です。`NEXT_PUBLIC_SUPABASE_OAUTH_PROVIDERS` を確認してください。
+              外部アカウントでのログインは現在利用できません。
             </p>
           )
         ) : (
           <p className="text-center text-xs text-zinc-500">
-            Supabase Auth が未設定です。`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` を確認してください。
+            現在ログイン機能の準備中です。
           </p>
         )}
       </div>
 
       <div className="flex items-center justify-between text-xs text-zinc-600">
-        <span>モバイルファーストUI</span>
+        <span>Iwate150</span>
         <Link href="/" className="font-semibold text-blue-600 underline">
           ホームへ
         </Link>
@@ -236,7 +236,7 @@ export default function LoginPage() {
         onClick={enableGuest}
         className="w-full"
       >
-        ログインなしで閲覧（デバッグ）
+        ゲストで閲覧
       </Button>
 
       {user && (

@@ -71,7 +71,7 @@ export function AuthGate({ children }: Props) {
             </p>
             <h1 className="text-2xl font-bold text-zinc-900">ログインが必要です</h1>
             <p className="text-sm text-zinc-600">
-              Supabase Auth で認証します。デバッグ目的なら「ログインなしで閲覧」を選んでください。
+              ログインすると機能をより便利に利用できます。ログインしない場合はゲストで閲覧できます。
             </p>
           </div>
           <div className="space-y-2">
@@ -86,7 +86,7 @@ export function AuthGate({ children }: Props) {
               onClick={enableGuest}
               className="w-full"
             >
-              ログインなしで閲覧（デバッグ）
+              ゲストで閲覧
             </Button>
           </div>
         </div>
@@ -96,4 +96,3 @@ export function AuthGate({ children }: Props) {
 
   return <>{children}</>;
 }
-

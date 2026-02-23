@@ -21,14 +21,14 @@ export function HomeCalendarSwitcher({ events }: Props) {
           size="sm"
           onClick={() => setView("modern")}
         >
-          通常カレンダー
+          カレンダー表示
         </Button>
         <Button
           variant={view === "legacy" ? "primary" : "ghost"}
           size="sm"
           onClick={() => setView("legacy")}
         >
-          Legacy縦長
+          縦スクロール表示
         </Button>
       </div>
 

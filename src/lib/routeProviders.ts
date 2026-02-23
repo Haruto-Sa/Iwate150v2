@@ -62,7 +62,7 @@ export function resolveProvider(mode: RouteMode): {
     return {
       provider: "osrm",
       fellBack: true,
-      reason: "OpenRouteService の API キーが未設定のため、無料 (OSRM) にフォールバックしました",
+      reason: "別の地図で案内を表示しました。",
     };
   }
   return { provider: "osrm", fellBack: false, reason: "" };
@@ -102,9 +102,12 @@ export function buildOsrmUrl(origin: LatLng, destination: LatLng): string {
  * const url = buildOpenRouteServiceUrl({ lat: 39.7, lng: 141.1 }, { lat: 39.8, lng: 141.2 });
  */
 export function buildOpenRouteServiceUrl(origin: LatLng, destination: LatLng): string {
-  // ORS Maps のディレクション URL 形式
-  // a パラメータ: 出発点(lat,lng)と目的地(lat,lng) / b: プロファイル(0=car) / n1,n2,n3: 地図表示用座標・ズーム
-  return `https://maps.openrouteservice.org/directions?n1=${origin.lat}&n2=${origin.lng}&n3=12&a=${origin.lat},${origin.lng},${destination.lat},${destination.lng}&b=0&s=`;
+  const coordinates = encodeURIComponent(
+    `${origin.lng},${origin.lat},${destination.lng},${destination.lat}`
+  );
+  const centerLat = ((origin.lat + destination.lat) / 2).toFixed(6);
+  const centerLng = ((origin.lng + destination.lng) / 2).toFixed(6);
+  return `https://maps.openrouteservice.org/directions?a=${coordinates}&b=0&c=0&k1=ja-JP&k2=km&n1=${centerLat}&n2=${centerLng}&n3=11`;
 }
 
 /**
@@ -149,7 +152,7 @@ export function buildRouteUrl(
       url: buildGoogleMapsUrl(destination),
       provider: "osrm",
       fellBack: true,
-      reason: "現在地が取得できないため、Google Maps でルートを表示します",
+      reason: "現在地を確認できないため、目的地の地図を表示しました。",
     };
   }
 

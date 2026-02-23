@@ -110,29 +110,28 @@ function persistCacheToLocalStorage(): void {
 }
 
 /**
- * クライアントで Storage URL を解決する。
+ * signed URL のみを解決する（失敗時は null）。
  *
- * `NEXT_PUBLIC_SUPABASE_STORAGE_MODE=signed` の場合は signed URL をキャッシュして再利用する。
- * それ以外は公開URLを返す。
+ * `NEXT_PUBLIC_SUPABASE_STORAGE_MODE=signed` の場合のみ createSignedUrl を実行し、
+ * 失敗・タイムアウト時は null を返す。
  *
  * @param path - DB path
  * @param type - asset type
- * @returns 利用可能な URL
+ * @returns signed URL。取得不可時は null
  * @example
- * const url = await resolveClientStorageUrl("images/spots/a.jpg", "image");
+ * const url = await resolveClientSignedStorageUrl("images/spots/a.jpg", "image");
  */
-export async function resolveClientStorageUrl(
+export async function resolveClientSignedStorageUrl(
   path: string | null | undefined,
   type: AssetType = "generic"
 ): Promise<string | null> {
   if (!path) return null;
-  const publicUrl = getPublicUrl(path, type);
   if (getStorageMode() !== "signed") {
-    return publicUrl;
+    return null;
   }
 
   const objectPath = toStorageObjectPath(path);
-  if (!objectPath) return publicUrl;
+  if (!objectPath) return null;
 
   restoreCacheFromLocalStorage();
   const cacheKey = buildCacheKey(objectPath, type);
@@ -142,7 +141,7 @@ export async function resolveClientStorageUrl(
   }
 
   const supabase = getSupabaseClient();
-  if (!supabase) return publicUrl;
+  if (!supabase) return null;
 
   const expiresIn = getSignedTtlSeconds();
 
@@ -164,7 +163,7 @@ export async function resolveClientStorageUrl(
 
     const { data, error } = result;
     if (error || !data?.signedUrl) {
-      return publicUrl;
+      return null;
     }
 
     const entry: SignedCacheEntry = {
@@ -176,8 +175,30 @@ export async function resolveClientStorageUrl(
     return entry.url;
   } catch (err) {
     console.warn(`[storageSignedClient] createSignedUrl error: ${objectPath}`, err);
-    return publicUrl;
+    return null;
   }
+}
+
+/**
+ * クライアントで Storage URL を解決する。
+ *
+ * `NEXT_PUBLIC_SUPABASE_STORAGE_MODE=signed` の場合は signed URL を優先し、
+ * 取得不可時は公開URLへフォールバックする。
+ *
+ * @param path - DB path
+ * @param type - asset type
+ * @returns 利用可能な URL
+ * @example
+ * const url = await resolveClientStorageUrl("images/spots/a.jpg", "image");
+ */
+export async function resolveClientStorageUrl(
+  path: string | null | undefined,
+  type: AssetType = "generic"
+): Promise<string | null> {
+  if (!path) return null;
+  const signedUrl = await resolveClientSignedStorageUrl(path, type);
+  if (signedUrl) return signedUrl;
+  return getPublicUrl(path, type);
 }
 
 /**

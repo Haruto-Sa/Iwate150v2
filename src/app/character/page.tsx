@@ -10,10 +10,39 @@ import { Sparkles, Image as ImageIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { CharacterViewer } from "@/components/character/CharacterViewer";
 import { getImageUrl } from "@/lib/storage";
-import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
+import { resolveClientSignedStorageUrl, resolveClientStorageUrl } from "@/lib/storageSignedClient";
 
 /** サムネイル Storage URL 解決のタイムアウト（ミリ秒） */
 const STORAGE_RESOLVE_TIMEOUT_MS = 20_000;
+/** Character の signed URL 解決タイムアウト（ミリ秒） */
+const CHARACTER_SIGNED_RESOLVE_TIMEOUT_MS = 5_000;
+/** 個別モデル読み込み失敗時に使う既定ローカルOBJ */
+const DEFAULT_FALLBACK_MODEL_PATH = "models/wanko1.obj";
+/** 個別モデル読み込み失敗時に使う既定ローカルMTL */
+const DEFAULT_FALLBACK_MTL_PATH = "models/wanko1.mtl";
+
+type SignedCharacterAssets = {
+  modelUrl: string | null;
+  mtlUrl: string | null;
+};
+
+/**
+ * URL/パスから拡張子なしファイル名（小文字）を取り出す。
+ *
+ * @param url - URL またはパス
+ * @returns ファイル名（拡張子なし）
+ * @example
+ * const stem = extractFileStem("/models/wanko1.obj?token=abc");
+ */
+function extractFileStem(url: string): string | null {
+  const stripped = url.split("?")[0]?.split("#")[0] ?? url;
+  const segment = stripped.split("/").pop();
+  if (!segment) return null;
+  const decoded = decodeURIComponent(segment);
+  const dotIndex = decoded.lastIndexOf(".");
+  const stem = dotIndex > 0 ? decoded.slice(0, dotIndex) : decoded;
+  return stem.toLowerCase();
+}
 
 /**
  * 候補URL配列を重複なく組み立てる。
@@ -65,6 +94,51 @@ function resolveThumbnailWithTimeout(
 }
 
 /**
+ * Character 用の signed URL をタイムアウト付きで解決する。
+ *
+ * @param characterId - ログ用キャラクターID
+ * @param path - Storage path
+ * @param label - ログ用ラベル
+ * @returns signed URL。失敗/タイムアウト時は null
+ * @example
+ * const modelUrl = await resolveCharacterSignedAssetWithTimeout("sobacchi", "models/wanko1.obj", "model");
+ */
+async function resolveCharacterSignedAssetWithTimeout(
+  characterId: string,
+  path: string | null | undefined,
+  label: "model" | "mtl",
+): Promise<string | null> {
+  if (!path) return null;
+  if (process.env.NEXT_PUBLIC_SUPABASE_STORAGE_MODE !== "signed") return null;
+
+  let timerId: ReturnType<typeof setTimeout> | null = null;
+  const result = await Promise.race([
+    resolveClientSignedStorageUrl(path, "model"),
+    new Promise<string | null>((resolve) => {
+      timerId = setTimeout(() => {
+        console.warn(`[character] signed ${label} resolve timeout`, {
+          characterId,
+          path,
+          timeoutMs: CHARACTER_SIGNED_RESOLVE_TIMEOUT_MS,
+        });
+        resolve(null);
+      }, CHARACTER_SIGNED_RESOLVE_TIMEOUT_MS);
+    }),
+  ]);
+  if (timerId !== null) clearTimeout(timerId);
+
+  if (result) {
+    console.info(`[character] signed ${label} resolved`, { characterId, path });
+  } else {
+    console.warn(`[character] signed ${label} unavailable, fallback to local public`, {
+      characterId,
+      path,
+    });
+  }
+  return result;
+}
+
+/**
  * キャラクターページ。
  *
  * 選択中キャラクターを大きく表示し、切り替えボタンで表示対象を変更できる。
@@ -76,6 +150,10 @@ function resolveThumbnailWithTimeout(
 export default function CharacterPage() {
   const [selectedId, setSelectedId] = useState<string | null>(characters[0]?.id ?? null);
   const [resolvedThumbnailUrl, setResolvedThumbnailUrl] = useState<string | null>(null);
+  const [signedAssets, setSignedAssets] = useState<SignedCharacterAssets>({
+    modelUrl: null,
+    mtlUrl: null,
+  });
 
   const selected = useMemo(
     () => characters.find((character) => character.id === selectedId) ?? characters[0] ?? null,
@@ -102,6 +180,79 @@ export default function CharacterPage() {
     };
   }, [selected]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!selected) return;
+
+    setSignedAssets({ modelUrl: null, mtlUrl: null });
+
+    Promise.all([
+      resolveCharacterSignedAssetWithTimeout(selected.id, selected.model_path, "model"),
+      resolveCharacterSignedAssetWithTimeout(selected.id, selected.mtl_path, "mtl"),
+    ])
+      .then(([modelUrl, mtlUrl]) => {
+        if (cancelled) return;
+        setSignedAssets({ modelUrl, mtlUrl });
+      })
+      .catch((error) => {
+        console.warn("[character] signed asset resolve failed", { characterId: selected.id, error });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
+
+  const modelCandidates = useMemo(
+    () => {
+      if (!selected) return [];
+      return buildUniqueCandidates([
+        signedAssets.modelUrl,
+        toLocalAssetUrl(selected.model_path),
+        toLocalAssetUrl(DEFAULT_FALLBACK_MODEL_PATH),
+      ]);
+    },
+    [selected, signedAssets.modelUrl],
+  );
+  const mtlCandidates = useMemo(
+    () => {
+      if (!selected) return [];
+      return buildUniqueCandidates([
+        signedAssets.mtlUrl,
+        toLocalAssetUrl(selected.mtl_path),
+        toLocalAssetUrl(DEFAULT_FALLBACK_MTL_PATH),
+      ]);
+    },
+    [selected, signedAssets.mtlUrl],
+  );
+  const thumbnailUrl = selected
+    ? resolvedThumbnailUrl ?? getImageUrl(selected.thumbnail)
+    : null;
+
+  useEffect(() => {
+    if (!selected) return;
+    const matchedMtlByModel = modelCandidates.map((modelUrl) => {
+      const modelStem = extractFileStem(modelUrl);
+      const matchedMtlCandidates =
+        modelStem === null
+          ? []
+          : mtlCandidates.filter((mtlUrl) => extractFileStem(mtlUrl) === modelStem);
+      return {
+        modelUrl,
+        matchedMtlCandidates,
+      };
+    });
+
+    console.info("[character] candidate priority", {
+      characterId: selected.id,
+      modelFirst: modelCandidates[0] ?? null,
+      mtlFirst: mtlCandidates[0] ?? null,
+      modelCandidates,
+      mtlCandidates,
+      matchedMtlByModel,
+    });
+  }, [selected, modelCandidates, mtlCandidates]);
+
   if (!selected) {
     return (
       <div className="space-y-6">
@@ -113,14 +264,6 @@ export default function CharacterPage() {
       </div>
     );
   }
-
-  const modelCandidates = buildUniqueCandidates([
-    toLocalAssetUrl(selected.model_path),
-  ]);
-  const mtlCandidates = buildUniqueCandidates([
-    toLocalAssetUrl(selected.mtl_path),
-  ]);
-  const thumbnailUrl = resolvedThumbnailUrl ?? getImageUrl(selected.thumbnail);
 
   return (
     <div className="space-y-6">

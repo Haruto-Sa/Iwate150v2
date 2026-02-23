@@ -38,6 +38,13 @@ type ModelLoadAttemptFailure = {
   error: unknown;
 };
 
+type ModelLoadSuccess = {
+  object: THREE.Group;
+  modelUrl: string;
+  mtlUrl: string | null;
+  stage: "mtl+obj" | "obj" | "fbx";
+};
+
 type ModelLoadError = Error & {
   failures?: ModelLoadAttemptFailure[];
 };
@@ -57,8 +64,28 @@ const REMOTE_LOAD_TIMEOUT_MS = 12_000;
 const DEFAULT_CANDIDATE_RETRY_COUNT = 2;
 /** 読み込み失敗時のデフォルト自動再試行回数 */
 const DEFAULT_AUTO_RETRY_COUNT = 1;
+/** 初期化を遅延するマウントサイズ判定の待機フレーム上限（約6秒相当） */
+const MAX_WAIT_FRAMES_FOR_VIEWPORT_READY = 360;
 
 type ModelFormat = "obj" | "fbx";
+
+/**
+ * URL/パスから拡張子なしファイル名（小文字）を取り出す。
+ *
+ * @param url - URL またはパス
+ * @returns ファイル名（拡張子なし）
+ * @example
+ * const stem = extractFileStem("/models/wanko1.obj?token=abc");
+ */
+function extractFileStem(url: string): string | null {
+  const stripped = url.split("?")[0]?.split("#")[0] ?? url;
+  const segment = stripped.split("/").pop();
+  if (!segment) return null;
+  const decoded = decodeURIComponent(segment);
+  const dotIndex = decoded.lastIndexOf(".");
+  const stem = dotIndex > 0 ? decoded.slice(0, dotIndex) : decoded;
+  return stem.toLowerCase();
+}
 
 /**
  * Promise にタイムアウトを設定する。
@@ -235,7 +262,7 @@ async function loadModelFromCandidates(
   modelCandidates: string[],
   mtlCandidates: string[],
   retryCount: number,
-): Promise<THREE.Group> {
+): Promise<ModelLoadSuccess> {
   let lastError: unknown = null;
   const failures: ModelLoadAttemptFailure[] = [];
 
@@ -245,43 +272,51 @@ async function loadModelFromCandidates(
 
     if (modelFormat === "fbx") {
       try {
-        return await withRetries(
+        const object = await withRetries(
           () => loadFbxModel(modelUrl, modelTimeout),
           retryCount,
         );
+        return { object, modelUrl, mtlUrl: null, stage: "fbx" };
       } catch (error) {
         lastError = error;
         failures.push({ modelUrl, mtlUrl: null, stage: "fbx", error });
-        console.warn("[CharacterViewer] fbx load failed", { modelUrl, error });
+        console.warn("[CharacterViewer] candidate failed", { stage: "fbx", modelUrl, error });
       }
       continue;
     }
 
-    if (mtlCandidates.length > 0) {
-      for (const mtlUrl of mtlCandidates) {
+    const modelStem = extractFileStem(modelUrl);
+    const matchedMtlCandidates =
+      modelStem === null
+        ? []
+        : mtlCandidates.filter((mtlUrl) => extractFileStem(mtlUrl) === modelStem);
+    if (matchedMtlCandidates.length > 0) {
+      for (const mtlUrl of matchedMtlCandidates) {
         const timeoutMs = Math.max(modelTimeout, getLoadTimeoutMs(mtlUrl));
         try {
-          return await withRetries(async () => {
+          const object = await withRetries(async () => {
             const materials = await loadMtlMaterials(mtlUrl, timeoutMs);
             return await loadObjModel(modelUrl, timeoutMs, materials);
           }, retryCount);
+          return { object, modelUrl, mtlUrl, stage: "mtl+obj" };
         } catch (error) {
           lastError = error;
           failures.push({ modelUrl, mtlUrl, stage: "mtl+obj", error });
-          console.warn("[CharacterViewer] mtl+obj load failed", { modelUrl, mtlUrl, error });
+          console.warn("[CharacterViewer] candidate failed", { stage: "mtl+obj", modelUrl, mtlUrl, error });
         }
       }
     }
 
     try {
-      return await withRetries(
+      const object = await withRetries(
         () => loadObjModel(modelUrl, modelTimeout),
         retryCount,
       );
+      return { object, modelUrl, mtlUrl: null, stage: "obj" };
     } catch (error) {
       lastError = error;
       failures.push({ modelUrl, mtlUrl: null, stage: "obj", error });
-      console.warn("[CharacterViewer] obj load failed", { modelUrl, error });
+      console.warn("[CharacterViewer] candidate failed", { stage: "obj", modelUrl, error });
     }
   }
 
@@ -306,8 +341,6 @@ function applyLegacyMeshFixes(
 ): void {
   const forceDoubleSide = profile?.forceDoubleSide ?? true;
   const disableFrustumCulling = profile?.disableFrustumCulling ?? true;
-  const alphaTest = profile?.materialAlphaTest ?? 0.1;
-  const transparent = profile?.transparent ?? false;
   const depthWrite = profile?.depthWrite ?? true;
   const depthTest = profile?.depthTest ?? true;
   const computeVertexNormals = profile?.computeVertexNormals ?? true;
@@ -333,10 +366,14 @@ function applyLegacyMeshFixes(
           map?: THREE.Texture | null;
           transparent?: boolean;
           alphaTest?: number;
+          opacity?: number;
           depthWrite?: boolean;
           depthTest?: boolean;
         };
-        const hasMap = Boolean(typed.map);
+        if (typed.map && !("image" in typed.map)) {
+          typed.map = null;
+        }
+        const hasMap = Boolean(typed.map && typed.map.image);
         const hasColor = Boolean(typed.color);
         const colorLuma = hasColor && typed.color
           ? typed.color.r * 0.299 + typed.color.g * 0.587 + typed.color.b * 0.114
@@ -351,8 +388,9 @@ function applyLegacyMeshFixes(
         } else if (!hasColor && !hasMap && typed.color) {
           typed.color.setHex(FALLBACK_DARK_GRAY);
         }
-        if ("transparent" in material) material.transparent = transparent && hasMap;
-        if ("alphaTest" in material) material.alphaTest = material.transparent ? alphaTest : 0;
+        if ("transparent" in material) material.transparent = false;
+        if ("alphaTest" in material) material.alphaTest = 0;
+        if ("opacity" in material) material.opacity = 1;
         if ("depthWrite" in material) material.depthWrite = depthWrite;
         if ("depthTest" in material) material.depthTest = depthTest;
         material.needsUpdate = true;
@@ -422,6 +460,10 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
   const cameraInstanceRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsInstanceRef = useRef<OrbitControls | null>(null);
   const profileOffsetRef = useRef(new THREE.Vector3());
+  const basePositionRef = useRef(new THREE.Vector3());
+  const baseQuaternionRef = useRef(new THREE.Quaternion());
+  const baseScaleVectorRef = useRef(new THREE.Vector3(1, 1, 1));
+  const hasBaseTransformRef = useRef(false);
   const baseScaleRef = useRef(1);
   const rotatingRef = useRef(true);
   /** リセット時に復元するカメラ距離 */
@@ -481,8 +523,48 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     setStatus("loading");
     setErrorType(null);
     setErrorMessage(null);
-    const width = mountRef.current.clientWidth || 320;
-    const height = mountRef.current.clientHeight || 220;
+    const initialWidth = mountRef.current.clientWidth;
+    const initialHeight = mountRef.current.clientHeight;
+    if (initialWidth <= 0 || initialHeight <= 0) {
+      let waitFrame = 0;
+      let frameId = 0;
+      console.warn("[CharacterViewer] init deferred due to zero-sized viewport", {
+        characterId,
+        width: initialWidth,
+        height: initialHeight,
+      });
+      const waitForReadyViewport = () => {
+        waitFrame += 1;
+        if (!mountRef.current) return;
+        const width = mountRef.current.clientWidth;
+        const height = mountRef.current.clientHeight;
+        if (width > 0 && height > 0) {
+          console.info("[CharacterViewer] viewport became ready", { characterId, width, height });
+          setReloadKey((value) => value + 1);
+          return;
+        }
+        if (waitFrame >= MAX_WAIT_FRAMES_FOR_VIEWPORT_READY) {
+          console.warn("[CharacterViewer] viewport ready wait reached frame limit", {
+            characterId,
+            width,
+            height,
+            waitFrame,
+          });
+          setErrorType("model");
+          setErrorMessage("表示領域の準備に時間がかかっています。再試行してください。");
+          setStatus("error");
+          return;
+        }
+        frameId = requestAnimationFrame(waitForReadyViewport);
+      };
+      frameId = requestAnimationFrame(waitForReadyViewport);
+      return () => {
+        cancelAnimationFrame(frameId);
+      };
+    }
+    const width = initialWidth;
+    const height = initialHeight;
+    console.info("[CharacterViewer] init viewport", { characterId, width, height });
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(SCENE_BG_COLOR);
@@ -530,12 +612,21 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     controlsInstanceRef.current = controls;
 
     let cancelled = false;
+    let postLoadRefitFrame = 0;
 
-    const fitAndCenterObject = (object: THREE.Object3D) => {
+    const fitAndCenterObject = (
+      object: THREE.Object3D,
+      reason: "initial" | "post-load" | "resize",
+    ) => {
       const activeCamera = cameraInstanceRef.current;
       const activeControls = controlsInstanceRef.current;
       if (!activeCamera || !activeControls) return;
 
+      if (hasBaseTransformRef.current) {
+        object.position.copy(basePositionRef.current);
+        object.quaternion.copy(baseQuaternionRef.current);
+        object.scale.copy(baseScaleVectorRef.current);
+      }
       object.updateMatrixWorld(true);
 
       const initialBox = new THREE.Box3().setFromObject(object);
@@ -543,9 +634,9 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z) || 1;
       const targetSize = 3.2;
       const fittedScale = targetSize / maxDim;
-      baseScaleRef.current = fittedScale;
       setZoom(1);
-      object.scale.setScalar(fittedScale);
+      object.scale.copy(baseScaleVectorRef.current).multiplyScalar(fittedScale);
+      baseScaleRef.current = object.scale.x;
 
       object.updateMatrixWorld(true);
       const scaledBox = new THREE.Box3().setFromObject(object);
@@ -555,11 +646,20 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       object.updateMatrixWorld(true);
       const centeredBox = new THREE.Box3().setFromObject(object);
       const centeredSize = centeredBox.getSize(new THREE.Vector3());
-      const centeredMax = Math.max(centeredSize.x, centeredSize.y, centeredSize.z) || 1;
-
-      const distance = Math.max(3.8, centeredMax * 2.2);
-      initialCameraDistanceRef.current = distance;
-      activeCamera.position.set(0, distance * 0.16, distance);
+      const centeredSphere = centeredBox.getBoundingSphere(new THREE.Sphere());
+      const radius = Math.max(centeredSphere.radius, 0.1);
+      const fovRad = THREE.MathUtils.degToRad(activeCamera.fov);
+      const distanceByFov = radius / Math.sin(fovRad / 2);
+      let distance = Math.max(3.8, distanceByFov * 1.22);
+      if (reason === "post-load") {
+        distance = Math.max(distance, initialCameraDistanceRef.current);
+      } else {
+        initialCameraDistanceRef.current = distance;
+      }
+      activeCamera.near = Math.max(0.01, radius / 200);
+      activeCamera.far = Math.max(120, distance + radius * 24);
+      activeCamera.updateProjectionMatrix();
+      activeCamera.position.set(0, 0, distance);
       activeControls.target.set(0, 0, 0);
       activeControls.minDistance = distance * 0.55;
       activeControls.maxDistance = distance * 3;
@@ -570,17 +670,46 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
         object.updateMatrixWorld(true);
       }
       activeControls.update();
+      console.info("[CharacterViewer] fit and center complete", {
+        characterId,
+        reason,
+        cameraDistance: distance,
+        bounds: {
+          x: centeredSize.x,
+          y: centeredSize.y,
+          z: centeredSize.z,
+        },
+      });
     };
 
-    const addModel = (object: THREE.Object3D) => {
+    const addModel = ({
+      object,
+      modelUrl,
+      mtlUrl,
+      stage,
+    }: ModelLoadSuccess) => {
       if (cancelled) return;
+      console.info("[CharacterViewer] candidate load succeeded", {
+        characterId,
+        stage,
+        modelUrl,
+        mtlUrl,
+      });
       applyLegacyMeshFixes(object, renderProfile);
       const profileOffset = applyRenderProfile(object, renderProfile);
       profileOffsetRef.current = disableProfilePositionOffset ? new THREE.Vector3() : profileOffset;
-      fitAndCenterObject(object);
+      basePositionRef.current.copy(object.position);
+      baseQuaternionRef.current.copy(object.quaternion);
+      baseScaleVectorRef.current.copy(object.scale);
+      hasBaseTransformRef.current = true;
+      fitAndCenterObject(object, "initial");
       initialObjectRotationRef.current = object.rotation.clone();
       objectRef.current = object;
       scene.add(object);
+      postLoadRefitFrame = requestAnimationFrame(() => {
+        if (cancelled || !objectRef.current) return;
+        fitAndCenterObject(objectRef.current, "post-load");
+      });
       setStatus("ready");
     };
 
@@ -589,11 +718,21 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       normalizedMtlCandidates,
       Math.max(0, Math.floor(candidateRetryCount)),
     )
-      .then((object) => addModel(object))
+      .then((payload) => addModel(payload))
       .catch((error) => {
         const errorWithMeta = error as ModelLoadError;
         const failures = errorWithMeta.failures ?? [];
-        console.warn("[CharacterViewer] all candidates failed", { characterId, error, failures });
+        console.warn("[CharacterViewer] all candidates failed", {
+          characterId,
+          message: errorWithMeta.message,
+          failureCount: failures.length,
+          failures: failures.map((failure) => ({
+            stage: failure.stage,
+            modelUrl: failure.modelUrl,
+            mtlUrl: failure.mtlUrl,
+            reason: failure.error instanceof Error ? failure.error.message : String(failure.error),
+          })),
+        });
         if (cancelled) return;
 
         const normalizedAutoRetryCount = Math.max(0, Math.floor(autoRetryCount));
@@ -630,8 +769,9 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      console.info("[CharacterViewer] viewport resized", { characterId, width: w, height: h });
       if (objectRef.current) {
-        fitAndCenterObject(objectRef.current);
+        fitAndCenterObject(objectRef.current, "resize");
       }
     };
 
@@ -649,12 +789,17 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       if (!resizeObserver) {
         window.removeEventListener("resize", handleResize);
       }
+      cancelAnimationFrame(postLoadRefitFrame);
       cancelAnimationFrame(frame);
       controls.dispose();
       renderer.dispose();
       controlsInstanceRef.current = null;
       cameraInstanceRef.current = null;
       profileOffsetRef.current = new THREE.Vector3();
+      hasBaseTransformRef.current = false;
+      basePositionRef.current = new THREE.Vector3();
+      baseQuaternionRef.current = new THREE.Quaternion();
+      baseScaleVectorRef.current = new THREE.Vector3(1, 1, 1);
       if (objectRef.current) {
         scene.remove(objectRef.current);
         objectRef.current = null;

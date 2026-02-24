@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuthSession } from "@/components/auth/SessionProvider";
 import { Button } from "@/components/ui/Button";
@@ -10,15 +10,22 @@ type Props = {
 };
 
 /**
- * 認証なしで表示できる公開認証ルートかを判定する。
+ * AuthGate をバイパスするルートかを判定する。
  *
  * @param pathname - 現在のパス名
- * @returns 公開認証ルートなら true
+ * @returns バイパス対象なら true
  * @example
- * isPublicAuthRoute("/login"); // true
+ * isBypassAuthGateRoute("/admin"); // true
  */
-function isPublicAuthRoute(pathname: string): boolean {
-  return pathname === "/login" || pathname.startsWith("/login/");
+function isBypassAuthGateRoute(pathname: string): boolean {
+  return (
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname === "/auth/callback" ||
+    pathname.startsWith("/auth/callback/") ||
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/")
+  );
 }
 
 /**
@@ -32,28 +39,26 @@ function isPublicAuthRoute(pathname: string): boolean {
 export function AuthGate({ children }: Props) {
   const { user, status } = useAuthSession();
   const pathname = usePathname();
-  const [guestAllowed, setGuestAllowed] = useState(false);
-  const publicAuthRoute = isPublicAuthRoute(pathname);
+  const [, setGuestRevision] = useState(0);
+  const bypassRoute = isBypassAuthGateRoute(pathname);
 
-  useEffect(() => {
-    const guest = localStorage.getItem("iwate150_guest") === "1";
-    if (guest) {
-      setGuestAllowed(true);
-    }
-  }, []);
+  const guestAllowed =
+    typeof window !== "undefined" && localStorage.getItem("iwate150_guest") === "1";
 
   const enableGuest = () => {
-    localStorage.setItem("iwate150_guest", "1");
-    setGuestAllowed(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("iwate150_guest", "1");
+    }
+    setGuestRevision((value) => value + 1);
   };
 
   // Allow access if: session exists, guest mode enabled, or env not configured (dev fallback)
   const envConfigured = Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
-  const allowed = publicAuthRoute || Boolean(user) || guestAllowed || !envConfigured;
+  const allowed = bypassRoute || Boolean(user) || guestAllowed || !envConfigured;
 
-  if (status === "loading" && !publicAuthRoute) {
+  if (status === "loading" && !bypassRoute) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-blue-50 text-sm text-zinc-700">
         認証状態を確認しています...

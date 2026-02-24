@@ -1,9 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { APP_TAGLINE, APP_TITLE } from "@/lib/config";
 
 export function Footer() {
+  const pathname = usePathname();
+  const adminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  if (adminRoute) {
+    return null;
+  }
+
   return (
     <footer className="border-t border-emerald-100/80 bg-white/80 pb-20 pt-6 backdrop-blur-xl sm:pb-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 text-sm text-emerald-900/80 sm:flex-row sm:items-center sm:justify-between sm:px-6">

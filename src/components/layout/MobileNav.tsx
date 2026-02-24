@@ -16,6 +16,11 @@ const navItems: NavItem[] = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  const adminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+
+  if (adminRoute) {
+    return null;
+  }
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-emerald-100 bg-white/90 pb-safe backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.08)] sm:hidden">

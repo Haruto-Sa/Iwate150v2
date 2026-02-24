@@ -15,9 +15,48 @@ const navItems = [
   { href: "/character", label: "Character" },
 ];
 
+/**
+ * 管理者ルートか判定する。
+ *
+ * @param pathname - 現在パス
+ * @returns `/admin` 配下なら true
+ * @example
+ * isAdminRoute("/admin/login");
+ */
+function isAdminRoute(pathname: string): boolean {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 export function Header() {
   const pathname = usePathname();
   const { user, signOut } = useAuthSession();
+  const adminRoute = isAdminRoute(pathname);
+
+  if (adminRoute) {
+    return (
+      <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link href="/admin" className="text-sm font-semibold tracking-wide text-zinc-900">
+            Iwate150 Admin Portal
+          </Link>
+          <div className="flex items-center gap-2 text-sm">
+            <Link href="/" className="rounded-md border border-zinc-300 px-3 py-1.5 text-zinc-700">
+              Public Site
+            </Link>
+            {user ? (
+              <Button variant="outline" size="sm" onClick={() => signOut()}>
+                ログアウト
+              </Button>
+            ) : (
+              <Link href="/admin/login" className="rounded-md border border-zinc-300 px-3 py-1.5 text-zinc-700">
+                Admin Login
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-30 bg-gradient-to-b from-white/90 to-white/70 backdrop-blur-2xl shadow-sm">

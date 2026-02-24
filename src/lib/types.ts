@@ -38,8 +38,13 @@ export type Stamp = {
 export type User = {
   id: number;
   auth_id: string | null;
+  email: string | null;
+  role: UserRole;
   display_name: string;
+  created_at: string;
 };
+
+export type UserRole = "user" | "admin" | "super_admin";
 
 export type Event = {
   id: number;
@@ -82,3 +87,27 @@ export type Character = {
   tags?: string[];
   renderProfile?: CharacterRenderProfile;
 };
+
+export type AdminDashboardSpotSummary = Pick<Spot, "id" | "name" | "city_id"> & {
+  created_at?: string | null;
+};
+
+export type AdminDashboardEventSummary = Pick<Event, "id" | "title" | "city_id" | "start_date"> & {
+  created_at?: string | null;
+};
+
+export type AdminDashboardStats = {
+  totalUsers: number;
+  newUsersLast7Days: number;
+  totalSpots: number;
+  totalEvents: number;
+  totalAdmins: number;
+  latestSpots: AdminDashboardSpotSummary[];
+  latestEvents: AdminDashboardEventSummary[];
+};
+
+export type AdminUserSummary = Pick<User, "id" | "auth_id" | "email" | "display_name" | "role" | "created_at">;
+
+export type AdminSpotCreateInput = Omit<Spot, "id">;
+
+export type AdminEventCreateInput = Omit<Event, "id">;

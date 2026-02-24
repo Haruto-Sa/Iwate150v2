@@ -1,16 +1,38 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { mockCities, mockGenres, mockSpots, mockEvents } from "./mockData";
-import { City, Genre, Spot, Event, Stamp, User } from "./types";
+import {
+  AdminDashboardEventSummary,
+  AdminDashboardSpotSummary,
+  AdminDashboardStats,
+  AdminEventCreateInput,
+  AdminSpotCreateInput,
+  AdminUserSummary,
+  City,
+  Event,
+  Genre,
+  Spot,
+  Stamp,
+  User,
+  UserRole,
+} from "./types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const isBrowser = typeof window !== "undefined";
 
 const hasEnv = Boolean(supabaseUrl && supabaseAnonKey);
+const storageBucket =
+  process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ??
+  process.env.SUPABASE_STORAGE_BUCKET ??
+  "iwate150data";
 
 const client: SupabaseClient | null = hasEnv
   ? createClient(supabaseUrl as string, supabaseAnonKey as string, {
-      auth: { persistSession: isBrowser, autoRefreshToken: isBrowser },
+      auth: {
+        persistSession: isBrowser,
+        autoRefreshToken: isBrowser,
+        flowType: "pkce",
+      },
     })
   : null;
 
@@ -21,6 +43,78 @@ if (!hasEnv && typeof console !== "undefined") {
 }
 
 export const getSupabaseClient = () => client;
+
+/**
+ * 与えられた値がユーザーロールか判定する。
+ *
+ * @param value - 判定対象
+ * @returns UserRole の場合 true
+ * @example
+ * isUserRole("admin");
+ */
+function isUserRole(value: unknown): value is UserRole {
+  return value === "user" || value === "admin" || value === "super_admin";
+}
+
+/**
+ * 管理系書き込み処理で利用する Supabase クライアントを取得する。
+ *
+ * @returns Supabase client
+ * @throws Error Supabase 未設定時
+ * @example
+ * const writableClient = getWritableClient();
+ */
+function getWritableClient(): SupabaseClient {
+  if (!client) {
+    throw new Error("Supabase 設定が未完了のため書き込み機能を利用できません。");
+  }
+  return client;
+}
+
+/**
+ * ファイル名を Storage キー向けの ASCII セーフ文字列へ整形する。
+ *
+ * @param filename - 元ファイル名
+ * @returns セーフ化されたベース名（拡張子を除く）
+ * @example
+ * toSafeFileBase("盛岡の写真.jpg");
+ */
+function toSafeFileBase(filename: string): string {
+  const base = filename.replace(/\.[^.]+$/, "").toLowerCase();
+  const safe = base.replace(/[^a-z0-9._-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return safe || "asset";
+}
+
+/**
+ * 拡張子を抽出し、無効な場合は既定値へフォールバックする。
+ *
+ * @param filename - ファイル名
+ * @returns 小文字拡張子（ピリオド除く）
+ * @example
+ * resolveExtension("spot-photo.PNG", "jpg");
+ */
+function resolveExtension(filename: string, fallback: string): string {
+  const match = filename.toLowerCase().match(/\.([a-z0-9]{1,10})$/);
+  return match?.[1] ?? fallback;
+}
+
+/**
+ * Storage アップロード用オブジェクトパスを生成する。
+ *
+ * @param folder - 保存先フォルダ
+ * @param filename - 元ファイル名
+ * @param fallbackExt - 拡張子の既定値
+ * @returns Storage object path
+ * @example
+ * buildAssetPath("images/spots", "sample.jpg", "jpg");
+ */
+function buildAssetPath(folder: string, filename: string, fallbackExt: string): string {
+  const normalizedFolder = folder.replace(/^\/+|\/+$/g, "");
+  const safeBase = toSafeFileBase(filename);
+  const ext = resolveExtension(filename, fallbackExt);
+  const randomToken = Math.random().toString(36).slice(2, 10);
+  return `${normalizedFolder}/${Date.now()}-${randomToken}-${safeBase}.${ext}`;
+}
 
 export type PagedResult<T> = {
   items: T[];
@@ -329,6 +423,289 @@ export async function searchEvents(params: EventSearchParams): Promise<PagedResu
   return buildPagedResult(safeItems, total, page, pageSize);
 }
 
+/**
+ * 認証ユーザーから表示名を導出する。
+ *
+ * @param email - メールアドレス
+ * @returns 表示名
+ * @example
+ * const name = deriveDisplayNameFromEmail("user@example.com");
+ */
+function deriveDisplayNameFromEmail(email: string | null | undefined): string {
+  if (!email) return "User";
+  const name = email.split("@")[0];
+  return name || "User";
+}
+
+/**
+ * 現在ログイン中ユーザーの `public.users` 情報を取得する。
+ *
+ * レコード未作成時は `public.users` に最小情報で作成し、再取得して返す。
+ *
+ * @returns 現在ユーザーのアプリプロフィール。未ログイン/取得失敗時は null
+ * @example
+ * const appUser = await fetchCurrentAppUser();
+ */
+export async function fetchCurrentAppUser(): Promise<User | null> {
+  if (!client) return null;
+  const {
+    data: { session },
+  } = await client.auth.getSession();
+  const authUser = session?.user;
+  if (!authUser) return null;
+
+  const writableClient = getWritableClient();
+  const { data: existing, error: existingError } = await writableClient
+    .from("users")
+    .select("*")
+    .eq("auth_id", authUser.id)
+    .maybeSingle();
+
+  if (existingError) {
+    console.warn("[supabase] current app user fetch error:", existingError);
+    return null;
+  }
+  if (existing) {
+    return existing as User;
+  }
+
+  const inserted = await writableClient
+    .from("users")
+    .insert({
+      auth_id: authUser.id,
+      email: authUser.email ?? null,
+      display_name: deriveDisplayNameFromEmail(authUser.email),
+      role: "user",
+    })
+    .select("*")
+    .single();
+
+  if (inserted.error) {
+    console.warn("[supabase] current app user insert error:", inserted.error);
+    return null;
+  }
+  return inserted.data as User;
+}
+
+/**
+ * 管理ダッシュボード表示用の集計値を取得する。
+ *
+ * @returns 管理ダッシュボード統計。Supabase未接続/取得失敗時はゼロ値
+ * @example
+ * const stats = await fetchAdminDashboardStats();
+ */
+export async function fetchAdminDashboardStats(): Promise<AdminDashboardStats> {
+  const fallback: AdminDashboardStats = {
+    totalUsers: 0,
+    newUsersLast7Days: 0,
+    totalSpots: 0,
+    totalEvents: 0,
+    totalAdmins: 0,
+    latestSpots: [],
+    latestEvents: [],
+  };
+
+  if (!client) return fallback;
+
+  const writableClient = getWritableClient();
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [
+    totalUsersRes,
+    newUsersRes,
+    totalSpotsRes,
+    totalEventsRes,
+    totalAdminsRes,
+    latestSpotsRes,
+    latestEventsRes,
+  ] = await Promise.all([
+    writableClient.from("users").select("*", { head: true, count: "exact" }),
+    writableClient.from("users").select("*", { head: true, count: "exact" }).gte("created_at", sevenDaysAgo),
+    writableClient.from("spots").select("*", { head: true, count: "exact" }),
+    writableClient.from("events").select("*", { head: true, count: "exact" }),
+    writableClient
+      .from("users")
+      .select("*", { head: true, count: "exact" })
+      .in("role", ["admin", "super_admin"]),
+    writableClient.from("spots").select("id,name,city_id").order("id", { ascending: false }).limit(5),
+    writableClient
+      .from("events")
+      .select("id,title,city_id,start_date")
+      .order("id", { ascending: false })
+      .limit(5),
+  ]);
+
+  const hasError = [
+    totalUsersRes.error,
+    newUsersRes.error,
+    totalSpotsRes.error,
+    totalEventsRes.error,
+    totalAdminsRes.error,
+    latestSpotsRes.error,
+    latestEventsRes.error,
+  ].some(Boolean);
+
+  if (hasError) {
+    console.warn("[supabase] admin dashboard stats fetch error", {
+      totalUsersError: totalUsersRes.error?.message,
+      newUsersError: newUsersRes.error?.message,
+      totalSpotsError: totalSpotsRes.error?.message,
+      totalEventsError: totalEventsRes.error?.message,
+      totalAdminsError: totalAdminsRes.error?.message,
+      latestSpotsError: latestSpotsRes.error?.message,
+      latestEventsError: latestEventsRes.error?.message,
+    });
+    return fallback;
+  }
+
+  return {
+    totalUsers: totalUsersRes.count ?? 0,
+    newUsersLast7Days: newUsersRes.count ?? 0,
+    totalSpots: totalSpotsRes.count ?? 0,
+    totalEvents: totalEventsRes.count ?? 0,
+    totalAdmins: totalAdminsRes.count ?? 0,
+    latestSpots: (latestSpotsRes.data ?? []) as AdminDashboardSpotSummary[],
+    latestEvents: (latestEventsRes.data ?? []) as AdminDashboardEventSummary[],
+  };
+}
+
+/**
+ * 管理対象ユーザー一覧を取得する。
+ *
+ * @param limit - 最大件数
+ * @returns 管理対象ユーザー配列
+ * @example
+ * const users = await fetchManageableUsers(200);
+ */
+export async function fetchManageableUsers(limit = 200): Promise<AdminUserSummary[]> {
+  if (!client) return [];
+  const writableClient = getWritableClient();
+  const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 500);
+  const { data, error } = await writableClient
+    .from("users")
+    .select("id,auth_id,email,display_name,role,created_at")
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) {
+    console.warn("[supabase] manageable users fetch error:", error);
+    return [];
+  }
+  return (data ?? []) as AdminUserSummary[];
+}
+
+/**
+ * 管理画面から新規スポットを作成する。
+ *
+ * @param input - 作成パラメータ
+ * @returns 作成されたスポット
+ * @throws Error Supabase未設定または作成失敗時
+ * @example
+ * await createAdminSpot({ ...spotInput });
+ */
+export async function createAdminSpot(input: AdminSpotCreateInput): Promise<Spot> {
+  const writableClient = getWritableClient();
+  const payload = {
+    name: input.name,
+    description: input.description,
+    city_id: input.city_id,
+    genre_id: input.genre_id,
+    lat: input.lat,
+    lng: input.lng,
+    image_thumb_path: input.image_thumb_path ?? null,
+    image_path: input.image_path ?? null,
+    model_path: input.model_path ?? null,
+    reference_url: input.reference_url ?? null,
+  };
+  const { data, error } = await writableClient.from("spots").insert(payload).select("*").single();
+  if (error || !data) {
+    throw new Error(error?.message ?? "スポットの作成に失敗しました。");
+  }
+  return data as Spot;
+}
+
+/**
+ * 管理画面から新規イベントを作成する。
+ *
+ * @param input - 作成パラメータ
+ * @returns 作成されたイベント
+ * @throws Error Supabase未設定または作成失敗時
+ * @example
+ * await createAdminEvent({ ...eventInput });
+ */
+export async function createAdminEvent(input: AdminEventCreateInput): Promise<Event> {
+  const writableClient = getWritableClient();
+  const payload = {
+    title: input.title,
+    location: input.location ?? null,
+    start_date: input.start_date ?? null,
+    end_date: input.end_date ?? null,
+    city_id: input.city_id ?? null,
+  };
+  const { data, error } = await writableClient.from("events").insert(payload).select("*").single();
+  if (error || !data) {
+    throw new Error(error?.message ?? "イベントの作成に失敗しました。");
+  }
+  return data as Event;
+}
+
+/**
+ * ユーザーのロールを更新する。
+ *
+ * @param userId - 対象ユーザー ID
+ * @param role - 変更先ロール
+ * @returns 更新後ユーザー情報
+ * @throws Error 入力不正または更新失敗時
+ * @example
+ * await updateUserRole(42, "admin");
+ */
+export async function updateUserRole(userId: number, role: UserRole): Promise<AdminUserSummary> {
+  if (!isUserRole(role)) {
+    throw new Error("不正なロールです。");
+  }
+  const writableClient = getWritableClient();
+  const { data, error } = await writableClient
+    .from("users")
+    .update({ role })
+    .eq("id", userId)
+    .select("id,auth_id,email,display_name,role,created_at")
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "ユーザー権限の更新に失敗しました。");
+  }
+  return data as AdminUserSummary;
+}
+
+/**
+ * 管理画面から画像/モデルを Supabase Storage へアップロードする。
+ *
+ * @param file - アップロード対象ファイル
+ * @param folder - 保存先フォルダ（例: `images/spots`, `models/spots`）
+ * @param fallbackExt - 拡張子の既定値
+ * @returns 保存した Storage object path
+ * @throws Error Supabase未設定またはアップロード失敗時
+ * @example
+ * const path = await uploadAdminAsset(file, "images/spots", "jpg");
+ */
+export async function uploadAdminAsset(
+  file: File,
+  folder: string,
+  fallbackExt: string
+): Promise<string> {
+  const writableClient = getWritableClient();
+  const objectPath = buildAssetPath(folder, file.name, fallbackExt);
+  const { error } = await writableClient.storage.from(storageBucket).upload(objectPath, file, {
+    upsert: false,
+    contentType: file.type || undefined,
+    cacheControl: "3600",
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+  return objectPath;
+}
+
 // ─────────────────────────────────────────────────────────────
 // User / Stamp functions
 // ─────────────────────────────────────────────────────────────
@@ -354,7 +731,7 @@ export async function ensurePublicUser(authId: string, email: string): Promise<U
   const displayName = email.split("@")[0] || "User";
   const { data: newUser, error } = await client
     .from("users")
-    .insert({ auth_id: authId, display_name: displayName })
+    .insert({ auth_id: authId, email, role: "user", display_name: displayName })
     .select()
     .single();
 

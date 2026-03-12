@@ -40,6 +40,8 @@ web/
 
 # testing
 /coverage
+/test-results
+/playwright-report
 
 # next.js
 /.next/
@@ -86,6 +88,6 @@ GEMINI.md
 documents/
 public/db/
 
-# DB スキーマと SQL マイグレーション
+# 公開リポジトリには SQL / 内部 DB 定義を含めない
 supabase/schema.sql
 supabase/*.sql

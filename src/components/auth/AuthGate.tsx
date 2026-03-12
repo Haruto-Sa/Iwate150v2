@@ -1,103 +1,67 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
-import { useAuthSession } from "@/components/auth/SessionProvider";
+import Link from "next/link";
+import { LockKeyhole, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { PUBLIC_LOGIN_PATH } from "@/lib/config";
+import { useAuthSession } from "@/components/auth/SessionProvider";
 
 type Props = {
   children: React.ReactNode;
+  title: string;
+  description: string;
+  loginLabel?: string;
 };
 
 /**
- * AuthGate をバイパスするルートかを判定する。
+ * 保存系機能だけに使う認証誘導ゲート。
  *
- * @param pathname - 現在のパス名
- * @returns バイパス対象なら true
+ * @param props - 表示設定
+ * @returns 認証済みなら children、未認証なら誘導 UI
  * @example
- * isBypassAuthGateRoute("/admin"); // true
+ * <AuthGate title="Favorites" description="保存にはログインが必要です。">{children}</AuthGate>
  */
-function isBypassAuthGateRoute(pathname: string): boolean {
-  return (
-    pathname === "/login" ||
-    pathname.startsWith("/login/") ||
-    pathname === "/auth/callback" ||
-    pathname.startsWith("/auth/callback/") ||
-    pathname === "/admin" ||
-    pathname.startsWith("/admin/")
-  );
-}
+export function AuthGate({ children, title, description, loginLabel = "Continue with login" }: Props) {
+  const { status, user } = useAuthSession();
 
-/**
- * 認証状態に応じてページ表示可否を制御するゲートコンポーネント。
- *
- * @param props - 子要素を含むプロパティ
- * @returns 認証済みまたは公開対象なら子要素、未認証なら認証案内UI
- * @example
- * <AuthGate>{children}</AuthGate>
- */
-export function AuthGate({ children }: Props) {
-  const { user, status } = useAuthSession();
-  const pathname = usePathname();
-  const [, setGuestRevision] = useState(0);
-  const bypassRoute = isBypassAuthGateRoute(pathname);
-
-  const guestAllowed =
-    typeof window !== "undefined" && localStorage.getItem("iwate150_guest") === "1";
-
-  const enableGuest = () => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("iwate150_guest", "1");
-    }
-    setGuestRevision((value) => value + 1);
-  };
-
-  // Allow access if: session exists, guest mode enabled, or env not configured (dev fallback)
-  const envConfigured = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
-  const allowed = bypassRoute || Boolean(user) || guestAllowed || !envConfigured;
-
-  if (status === "loading" && !bypassRoute) {
+  if (status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-blue-50 text-sm text-zinc-700">
-        認証状態を確認しています...
+      <div className="rounded-3xl border border-emerald-900/10 bg-white/80 p-6 text-sm text-emerald-900/70 shadow-sm">
+        アカウント状態を確認しています...
       </div>
     );
   }
 
-  if (!allowed) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#36d1dc] to-[#5b86e5] px-4">
-        <div className="w-full max-w-md space-y-4 rounded-2xl bg-white/95 p-6 shadow-xl">
-          <div className="space-y-2 text-center">
-            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
-              Iwate150
-            </p>
-            <h1 className="text-2xl font-bold text-zinc-900">ログインが必要です</h1>
-            <p className="text-sm text-zinc-600">
-              ログインすると機能をより便利に利用できます。ログインしない場合はゲストで閲覧できます。
-            </p>
-          </div>
-          <div className="space-y-2">
-            <a
-              href="/login"
-              className="block w-full rounded-lg bg-black px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-zinc-800"
+  if (user) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="rounded-[28px] border border-emerald-900/10 bg-gradient-to-br from-[#effcf5] via-white to-[#eef6ff] p-6 shadow-sm ring-1 ring-emerald-900/10">
+      <div className="flex items-start gap-4">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-emerald-700">
+          <LockKeyhole className="h-5 w-5" />
+        </div>
+        <div className="space-y-2">
+          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+            <Sparkles className="h-3.5 w-3.5" />
+            Save your trip
+          </p>
+          <h2 className="text-xl font-semibold text-[#0f1c1a]">{title}</h2>
+          <p className="text-sm leading-6 text-emerald-900/75">{description}</p>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Link href={PUBLIC_LOGIN_PATH}>
+              <Button>{loginLabel}</Button>
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center rounded-full px-3 py-2 text-sm font-medium text-emerald-900/75 transition hover:bg-emerald-50"
             >
-              ログイン / 新規登録へ進む
-            </a>
-            <Button
-              variant="outline"
-              onClick={enableGuest}
-              className="w-full"
-            >
-              ゲストで閲覧
-            </Button>
+              Explore first
+            </Link>
           </div>
         </div>
       </div>
-    );
-  }
-
-  return <>{children}</>;
+    </div>
+  );
 }

@@ -3,8 +3,16 @@ import { fetchSpots } from "@/lib/supabaseClient";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Orbit, Box } from "lucide-react";
 import { resolveServerStorageUrls } from "@/lib/storage";
+import { buildPageMetadata } from "@/lib/seo";
+import { getSpotHref } from "@/lib/spotRoutes";
 
 export const revalidate = 120;
+export const metadata = buildPageMetadata({
+  title: "AR",
+  description: "AR 対応スポットの準備状況を確認できるベータページです。",
+  path: "/ar",
+  noIndex: true,
+});
 
 export default async function ARPage() {
   const spots = await fetchSpots();
@@ -36,7 +44,7 @@ export default async function ARPage() {
                 </p>
                 <Link
                   className="mt-2 inline-block text-xs text-emerald-200 underline underline-offset-4"
-                  href={`/spot?focus=${spot.id}`}
+                  href={getSpotHref(spot)}
                 >
                   詳細ページへ
                 </Link>

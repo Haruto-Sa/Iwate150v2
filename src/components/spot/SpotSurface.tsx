@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { SlidersHorizontal, MapPin, Navigation } from "lucide-react";
 import { haversineDistance } from "@/lib/geo";
 import { buildRouteUrl } from "@/lib/routeProviders";
+import { getSpotHref } from "@/lib/spotRoutes";
 
 type Props = {
   spots: Spot[];
@@ -119,16 +120,26 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
 
   useEffect(() => {
     if (!userPos || initialCentered) return;
-    setMapCenter(userPos);
-    setInitialCentered(true);
+    const frameId = window.requestAnimationFrame(() => {
+      setMapCenter(userPos);
+      setInitialCentered(true);
+    });
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, [initialCentered, userPos]);
 
   useEffect(() => {
     if (!focusSpotId) return;
     const focused = spots.find((spot) => spot.id === focusSpotId);
     if (!focused) return;
-    setMapCenter({ lat: focused.lat, lng: focused.lng });
-    setInitialCentered(true);
+    const frameId = window.requestAnimationFrame(() => {
+      setMapCenter({ lat: focused.lat, lng: focused.lng });
+      setInitialCentered(true);
+    });
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, [focusSpotId, spots]);
 
   const basePoint = userPos ?? MORIOKA_STATION;
@@ -190,8 +201,8 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
   return (
     <div className="space-y-8">
       <SectionTitle
-        label="マップ"
-        description="現在地または盛岡駅を基準に、近くの観光地を地図で探せます。"
+        label="Map"
+        description="現在地や気になるエリアから、岩手のスポットを地図で見つけられます。"
         icon={MapPin}
       />
 
@@ -336,7 +347,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
             <p className="line-clamp-2 text-sm text-emerald-900/80">{spot.description}</p>
             <div className="mt-3 flex items-center gap-3">
               <a
-                href={`/spot?focus=${spot.id}`}
+                href={getSpotHref(spot)}
                 className="inline-flex items-center gap-2 text-xs text-emerald-800 underline underline-offset-4"
               >
                 詳細を見る

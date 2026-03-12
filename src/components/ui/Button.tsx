@@ -95,7 +95,7 @@ export function Button({
       data-lk-button-size={size}
       type={type ?? "button"}
       disabled={disabled}
-      className={`${colorClass} transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:pointer-events-none disabled:opacity-50 ${className}`}
+      className={`interactive-lift tap-feedback ${colorClass} transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:pointer-events-none disabled:opacity-50 ${className}`}
       {...rest}
     >
       <div data-lk-button-content-wrap="true">{children}</div>

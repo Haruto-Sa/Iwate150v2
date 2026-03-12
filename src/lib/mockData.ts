@@ -1,5 +1,20 @@
 import { City, Genre, Spot, Event } from "./types";
 
+/**
+ * 今日からの相対日付を `YYYY-MM-DD` で返す。
+ *
+ * @param offsetDays - 今日からの日数差
+ * @returns 日付文字列
+ * @example
+ * buildRelativeDate(3);
+ */
+function buildRelativeDate(offsetDays: number): string {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + offsetDays);
+  return date.toISOString().slice(0, 10);
+}
+
 // Mock fallback data used when Supabase environment variables are missing.
 export const mockCities: City[] = [
   {
@@ -86,26 +101,26 @@ export const mockSpots: Spot[] = [
 export const mockEvents: Event[] = [
   {
     id: 1,
-    title: "つなぎでつなぐ盛岡さんさ踊り",
+    title: "盛岡週末ナイトマーケット",
     location: "盛岡市",
-    start_date: "2025-02-01",
-    end_date: "2025-02-28",
+    start_date: buildRelativeDate(2),
+    end_date: buildRelativeDate(4),
     city_id: 1,
   },
   {
     id: 2,
-    title: "毛越寺二十日夜祭",
+    title: "平泉ライトアップ散策",
     location: "平泉町",
-    start_date: "2025-01-20",
-    end_date: "2025-01-20",
+    start_date: buildRelativeDate(6),
+    end_date: buildRelativeDate(6),
     city_id: 2,
   },
   {
     id: 3,
-    title: "平笠裸参り",
-    location: "八幡平市",
-    start_date: "2025-01-08",
-    end_date: "2025-01-08",
-    city_id: null,
+    title: "龍泉洞ブルー体験デー",
+    location: "岩泉町",
+    start_date: buildRelativeDate(12),
+    end_date: buildRelativeDate(13),
+    city_id: 3,
   },
 ];

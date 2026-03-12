@@ -242,6 +242,8 @@ export function useResolvedStorageUrl(
 
   useEffect(() => {
     let cancelled = false;
+    // path 変更時にまず即座にフォールバック URL を表示する。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUrl(fallback);
     resolveClientStorageUrl(path, type).then((nextUrl) => {
       if (!cancelled) setUrl(nextUrl);

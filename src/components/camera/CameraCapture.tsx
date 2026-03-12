@@ -387,7 +387,7 @@ export function CameraCapture() {
       (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
     if (!isLocalhost && typeof window !== "undefined" && !window.isSecureContext) {
       setErrorMessage(
-        "カメラは HTTPS 環境でのみ利用できます。Cloudflare Tunnel の HTTPS URL でアクセスしてください。"
+        "カメラを使うには安全な接続が必要です。ページを再読み込みして、https で開き直してください。"
       );
       setStatus("denied");
       startInProgressRef.current = false;
@@ -395,7 +395,7 @@ export function CameraCapture() {
     }
 
     if (!navigator?.mediaDevices?.getUserMedia) {
-      setErrorMessage("このブラウザはカメラに対応していません。");
+      setErrorMessage("この端末ではカメラ機能を利用できませんでした。別のブラウザや端末でお試しください。");
       setStatus("denied");
       startInProgressRef.current = false;
       return;
@@ -504,10 +504,10 @@ export function CameraCapture() {
       const message = e instanceof Error ? e.message : String(e);
       if (/module\.arguments/i.test(message)) {
         setErrorMessage(
-          "FaceMesh の起動に失敗しました。自動復旧を試します。数秒待っても改善しない場合のみ再試行してください。"
+          "カメラ演出の準備に少し時間がかかっています。数秒待っても改善しない場合のみ再試行してください。"
         );
       } else {
-        setErrorMessage("カメラアクセスが拒否されました。ブラウザ設定で許可してください。");
+        setErrorMessage("カメラの利用が許可されていません。ブラウザ設定からカメラを許可してください。");
       }
       setStatus("denied");
     } finally {
@@ -783,7 +783,7 @@ export function CameraCapture() {
             <div className="flex flex-col items-center gap-2 rounded-2xl bg-white/80 px-4 py-3 text-center shadow-lg">
               <Sparkles className="h-6 w-6 text-[#0f3a3a]" />
               <p className="text-sm text-[#0f1c1a]">
-                {status === "starting" ? "カメラを起動しています…" : "カメラを許可してください"}
+                {status === "starting" ? "旅のカメラ体験を準備しています…" : "カメラを許可して体験を始めましょう"}
               </p>
             </div>
           )}
@@ -811,7 +811,7 @@ export function CameraCapture() {
                 className="pointer-events-auto h-12 px-4 text-sm"
               >
                 <RefreshCw className="h-4 w-4" />
-                再開
+                もう一度試す
               </Button>
             )}
             <button
@@ -860,11 +860,11 @@ export function CameraCapture() {
             </Button>
           );
         })}
-        <span className="text-xs text-emerald-900/70">複数選択可（最大5つ）</span>
+        <span className="text-xs text-emerald-900/70">いっしょに写すガイドは最大 5 つまで選べます</span>
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-emerald-900/75">撮影後に自動で編集画面へ移動します</p>
+        <p className="text-xs text-emerald-900/75">撮影すると、そのまま編集画面へ進みます</p>
         <Button
           onClick={handleCapture}
           className="h-11 px-5 text-base"
@@ -882,13 +882,13 @@ export function CameraCapture() {
       )}
       {selectedModels.length > 0 && selectedModelsLoading && (
         <div className="rounded-xl border border-sky-200/60 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-          モデルを読み込み中です。初回は数秒かかることがあります。
+          ガイドを読み込んでいます。はじめての表示時は少しだけ時間がかかることがあります。
         </div>
       )}
       {selectedModelErrors.length > 0 && (
         <div className="rounded-xl border border-rose-200/60 bg-rose-50 px-3 py-2 text-xs text-rose-900">
-          モデル読み込みに失敗: {selectedModelErrors.map((id) => getCharacterNameById(id)).join(" / ")}
-          。一度選択を外して再度選択してください。
+          一部のガイドを表示できませんでした: {selectedModelErrors.map((id) => getCharacterNameById(id)).join(" / ")}
+          。いったん外してから、もう一度選び直してください。
         </div>
       )}
     </div>

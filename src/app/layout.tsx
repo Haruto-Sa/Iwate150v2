@@ -13,8 +13,8 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
-import { AuthGate } from "@/components/auth/AuthGate";
 import { SessionProvider } from "@/components/auth/SessionProvider";
+import { buildPageMetadata } from "@/lib/seo";
 
 const display = Cormorant_Garamond({
   variable: "--font-display",
@@ -28,11 +28,7 @@ const body = Noto_Sans_JP({
   weight: ["400", "500", "700"],
 });
 
-export const metadata: Metadata = {
-  title: "Iwate150",
-  description:
-    "岩手の観光地やイベントを地図・検索・ARで楽しめる観光ガイドアプリ。",
-};
+export const metadata: Metadata = buildPageMetadata();
 
 export default function RootLayout({
   children,
@@ -46,11 +42,9 @@ export default function RootLayout({
           <div className="grain" />
           <div className="flex min-h-screen flex-col bg-transparent text-[#0f1c1a]">
             <Header />
-            <AuthGate>
-              <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-8 sm:px-6 sm:pt-12 sm:pb-16">
-                {children}
-              </main>
-            </AuthGate>
+            <main className="page-shell mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-8 sm:px-6 sm:pt-12 sm:pb-16">
+              {children}
+            </main>
             <MobileNav />
             <Footer />
           </div>

@@ -13,7 +13,7 @@ type Props = {
 export function GlassCard({ title, icon: Icon, badge, actions, className = "", children }: Props) {
   return (
     <section
-      className={`glass relative overflow-hidden rounded-2xl bg-white/90 p-4 text-[#0f1c1a] shadow-xl ring-1 ring-emerald-900/8 sm:p-5 ${className}`}
+      className={`interactive-lift glass relative overflow-hidden rounded-2xl bg-white/90 p-4 text-[#0f1c1a] shadow-xl ring-1 ring-emerald-900/8 transition duration-300 hover:bg-white/95 sm:p-5 ${className}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">

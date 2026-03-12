@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { getImageUrl } from "@/lib/storage";
 import Image from "next/image";
 import { useResolvedStorageUrls } from "@/lib/storageSignedClient";
+import { getSpotHref } from "@/lib/spotRoutes";
 
 type SearchTab = "spot" | "event";
 type SpotSearchResponse = {
@@ -215,7 +216,7 @@ export function SearchSurface({ cities, genres }: Props) {
         <input
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
-          placeholder="イベント名・スポット名で検索"
+          placeholder="スポット名やイベント名で検索"
           className="w-full bg-transparent text-sm text-emerald-950 placeholder:text-emerald-900/45 focus:outline-none"
         />
         <Button
@@ -263,8 +264,8 @@ export function SearchSurface({ cities, genres }: Props) {
 
       <div className="flex gap-2 rounded-2xl border border-emerald-900/10 bg-white/70 p-1.5">
         {[
-          { key: "spot", label: "スポット", icon: LocateFixed },
-          { key: "event", label: "イベント", icon: Navigation },
+          { key: "spot", label: "Spots", icon: LocateFixed },
+          { key: "event", label: "Events", icon: Navigation },
         ].map((item) => (
           <Button
             key={item.key}
@@ -308,10 +309,10 @@ export function SearchSurface({ cities, genres }: Props) {
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 text-sm text-emerald-900/80">{spot.description}</p>
                     <a
-                      href={`/spot?focus=${spot.id}`}
+                      href={getSpotHref(spot)}
                       className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-emerald-700 underline underline-offset-4 hover:text-emerald-800"
                     >
-                      詳細へ
+                      詳細を見る
                     </a>
                   </div>
                   <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">

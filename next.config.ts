@@ -46,10 +46,47 @@ if (supabaseUrl) {
 }
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
   images: {
     remotePatterns,
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(self), geolocation=(self), microphone=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' https: data:",
+              "connect-src 'self' https: wss:",
+              "media-src 'self' blob: data:",
+              "frame-ancestors 'self'",
+            ].join("; "),
+          },
+        ],
+      },
+    ];
   },
 };
 

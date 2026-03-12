@@ -93,7 +93,7 @@ export function getOnToken(colorToken: LkColor) {
     }
   }
 
-  var tokenToReturn;
+  let tokenToReturn;
   //first, figure out if it's already an "on" token.
 
   switch (isAlreadyOnToken) {

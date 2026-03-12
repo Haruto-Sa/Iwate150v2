@@ -1,26 +1,20 @@
-import { fetchSpots } from "@/lib/supabaseClient";
-import { SpotSurface } from "@/components/spot/SpotSurface";
-
-export const revalidate = 60;
+import { redirect } from "next/navigation";
 
 /**
- * スポットページ
- *
- * `focus` クエリが渡された場合は初期表示で対象スポットを中心表示する。
+ * 旧地図 URL を新 URL へ転送する。
  *
  * @param props.searchParams - URL クエリ
- * @returns SpotPage コンポーネント
+ * @returns never
+ * @example
+ * <LegacySpotPage searchParams={Promise.resolve({ focus: "1" })} />
  */
-export default async function SpotPage({
+export default async function LegacySpotPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const spots = await fetchSpots();
   const resolved = await searchParams;
-  const focusParam = resolved?.focus;
-  const focusValue = Array.isArray(focusParam) ? focusParam[0] : focusParam;
-  const focusSpotId = Number(focusValue);
-  const safeFocusId = Number.isFinite(focusSpotId) && focusSpotId > 0 ? focusSpotId : null;
-  return <SpotSurface spots={spots} focusSpotId={safeFocusId} />;
+  const focus = resolved?.focus;
+  const focusValue = Array.isArray(focus) ? focus[0] : focus;
+  redirect(focusValue ? `/map?focus=${encodeURIComponent(focusValue)}` : "/map");
 }

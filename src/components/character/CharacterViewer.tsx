@@ -1,6 +1,4 @@
 "use client";
-/* eslint-disable react-compiler/react-compiler */
-"use no memo";
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import * as THREE from "three";

@@ -1,6 +1,4 @@
 "use client";
-/* eslint-disable react-compiler/react-compiler */
-"use no memo";
 
 import { useEffect, useMemo, useState } from "react";
 import { characters } from "@/lib/characters";
@@ -164,8 +162,6 @@ export default function CharacterPage() {
     let cancelled = false;
     if (!selected) return;
 
-    setResolvedThumbnailUrl(null);
-
     resolveThumbnailWithTimeout(selected.thumbnail)
       .then((url) => {
         if (cancelled) return;
@@ -183,8 +179,6 @@ export default function CharacterPage() {
   useEffect(() => {
     let cancelled = false;
     if (!selected) return;
-
-    setSignedAssets({ modelUrl: null, mtlUrl: null });
 
     Promise.all([
       resolveCharacterSignedAssetWithTimeout(selected.id, selected.model_path, "model"),
@@ -257,8 +251,8 @@ export default function CharacterPage() {
     return (
       <div className="space-y-6">
         <SectionTitle
-          label="ゆるキャラ"
-          description="キャラクター情報を準備中です。"
+          label="Character"
+          description="旅をいっしょに楽しむキャラクター情報を準備中です。"
           icon={Sparkles}
         />
       </div>
@@ -268,8 +262,8 @@ export default function CharacterPage() {
   return (
     <div className="space-y-6">
       <SectionTitle
-        label="ゆるキャラ"
-        description="お気に入りのキャラクターを選んで、3Dモデルをじっくり操作できます。"
+        label="Character"
+        description="旅をもっと楽しくしてくれるキャラクターを選んで、3D でじっくり眺められます。"
         icon={Sparkles}
       />
 
@@ -290,7 +284,7 @@ export default function CharacterPage() {
               />
             </div>
             <p className="text-center text-xs leading-relaxed text-emerald-900/65 lg:text-left">
-              画面下のボタンで拡大・縮小・回転・リセットを操作できます。
+              画面下のボタンで拡大・縮小・回転・リセットを操作できます。気になるキャラクターは気軽に切り替えて見比べられます。
             </p>
           </div>
 

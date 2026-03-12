@@ -3,12 +3,13 @@
 import "leaflet/dist/leaflet.css";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Icon, divIcon, latLngBounds } from "leaflet";
+import type { DivIcon, Icon } from "leaflet";
 import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { Spot } from "@/lib/types";
 import { getImageUrl } from "@/lib/storage";
 import { useResolvedStorageUrls } from "@/lib/storageSignedClient";
+import { getSpotHref } from "@/lib/spotRoutes";
 
 const MapContainer = dynamic(
   async () => (await import("react-leaflet")).MapContainer,
@@ -32,6 +33,7 @@ type AutoFitMapViewProps = {
 const AutoFitMapView = dynamic<AutoFitMapViewProps>(
   async () => {
     const { useMap } = await import("react-leaflet");
+    const { latLngBounds } = await import("leaflet");
 
     /**
      * 表示対象ポイントに合わせて地図表示範囲を自動調整する。
@@ -84,20 +86,6 @@ type Props = {
   onRouteRequest?: (destination: { lat: number; lng: number }) => void;
 };
 
-const defaultIcon = new Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-
-const userIcon = divIcon({
-  className: "user-marker",
-  html: `<div style="width:18px;height:18px;border-radius:50%;background:#e53935;box-shadow:0 0 0 6px rgba(229,57,53,0.25);border:2px solid white;"></div>`,
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
-
 /**
  * Leaflet 地図コンポーネント
  *
@@ -121,6 +109,8 @@ export function LeafletMap({
 }: Props) {
   const markers = useMemo(() => spots ?? [], [spots]);
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [defaultIcon, setDefaultIcon] = useState<Icon | null>(null);
+  const [userIcon, setUserIcon] = useState<DivIcon | null>(null);
   const centerKey = `${center.lat.toFixed(6)}:${center.lng.toFixed(6)}`;
   const markerImagePaths = useMemo(
     () => markers.map((spot) => spot.image_thumb_path ?? spot.image_path ?? null),
@@ -129,7 +119,34 @@ export function LeafletMap({
   const resolvedImageMap = useResolvedStorageUrls(markerImagePaths, "image");
 
   useEffect(() => {
+    let cancelled = false;
+    import("leaflet").then(({ Icon, divIcon }) => {
+      if (cancelled) return;
+      setDefaultIcon(
+        new Icon({
+          iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+          shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+        })
+      );
+      setUserIcon(
+        divIcon({
+          className: "user-marker",
+          html: `<div style="width:18px;height:18px;border-radius:50%;background:#e53935;box-shadow:0 0 0 6px rgba(229,57,53,0.25);border:2px solid white;"></div>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        })
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (userPosition) {
+      // 親から現在地が渡された場合はその値を優先表示する。
       setUserPos(userPosition);
       return;
     }
@@ -151,7 +168,7 @@ export function LeafletMap({
   );
   const fitUserPos = useMemo(
     () => (userPos ? { lat: userPos.lat, lng: userPos.lng } : null),
-    [Boolean(userPos)]
+    [userPos]
   );
   const fitKey = useMemo(
     () => `${markerPointsKey}|user:${showUser && fitUserPos ? "1" : "0"}`,
@@ -163,7 +180,7 @@ export function LeafletMap({
       points.push(fitUserPos);
     }
     return points;
-  }, [fitKey, fitUserPos, markers, showUser]);
+  }, [fitUserPos, markers, showUser]);
 
   return (
     <div className="h-[60vh] w-full overflow-hidden rounded-2xl border border-white/10 shadow-xl ring-1 ring-white/10">
@@ -185,7 +202,7 @@ export function LeafletMap({
             <Marker
               key={spot.id}
               position={[spot.lat, spot.lng]}
-              icon={defaultIcon}
+              {...(defaultIcon ? { icon: defaultIcon } : {})}
             >
               <Popup>
                 <div className="space-y-1 text-sm">
@@ -210,7 +227,7 @@ export function LeafletMap({
                   <div className="flex items-center gap-2">
                     <a
                       className="text-emerald-700 underline text-sm"
-                      href={`/spot?focus=${spot.id}`}
+                      href={getSpotHref(spot)}
                     >
                       詳細を見る
                     </a>
@@ -229,7 +246,7 @@ export function LeafletMap({
             </Marker>
           );
         })}
-        {userPos && (
+        {userPos && userIcon && (
           <Marker position={[userPos.lat, userPos.lng]} icon={userIcon}>
             <Popup>
               <div className="text-sm font-semibold text-emerald-700">現在地</div>

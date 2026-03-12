@@ -143,10 +143,12 @@ export default function StampPage() {
   if (!user) {
     return (
       <div className="space-y-6">
-        <GlassCard title="ログインが必要です" icon={AlertCircle} badge="Auth">
-          <p className="text-sm text-emerald-900/80">スタンプ機能を使うにはログインが必要です。</p>
+        <GlassCard title="Stamps start with login" icon={AlertCircle} badge="Save progress">
+          <p className="text-sm text-emerald-900/80">
+            スタンプを集めて進捗を残すにはログインが必要です。地図や検索はそのまま楽しめます。
+          </p>
           <Link href="/login">
-            <Button className="mt-4">ログイン / 新規登録</Button>
+            <Button className="mt-4">ログインしてスタンプを始める</Button>
           </Link>
         </GlassCard>
       </div>

@@ -1,122 +1,87 @@
 "use client";
 
+import { createContext, useContext, type ReactNode } from "react";
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { getSupabaseClient } from "@/lib/supabaseClient";
+  SessionProvider as NextAuthSessionProvider,
+  signIn as nextAuthSignIn,
+  signOut as nextAuthSignOut,
+  useSession,
+} from "next-auth/react";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
+type AuthUser = {
+  id: string;
+  email: string | null | undefined;
+  name: string | null | undefined;
+  role: "user" | "admin" | "super_admin";
+};
+
 type AuthContextValue = {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   status: AuthStatus;
   refreshSession: () => Promise<void>;
   signOut: () => Promise<void>;
+  signIn: typeof nextAuthSignIn;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * Supabase Auth セッションを監視してアプリ全体に共有する Provider。
+ * 認証状態をアプリ全体へ共有する Provider。
  *
  * @param props.children - 子要素
- * @returns SessionProvider コンポーネント
+ * @returns Provider
  * @example
  * <SessionProvider><App /></SessionProvider>
  */
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const supabase = getSupabaseClient();
-  const [session, setSession] = useState<Session | null>(null);
-  const [status, setStatus] = useState<AuthStatus>("loading");
-
-  /**
-   * 現在セッションを再取得して状態へ反映する。
-   *
-   * @returns Promise<void>
-   * @example
-   * await refreshSession();
-   */
-  const refreshSession = useCallback(async () => {
-    if (!supabase) {
-      setSession(null);
-      setStatus("unauthenticated");
-      return;
-    }
-    const { data } = await supabase.auth.getSession();
-    const nextSession = data.session ?? null;
-    setSession(nextSession);
-    setStatus(nextSession ? "authenticated" : "unauthenticated");
-  }, [supabase]);
-
-  /**
-   * Supabase Auth セッションを破棄する。
-   *
-   * @returns Promise<void>
-   * @example
-   * await signOut();
-   */
-  const signOut = useCallback(async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
-    setSession(null);
-    setStatus("unauthenticated");
-  }, [supabase]);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (!supabase) {
-      setSession(null);
-      setStatus("unauthenticated");
-      return;
-    }
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!isMounted) return;
-      const initialSession = data.session ?? null;
-      setSession(initialSession);
-      setStatus(initialSession ? "authenticated" : "unauthenticated");
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!isMounted) return;
-      setSession(nextSession);
-      setStatus(nextSession ? "authenticated" : "unauthenticated");
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
-
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      user: session?.user ?? null,
-      session,
-      status,
-      refreshSession,
-      signOut,
-    }),
-    [refreshSession, session, signOut, status]
+  return (
+    <NextAuthSessionProvider refetchOnWindowFocus={false}>
+      <AuthSessionBridge>{children}</AuthSessionBridge>
+    </NextAuthSessionProvider>
   );
+}
+
+/**
+ * NextAuth の session を既存 hook 互換形へ橋渡しする。
+ *
+ * @param props.children - 子要素
+ * @returns Provider
+ * @example
+ * <AuthSessionBridge>{children}</AuthSessionBridge>
+ */
+function AuthSessionBridge({ children }: { children: ReactNode }) {
+  const { data, status, update } = useSession();
+
+  const user = data?.user
+    ? {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role,
+      }
+    : null;
+  const value: AuthContextValue = {
+    user,
+    status,
+    refreshSession: async () => {
+      await update();
+    },
+    signOut: async () => {
+      await nextAuthSignOut({ redirect: false });
+      await update();
+    },
+    signIn: nextAuthSignIn,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 /**
- * Supabase Auth の共有状態を取得するカスタムフック。
+ * アプリ共通の認証状態を返す。
  *
- * @returns 認証状態コンテキスト
+ * @returns 認証コンテキスト
  * @example
  * const { user, status } = useAuthSession();
  */

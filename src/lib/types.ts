@@ -14,6 +14,10 @@ export type Genre = {
   image_path?: string | null;
 };
 
+export type AdminCitySummary = Pick<City, "id" | "name">;
+
+export type AdminGenreSummary = Pick<Genre, "id" | "name">;
+
 export type Spot = {
   id: number;
   name: string;
@@ -111,3 +115,24 @@ export type AdminUserSummary = Pick<User, "id" | "auth_id" | "email" | "display_
 export type AdminSpotCreateInput = Omit<Spot, "id">;
 
 export type AdminEventCreateInput = Omit<Event, "id">;
+
+export type AdminSpotUpdateInput = Partial<AdminSpotCreateInput>;
+
+export type AdminEventUpdateInput = Partial<AdminEventCreateInput>;
+
+export type AdminListPage<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNext: boolean;
+};
+
+export type AdminSpotListItem = Spot & {
+  city?: AdminCitySummary | null;
+  genre?: AdminGenreSummary | null;
+};
+
+export type AdminEventListItem = Event & {
+  city?: AdminCitySummary | null;
+};

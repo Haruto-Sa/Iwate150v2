@@ -21,6 +21,9 @@ type FaceResultsHandler = (results: FaceMeshResults) => void;
 type ModelFormat = "obj" | "fbx";
 type ModelLoadStatus = "idle" | "loading" | "ready" | "error";
 type ModelSource = { modelUrl: string; mtlUrl: string | null };
+type FaceMeshConstructor = typeof import("@mediapipe/face_mesh").FaceMesh;
+type MediaPipeCameraConstructor = typeof import("@mediapipe/camera_utils").Camera;
+type CameraFacingMode = "user" | "environment";
 
 const MEDIAPIPE_FACE_MESH_ASSET_BASE =
   process.env.NEXT_PUBLIC_MEDIAPIPE_FACE_MESH_ASSET_BASE ?? "/mediapipe/face_mesh";
@@ -55,6 +58,143 @@ function resetMediaPipeSolutionGlobals(): void {
   const globalScope = globalThis as typeof globalThis & Record<string, unknown>;
   globalScope.createMediapipeSolutionsWasm = undefined;
   globalScope.createMediapipeSolutionsPackedAssets = undefined;
+}
+
+/**
+ * MediaPipe モジュールから実体の export を解決する。
+ *
+ * bundler によって named export が `default` や `module.exports` 配下へ
+ * ぶら下がるため、その差を吸収する。
+ *
+ * @param moduleNamespace - dynamic import の戻り値
+ * @param exportName - 取り出したい export 名
+ * @returns 見つかった export。未検出時は null
+ * @example
+ * const FaceMeshCtor = resolveMediaPipeExport(moduleNamespace, "FaceMesh");
+ */
+function resolveMediaPipeExport<T>(
+  moduleNamespace: unknown,
+  exportName: string
+): T | null {
+  if (!moduleNamespace || (typeof moduleNamespace !== "object" && typeof moduleNamespace !== "function")) {
+    return readMediaPipeGlobalExport<T>(exportName);
+  }
+
+  const namespaceRecord = moduleNamespace as Record<string, unknown>;
+  const direct = namespaceRecord[exportName];
+  if (direct) return direct as T;
+
+  const defaultNamespace = namespaceRecord.default;
+  if (defaultNamespace && (typeof defaultNamespace === "object" || typeof defaultNamespace === "function")) {
+    const defaultRecord = defaultNamespace as Record<string, unknown>;
+    const defaultExport = defaultRecord[exportName];
+    if (defaultExport) return defaultExport as T;
+    if (typeof defaultNamespace === "function" && defaultNamespace.name === exportName) {
+      return defaultNamespace as T;
+    }
+  }
+
+  const commonJsNamespace = namespaceRecord["module.exports"];
+  if (commonJsNamespace && (typeof commonJsNamespace === "object" || typeof commonJsNamespace === "function")) {
+    const commonJsRecord = commonJsNamespace as Record<string, unknown>;
+    const commonJsExport = commonJsRecord[exportName];
+    if (commonJsExport) return commonJsExport as T;
+    if (typeof commonJsNamespace === "function" && commonJsNamespace.name === exportName) {
+      return commonJsNamespace as T;
+    }
+  }
+
+  return readMediaPipeGlobalExport<T>(exportName);
+}
+
+/**
+ * MediaPipe が global へ公開した constructor を読む。
+ *
+ * 一部の UMD ビルドは import namespace へ export を返さず、
+ * 副作用で `window.FaceMesh` / `window.Camera` を生やすだけなので、
+ * 最後のフォールバックとして global を参照する。
+ *
+ * @param exportName - 取り出したい export 名
+ * @returns 見つかった export。未検出時は null
+ * @example
+ * const CameraCtor = readMediaPipeGlobalExport("Camera");
+ */
+function readMediaPipeGlobalExport<T>(exportName: string): T | null {
+  const globalScope = globalThis as typeof globalThis & Record<string, unknown>;
+  const globalExport = globalScope[exportName];
+  return globalExport ? (globalExport as T) : null;
+}
+
+/**
+ * ブラウザが返した facingMode がアプリ定義の値か判定する。
+ *
+ * @param value - 判定対象
+ * @returns `user` または `environment` の場合 true
+ * @example
+ * isCameraFacingMode("user");
+ */
+function isCameraFacingMode(value: unknown): value is CameraFacingMode {
+  return value === "user" || value === "environment";
+}
+
+/**
+ * 起動した stream から実際に有効な facingMode を解決する。
+ *
+ * `getUserMedia` が要求どおりに切り替えられなかった環境では、
+ * track settings を優先し、取得できない場合のみ要求値へフォールバックする。
+ *
+ * @param stream - 起動済み MediaStream
+ * @param requestedFacingMode - 要求した facingMode
+ * @returns 実際に採用された facingMode
+ * @example
+ * const activeFacingMode = resolveActiveFacingMode(stream, "environment");
+ */
+function resolveActiveFacingMode(
+  stream: MediaStream,
+  requestedFacingMode: CameraFacingMode
+): CameraFacingMode {
+  const actualFacingMode = stream.getVideoTracks()[0]?.getSettings().facingMode;
+  return isCameraFacingMode(actualFacingMode) ? actualFacingMode : requestedFacingMode;
+}
+
+/**
+ * facingMode を優先指定して camera stream を取得する。
+ *
+ * まず `exact` で切替を強制し、未対応端末のみ緩い指定へフォールバックする。
+ *
+ * @param targetFacingMode - 起動したい facingMode
+ * @returns 取得した MediaStream
+ * @example
+ * const stream = await requestCameraStream("user");
+ */
+async function requestCameraStream(targetFacingMode: CameraFacingMode): Promise<MediaStream> {
+  const baseVideoConstraints = {
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+  } satisfies MediaTrackConstraints;
+
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      video: {
+        ...baseVideoConstraints,
+        facingMode: { exact: targetFacingMode },
+      },
+      audio: false,
+    });
+  } catch (error) {
+    const isConstraintError =
+      error instanceof DOMException &&
+      (error.name === "OverconstrainedError" || error.name === "ConstraintNotSatisfiedError");
+    if (!isConstraintError) throw error;
+
+    return navigator.mediaDevices.getUserMedia({
+      video: {
+        ...baseVideoConstraints,
+        facingMode: targetFacingMode,
+      },
+      audio: false,
+    });
+  }
 }
 
 /**
@@ -121,7 +261,11 @@ function isFaceMeshModuleArgumentsError(error: unknown): boolean {
  */
 async function createFaceMeshInstance(): Promise<FaceMeshInstance> {
   resetMediaPipeSolutionGlobals();
-  const { FaceMesh } = await import("@mediapipe/face_mesh");
+  const moduleNamespace = await import("@mediapipe/face_mesh");
+  const FaceMesh = resolveMediaPipeExport<FaceMeshConstructor>(moduleNamespace, "FaceMesh");
+  if (!FaceMesh) {
+    throw new Error("FaceMesh constructor is unavailable in @mediapipe/face_mesh");
+  }
   const faceMesh = new FaceMesh({
     locateFile: (file) => resolveFaceMeshAssetUrl(file),
   });
@@ -196,15 +340,20 @@ export function CameraCapture() {
   const unmountedRef = useRef(false);
   const recoveringFaceMeshRef = useRef(false);
   const faceResultHandlerRef = useRef<FaceResultsHandler>(() => undefined);
+  const activeFacingModeRef = useRef<CameraFacingMode>("user");
 
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [detection, setDetection] = useState<Detection>(null);
   const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [modelStatusMap, setModelStatusMap] = useState<Record<string, ModelLoadStatus>>({});
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
-  const facingModeRef = useRef<"user" | "environment">("user");
+  const [activeFacingMode, setActiveFacingMode] = useState<CameraFacingMode>("user");
+  const facingModeRef = useRef<CameraFacingMode>("user");
   const router = useRouter();
+
+  useEffect(() => {
+    activeFacingModeRef.current = activeFacingMode;
+  }, [activeFacingMode]);
 
   const selectedModelsReady = useMemo(
     () => selectedModels.length > 0 && selectedModels.every((id) => modelStatusMap[id] === "ready"),
@@ -341,7 +490,7 @@ export function CameraCapture() {
     }
     const lm = results.multiFaceLandmarks[0];
     // 内カメ(user)はミラー表示のためx反転、外カメ(environment)はそのまま
-    const isFront = facingModeRef.current === "user";
+    const isFront = activeFacingModeRef.current === "user";
     const xs = lm.map((p) => (isFront ? 1 - p.x : p.x));
     const ys = lm.map((p) => p.y);
     const minX = Math.max(0, Math.min(...xs));
@@ -368,17 +517,31 @@ export function CameraCapture() {
 
   // Start camera + mediapipe
   const stopStream = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
     if (mediaPipeCameraRef.current) {
       mediaPipeCameraRef.current.stop();
       mediaPipeCameraRef.current = null;
     }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+    detectionRef.current = null;
+    setDetection(null);
   }, []);
 
-  const startCamera = useCallback(async () => {
+  /**
+   * 指定した facingMode でカメラ起動を行う。
+   *
+   * @param targetFacingMode - 起動したい facingMode。省略時は最後に要求した向き
+   * @returns なし
+   * @example
+   * await startCamera("environment");
+   */
+  const startCamera = useCallback(async (targetFacingMode: CameraFacingMode = facingModeRef.current) => {
     if (startInProgressRef.current || status === "starting" || status === "ready") return;
     startInProgressRef.current = true;
 
@@ -405,13 +568,21 @@ export function CameraCapture() {
     setStatus("starting");
     try {
       stopStream();
+      facingModeRef.current = targetFacingMode;
 
-      const [{ Camera }] = await Promise.all([import("@mediapipe/camera_utils")]);
+      const [cameraUtilsModule] = await Promise.all([import("@mediapipe/camera_utils")]);
+      const Camera = resolveMediaPipeExport<MediaPipeCameraConstructor>(
+        cameraUtilsModule,
+        "Camera"
+      );
+      if (!Camera) {
+        throw new Error("Camera constructor is unavailable in @mediapipe/camera_utils");
+      }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facingModeRef.current, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
+      const stream = await requestCameraStream(targetFacingMode);
+      const resolvedFacingMode = resolveActiveFacingMode(stream, targetFacingMode);
+      facingModeRef.current = resolvedFacingMode;
+      setActiveFacingMode(resolvedFacingMode);
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -506,6 +677,10 @@ export function CameraCapture() {
         setErrorMessage(
           "カメラ演出の準備に少し時間がかかっています。数秒待っても改善しない場合のみ再試行してください。"
         );
+      } else if (/constructor is unavailable/i.test(message)) {
+        setErrorMessage(
+          "カメラ演出ライブラリの初期化に失敗しました。ページを再読み込みしてから再試行してください。"
+        );
       } else {
         setErrorMessage("カメラの利用が許可されていません。ブラウザ設定からカメラを許可してください。");
       }
@@ -517,15 +692,18 @@ export function CameraCapture() {
     }
   }, [initThreeScene, loadModel, status, stopStream]);
 
-  // カメラの内カメ/外カメ切替（モバイル用）
+  /**
+   * 内カメと外カメを切り替える。
+   *
+   * @returns なし
+   * @example
+   * switchCamera();
+   */
   const switchCamera = useCallback(() => {
-    // ストリームと MediaPipe Camera を停止（FaceMesh は再利用するため維持）
-    stopStream();
-    // facingMode を反転
     const newMode = facingModeRef.current === "user" ? "environment" : "user";
     facingModeRef.current = newMode;
-    setFacingMode(newMode);
-    // status を idle に戻して自動再起動を発火
+    setErrorMessage(null);
+    stopStream();
     setStatus("idle");
   }, [stopStream]);
 
@@ -719,7 +897,7 @@ export function CameraCapture() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    if (facingModeRef.current === "user") {
+    if (activeFacingMode === "user") {
       ctx.save();
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
@@ -756,7 +934,7 @@ export function CameraCapture() {
           className="h-full w-full object-cover"
           muted
           playsInline
-          style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none" }}
+          style={{ transform: activeFacingMode === "user" ? "scaleX(-1)" : "none" }}
         />
 
         <canvas
@@ -806,7 +984,9 @@ export function CameraCapture() {
           <div className="flex items-center gap-3">
             {(status === "idle" || status === "denied") && (
               <Button
-                onClick={startCamera}
+                onClick={() => {
+                  void startCamera();
+                }}
                 variant="glass"
                 className="pointer-events-auto h-12 px-4 text-sm"
               >

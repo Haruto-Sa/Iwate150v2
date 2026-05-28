@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import {
   SessionProvider as NextAuthSessionProvider,
   signIn as nextAuthSignIn,
@@ -54,26 +54,38 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 function AuthSessionBridge({ children }: { children: ReactNode }) {
   const { data, status, update } = useSession();
 
-  const user = data?.user
-    ? {
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name,
-        role: data.user.role,
-      }
-    : null;
-  const value: AuthContextValue = {
-    user,
-    status,
-    refreshSession: async () => {
-      await update();
-    },
-    signOut: async () => {
-      await nextAuthSignOut({ redirect: false });
-      await update();
-    },
-    signIn: nextAuthSignIn,
-  };
+  // data.user の各フィールドを個別に依存にすることで、
+  // セッション内容が変わらない限り新しいオブジェクト参照を作らない
+  const userId = data?.user?.id;
+  const userEmail = data?.user?.email;
+  const userName = data?.user?.name;
+  const userRole = data?.user?.role;
+
+  const user = useMemo<AuthUser | null>(
+    () =>
+      userId
+        ? { id: userId, email: userEmail, name: userName, role: userRole ?? "user" }
+        : null,
+    [userId, userEmail, userName, userRole]
+  );
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      status,
+      refreshSession: async () => {
+        await update();
+      },
+      signOut: async () => {
+        await nextAuthSignOut({ redirect: false });
+        await update();
+      },
+      signIn: nextAuthSignIn,
+    }),
+    // update は useSession が返す安定した関数なので依存に含める
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, status]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -183,11 +183,12 @@ export function LeafletMap({
   }, [fitUserPos, markers, showUser]);
 
   return (
-    <div className="h-[60vh] w-full overflow-hidden rounded-2xl border border-white/10 shadow-xl ring-1 ring-white/10">
+    <div className="relative z-0 isolate h-[60vh] w-full overflow-hidden rounded-2xl border border-white/10 shadow-xl ring-1 ring-white/10">
       <MapContainer
         key={centerKey}
         center={[center.lat, center.lng]}
         zoom={zoom}
+        className="h-full w-full"
         style={{ height: "100%", width: "100%" }}
         scrollWheelZoom
       >

@@ -1,4 +1,4 @@
-import { City, Genre, Spot, Event } from "./types";
+import { City, Event, Favorite, Genre, Spot } from "./types";
 
 /**
  * 今日からの相対日付を `YYYY-MM-DD` で返す。
@@ -124,3 +124,5 @@ export const mockEvents: Event[] = [
     city_id: 3,
   },
 ];
+
+export const mockFavorites: Favorite[] = [];

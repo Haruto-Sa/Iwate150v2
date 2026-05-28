@@ -15,7 +15,11 @@ export const metadata = buildPageMetadata({
 });
 
 export default async function Home() {
-  const [events, spots, cities] = await Promise.all([fetchEvents(), fetchSpots(), fetchCities()]);
+  const [events, spots, cities] = await Promise.all([
+    fetchEvents({ limit: 4 }),
+    fetchSpots(),
+    fetchCities(),
+  ]);
   const cityById = new Map(cities.map((city) => [city.id, city]));
   const featured = spots.slice(0, 3);
   const nextEvents = events.slice(0, 4);
@@ -111,7 +115,9 @@ export default async function Home() {
                 </div>
               );
             })}
-            {nextEvents.length === 0 && <p className="text-emerald-900/70">いま表示できるイベントは準備中です。</p>}
+            {nextEvents.length === 0 && (
+              <p className="text-emerald-900/70">近日開催予定のイベントはありません</p>
+            )}
           </div>
         </GlassCard>
         <GlassCard title="Near you" icon={LocateFixed} badge="Quick stops">

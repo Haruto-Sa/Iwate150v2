@@ -3,6 +3,12 @@ import { ShieldCheck, MoveRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { buildPageMetadata } from "@/lib/seo";
 
+type StudioAccessPageProps = {
+  searchParams: Promise<{
+    denied?: string;
+  }>;
+};
+
 export const metadata = buildPageMetadata({
   title: "Studio Access",
   description: "運用担当者向けの非公開ワークスペース入口です。",
@@ -13,11 +19,14 @@ export const metadata = buildPageMetadata({
 /**
  * secret workspace の入口ページ。
  *
+ * @param props - search params
  * @returns StudioAccessPage
  * @example
- * <StudioAccessPage />
+ * <StudioAccessPage searchParams={Promise.resolve({ denied: "1" })} />
  */
-export default function StudioAccessPage() {
+export default async function StudioAccessPage({ searchParams }: StudioAccessPageProps) {
+  const { denied } = await searchParams;
+
   return (
     <div className="mx-auto max-w-2xl rounded-[32px] border border-zinc-200 bg-white p-8 shadow-sm">
       <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
@@ -28,6 +37,12 @@ export default function StudioAccessPage() {
       <p className="mt-3 text-sm leading-7 text-zinc-600">
         この入口は一般公開向けではありません。権限のある運用アカウントでログインした後にワークスペースへ進んでください。
       </p>
+      {denied === "1" && (
+        <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+          現在のアカウントには Studio 権限がありません。管理者アカウントでログインするか、`public.users`
+          の role 設定を確認してください。
+        </p>
+      )}
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/login?next=/studio">
           <Button className="justify-between">

@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-03-19T08:55:15.383Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "detailPath": "/spots/1",
+  "pages": [
+    {
+      "key": "home",
+      "path": "/",
+      "requestedUrl": "http://127.0.0.1:3000/",
+      "finalUrl": "http://127.0.0.1:3000/",
+      "categories": {
+        "performance": 58,
+        "accessibility": 94,
+        "bestPractices": 100,
+        "seo": 98,
+        "pwa": 38
+      }
+    },
+    {
+      "key": "map",
+      "path": "/map",
+      "requestedUrl": "http://127.0.0.1:3000/map",
+      "finalUrl": "http://127.0.0.1:3000/map",
+      "categories": {
+        "performance": 49,
+        "accessibility": 100,
+        "bestPractices": 93,
+        "seo": 98,
+        "pwa": 38
+      }
+    },
+    {
+      "key": "search",
+      "path": "/search",
+      "requestedUrl": "http://127.0.0.1:3000/search",
+      "finalUrl": "http://127.0.0.1:3000/search",
+      "categories": {
+        "performance": 56,
+        "accessibility": 95,
+        "bestPractices": 100,
+        "seo": 97,
+        "pwa": 38
+      }
+    },
+    {
+      "key": "spot-detail",
+      "path": "/spots/1",
+      "requestedUrl": "http://127.0.0.1:3000/spots/1",
+      "finalUrl": "http://127.0.0.1:3000/spots/1",
+      "categories": {
+        "performance": 59,
+        "accessibility": 95,
+        "bestPractices": 100,
+        "seo": 96,
+        "pwa": 38
+      }
+    }
+  ]
+}

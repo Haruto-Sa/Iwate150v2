@@ -24,7 +24,7 @@ export default async function MapPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const spots = await fetchSpots();
+  const spots = await fetchSpots({ fallback: "empty" });
   const resolved = await searchParams;
   const focusParam = resolved?.focus;
   const focusValue = Array.isArray(focusParam) ? focusParam[0] : focusParam;

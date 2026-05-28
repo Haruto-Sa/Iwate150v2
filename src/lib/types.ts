@@ -39,6 +39,13 @@ export type Stamp = {
   created_at: string;
 };
 
+export type Favorite = {
+  id: number;
+  user_id: number;
+  spot_id: number;
+  created_at: string;
+};
+
 export type User = {
   id: number;
   auth_id: string | null;

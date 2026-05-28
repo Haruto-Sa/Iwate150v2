@@ -40,25 +40,41 @@ export default function StampPage() {
   const [loading, setLoading] = useState(true);
   const [stampingSpotId, setStampingSpotId] = useState<number | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [initError, setInitError] = useState<string | null>(null);
 
   // Initialize user and fetch data
   useEffect(() => {
     async function init() {
       setLoading(true);
-      // Fetch spots
-      const allSpots = await fetchSpots();
-      setSpots(allSpots);
-
-      // If logged in, ensure public user and fetch stamps
-      if (user?.id) {
-        const ensured = await ensurePublicUser(user.id, user.email ?? "");
-        if (ensured) {
-          setPublicUserId(ensured.id);
-          const stamps = await fetchUserStamps(ensured.id);
-          setUserStamps(stamps);
+      setInitError(null);
+      try {
+        const allSpots = await fetchSpots();
+        setSpots(allSpots);
+        if (allSpots.length === 0) {
+          setInitError("スタンプ対象のスポットをまだ表示できません。時間をおいて再度お試しください。");
         }
+
+        if (user?.id) {
+          const ensured = await ensurePublicUser(user.id, user.email ?? "");
+          if (!ensured) {
+            setInitError("スタンプ情報の初期化に失敗しました。再読み込み後にもう一度お試しください。");
+            setPublicUserId(null);
+            setUserStamps([]);
+          } else {
+            setPublicUserId(ensured.id);
+            const stamps = await fetchUserStamps(ensured.id);
+            setUserStamps(stamps);
+          }
+        }
+      } catch (error) {
+        console.error("[stamp] init failed", error);
+        setInitError("スタンプページの読み込みに失敗しました。再読み込みしてもう一度お試しください。");
+        setSpots([]);
+        setUserStamps([]);
+        setPublicUserId(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     if (status !== "loading") {
       init();
@@ -133,8 +149,13 @@ export default function StampPage() {
   // Loading state
   if (status === "loading" || loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-300" />
+      <div className="space-y-6">
+        <GlassCard title="スタンプラリーを読み込み中" icon={Loader2} badge="Loading">
+          <div className="flex items-center gap-3 text-sm text-emerald-900/80">
+            <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
+            <span>スポットと進捗情報を確認しています。</span>
+          </div>
+        </GlassCard>
       </div>
     );
   }
@@ -151,12 +172,23 @@ export default function StampPage() {
             <Button className="mt-4">ログインしてスタンプを始める</Button>
           </Link>
         </GlassCard>
+        <GlassCard title="できること" icon={StampIcon}>
+          <p className="text-sm text-emerald-900/75">
+            ログイン後は現在地の近くにあるスポットでスタンプを集め、達成率と獲得履歴を残せます。
+          </p>
+        </GlassCard>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {initError && (
+        <GlassCard title="スタンプ情報を表示できません" icon={AlertCircle} badge="Retry">
+          <p className="text-sm text-emerald-900/80">{initError}</p>
+        </GlassCard>
+      )}
+
       {/* Achievement Card */}
       <GlassCard title="スタンプ達成率" icon={Trophy} badge={`${earnedCount}/${totalSpots}`}>
         <div className="space-y-3">
@@ -175,13 +207,18 @@ export default function StampPage() {
       {/* Location Request */}
       <GlassCard title="現在地からスタンプ" icon={Navigation} badge="GPS">
         <div className="space-y-3">
-            <p className="text-sm text-emerald-900/80">
-              現在地から{STAMP_RADIUS}m以内のスポットでスタンプを獲得できます。
-            </p>
+          <p className="text-sm text-emerald-900/80">
+            現在地から{STAMP_RADIUS}m以内のスポットでスタンプを獲得できます。
+          </p>
           <Button onClick={requestLocation} variant="primary">
             <MapPin className="h-4 w-4" />
             位置情報を取得
           </Button>
+          {!userLocation && !locationError && (
+            <p className="text-xs text-emerald-900/65">
+              位置情報を取得すると、近くでスタンプ可能なスポットがここに表示されます。
+            </p>
+          )}
           {locationError && (
             <div className="flex items-center gap-2 rounded-lg border border-amber-200/30 bg-amber-900/20 px-3 py-2 text-xs text-amber-200">
               <AlertCircle className="h-4 w-4 text-amber-800" />

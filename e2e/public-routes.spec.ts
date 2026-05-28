@@ -8,10 +8,14 @@ test("guest can access main public routes", async ({ page }) => {
   await expect(page.getByText("Map").first()).toBeVisible();
 
   await page.goto("/search");
-  await expect(page.getByPlaceholder("スポット名やイベント名で検索")).toBeVisible();
+  await expect(page.getByPlaceholder("スポット名、キーワードで検索...")).toBeVisible();
+  await expect(page.getByText("人気のスポット")).toBeVisible();
 
   await page.goto("/camera");
   await expect(page.getByText("はじめてでも大丈夫です。")).toBeVisible();
+
+  await page.goto("/stamps");
+  await expect(page.getByText("Stamps start with login")).toBeVisible();
 });
 
 test("legacy routes redirect to new public routes", async ({ page }) => {

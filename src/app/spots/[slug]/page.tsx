@@ -2,12 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { MapPin, Camera, Heart, Sparkles } from "lucide-react";
+import { MapPin, Camera, Sparkles } from "lucide-react";
 import { fetchCities, fetchGenres, fetchSpots } from "@/lib/supabaseClient";
 import { buildSpotMetadata, buildSpotJsonLd } from "@/lib/seo";
 import { extractSpotIdFromSlug, getSpotHref } from "@/lib/spotRoutes";
 import { getImageUrl } from "@/lib/storage";
 import { Button } from "@/components/ui/Button";
+import { FavoriteToggleButton } from "@/components/favorites/FavoriteToggleButton";
+import { ShareButton } from "@/components/ui/ShareButton";
+import { SITE_URL } from "@/lib/config";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -156,10 +159,14 @@ export default async function SpotDetailPage({ params }: PageProps) {
                 </dd>
               </div>
             </dl>
-            <Link href="/favorites" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-900 underline underline-offset-4">
-              <Heart className="h-4 w-4" />
-              お気に入りに残す
-            </Link>
+            <FavoriteToggleButton spotId={spot.id} />
+            <div className="mt-4 border-t border-emerald-900/10 pt-4">
+              <ShareButton
+                title={spot.name}
+                text={`${spot.name}を発見！`}
+                url={`${SITE_URL}${getSpotHref(spot)}`}
+              />
+            </div>
           </div>
         </div>
       </section>

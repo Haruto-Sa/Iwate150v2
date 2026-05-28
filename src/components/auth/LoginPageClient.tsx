@@ -128,23 +128,29 @@ export function LoginPageClient() {
           </p>
 
           <div className="mt-5 space-y-3">
-            {availableProviders
-              .filter((provider) => provider.id !== "nodemailer")
-              .map((provider) => (
-                <Button
-                  key={provider.id}
-                  variant="outline"
-                  className="w-full justify-between"
-                  disabled={loadingProvider === provider.id}
-                  onClick={() => handleProviderSignIn(provider.id)}
-                >
-                  <span>{provider.name} で続ける</span>
-                  <MoveRight className="h-4 w-4" />
-                </Button>
-              ))}
-            {availableProviders.filter((provider) => provider.id !== "nodemailer").length === 0 && (
+            {providers === null ? (
+              <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                ログイン方法を確認中です...
+              </p>
+            ) : (
+              availableProviders
+                .filter((provider) => provider.id !== "nodemailer")
+                .map((provider) => (
+                  <Button
+                    key={provider.id}
+                    variant="outline"
+                    className="w-full justify-between"
+                    disabled={loadingProvider === provider.id}
+                    onClick={() => handleProviderSignIn(provider.id)}
+                  >
+                    <span>{provider.name} で続ける</span>
+                    <MoveRight className="h-4 w-4" />
+                  </Button>
+                ))
+            )}
+            {providers !== null && availableProviders.filter((provider) => provider.id !== "nodemailer").length === 0 && (
               <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                現在、外部アカウントのログインは準備中です。
+                この環境では外部アカウントログインは未設定です。
               </p>
             )}
           </div>
@@ -156,7 +162,11 @@ export function LoginPageClient() {
             パスワードを作らずに、メールのリンクから安全にログインできます。
           </p>
 
-          {providers?.nodemailer ? (
+          {providers === null ? (
+            <p className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              メールログイン設定を確認中です...
+            </p>
+          ) : providers?.nodemailer ? (
             <div className="mt-5 space-y-3">
               <label className="block text-sm font-medium text-zinc-700">
                 メールアドレス
@@ -183,7 +193,7 @@ export function LoginPageClient() {
             </div>
           ) : (
             <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              現在、メールリンクログインは準備中です。
+              この環境ではメールリンクログインは未設定です。
             </p>
           )}
 

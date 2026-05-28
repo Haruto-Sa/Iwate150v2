@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint src e2e middleware.ts playwright.config.ts vitest.config.ts",
     "typecheck": "tsc --noEmit",
@@ -20,7 +20,9 @@
     "@material/material-color-utilities": "^0.4.0",
     "@mediapipe/camera_utils": "^0.3.1640029074",
     "@mediapipe/face_mesh": "^0.4.1633559619",
+    "@serwist/next": "^9.5.7",
     "@supabase/supabase-js": "^2.87.1",
+    "@vercel/speed-insights": "^2.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.563.0",
     "next": "16.0.8",
@@ -29,6 +31,7 @@
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-leaflet": "^5.0.0",
+    "serwist": "^9.5.7",
     "three": "^0.169.0"
   },
   "devDependencies": {

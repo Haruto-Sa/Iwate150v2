@@ -33,7 +33,7 @@ export function Header() {
 
   if (secretWorkspaceRoute) {
     return (
-      <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 shadow-sm backdrop-blur-xl">
+      <header className="sticky top-0 z-[1200] border-b border-zinc-200 bg-white/90 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href={SECRET_WORKSPACE_PATH} className="text-sm font-semibold tracking-wide text-zinc-900">
             Studio Workspace
@@ -52,7 +52,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-30 bg-gradient-to-b from-white/90 to-white/70 backdrop-blur-2xl shadow-sm">
+    <header className="sticky top-0 z-[1200] bg-gradient-to-b from-white/90 to-white/70 backdrop-blur-2xl shadow-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="group flex min-w-0 items-center gap-3 text-[#0f1c1a]">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-100 ring-1 ring-emerald-200/70 transition group-hover:scale-105 group-hover:ring-emerald-400">

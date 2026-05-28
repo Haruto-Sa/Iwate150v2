@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { FAVORITES_PATH, PUBLIC_LOGIN_PATH, SECRET_WORKSPACE_PATH } from "@/lib/config";
+import { PUBLIC_LOGIN_PATH, SECRET_WORKSPACE_PATH } from "@/lib/config";
 
 /**
  * 保護対象ルートへ未認証で来た場合にログインページへ送る middleware。
@@ -12,8 +12,7 @@ import { FAVORITES_PATH, PUBLIC_LOGIN_PATH, SECRET_WORKSPACE_PATH } from "@/lib/
  */
 export default auth((request) => {
   const pathname = request.nextUrl.pathname;
-  const isProtected =
-    pathname.startsWith(SECRET_WORKSPACE_PATH) || pathname.startsWith(FAVORITES_PATH);
+  const isProtected = pathname.startsWith(SECRET_WORKSPACE_PATH);
 
   if (!isProtected) {
     return NextResponse.next();
@@ -29,5 +28,5 @@ export default auth((request) => {
 });
 
 export const config = {
-  matcher: ["/studio/:path*", "/favorites/:path*"],
+  matcher: ["/studio/:path*"],
 };

@@ -9,6 +9,7 @@ import { getImageUrl } from "@/lib/storage";
 import Image from "next/image";
 import { useResolvedStorageUrls } from "@/lib/storageSignedClient";
 import { getSpotHref } from "@/lib/spotRoutes";
+import { splitEventsByTimeline } from "@/lib/eventFilters";
 
 type SearchTab = "spot" | "event";
 type SpotSearchResponse = {
@@ -28,6 +29,8 @@ type EventSearchResponse = {
 type Props = {
   cities: City[];
   genres: Genre[];
+  defaultSpots: Spot[];
+  defaultEvents: Event[];
 };
 
 const PAGE_SIZE = 50;
@@ -68,7 +71,7 @@ function buildSearchQuery(params: {
  * @example
  * <SearchSurface cities={cities} genres={genres} />
  */
-export function SearchSurface({ cities, genres }: Props) {
+export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: Props) {
   const [tab, setTab] = useState<SearchTab>("spot");
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
@@ -94,11 +97,13 @@ export function SearchSurface({ cities, genres }: Props) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const cityById = useMemo(() => new Map(cities.map((city) => [city.id, city])), [cities]);
+  const isIdleState =
+    debouncedKeyword.length === 0 && selectedCityId === "all" && selectedGenreId === "all";
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedKeyword(keyword.trim().slice(0, 100));
-    }, 250);
+    }, 300);
     return () => {
       window.clearTimeout(timer);
     };
@@ -114,6 +119,12 @@ export function SearchSurface({ cities, genres }: Props) {
   }, [selectedGenreId, tab]);
 
   useEffect(() => {
+    if (isIdleState) {
+      setIsLoading(false);
+      setErrorMessage(null);
+      return;
+    }
+
     const controller = new AbortController();
     const run = async () => {
       setIsLoading(true);
@@ -152,7 +163,7 @@ export function SearchSurface({ cities, genres }: Props) {
     return () => {
       controller.abort();
     };
-  }, [debouncedKeyword, page, selectedCityId, selectedGenreId, tab]);
+  }, [debouncedKeyword, isIdleState, page, selectedCityId, selectedGenreId, tab]);
 
   /**
    * スポットカード用の画像パス（thumb優先）を返す。
@@ -199,11 +210,26 @@ export function SearchSurface({ cities, genres }: Props) {
   const total = tab === "spot" ? spotResult.total : eventResult.total;
   const hasNext = tab === "spot" ? spotResult.hasNext : eventResult.hasNext;
   const hasPrev = page > 1;
+  const groupedEvents = useMemo(() => splitEventsByTimeline(eventResult.items), [eventResult.items]);
 
   const visibleImagePaths = useMemo(() => {
+    if (isIdleState) {
+      return [
+        ...defaultSpots.map((spot) => getSpotImagePathValue(spot)),
+        ...defaultEvents.map((event) => getEventImagePathValue(event)),
+      ];
+    }
     if (tab === "spot") return (activeItems as Spot[]).map((spot) => getSpotImagePathValue(spot));
     return (activeItems as Event[]).map((event) => getEventImagePathValue(event));
-  }, [activeItems, getEventImagePathValue, getSpotImagePathValue, tab]);
+  }, [
+    activeItems,
+    defaultEvents,
+    defaultSpots,
+    getEventImagePathValue,
+    getSpotImagePathValue,
+    isIdleState,
+    tab,
+  ]);
   const resolvedImageMap = useResolvedStorageUrls(visibleImagePaths, "image");
 
   const startIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -216,7 +242,7 @@ export function SearchSurface({ cities, genres }: Props) {
         <input
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
-          placeholder="スポット名やイベント名で検索"
+          placeholder="スポット名、キーワードで検索..."
           className="w-full bg-transparent text-sm text-emerald-950 placeholder:text-emerald-900/45 focus:outline-none"
         />
         <Button
@@ -280,15 +306,21 @@ export function SearchSurface({ cities, genres }: Props) {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-emerald-900/70">
-        <p>
-          {tab === "spot" ? "スポット" : "イベント"}: {total} 件
-          {tab === "event" && "（ジャンル条件はスポットのみ対応）"}
-        </p>
-        <p>
-          {startIndex}-{endIndex} / {total}
-        </p>
-      </div>
+      {isIdleState ? (
+        <div className="rounded-2xl border border-emerald-900/10 bg-white/70 px-4 py-3 text-xs text-emerald-900/70">
+          フィルタ未選択のため、おすすめのスポットと直近イベントを表示しています。
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-emerald-900/70">
+          <p>
+            {tab === "spot" ? "スポット" : "イベント"}: {total} 件
+            {tab === "event" && "（ジャンル条件はスポットのみ対応）"}
+          </p>
+          <p>
+            {startIndex}-{endIndex} / {total}
+          </p>
+        </div>
+      )}
 
       {errorMessage && (
         <div className="rounded-xl border border-rose-300/60 bg-rose-50 px-3 py-2 text-xs text-rose-800">
@@ -296,8 +328,89 @@ export function SearchSurface({ cities, genres }: Props) {
         </div>
       )}
 
-      <div className="card-grid">
-        {tab === "spot" &&
+      {isIdleState ? (
+        <div className="space-y-6">
+          <section className="space-y-3">
+            <div className="px-1">
+              <h2 className="text-lg font-semibold text-[#0f1c1a]">人気のスポット</h2>
+              <p className="text-sm text-emerald-900/70">今日の旅先候補として 8 件をピックアップしています。</p>
+            </div>
+            <div className="card-grid">
+              {defaultSpots.map((spot) => {
+                const imagePath = getSpotImagePathValue(spot);
+                const imageUrl = imagePath
+                  ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
+                  : null;
+                return (
+                  <GlassCard key={spot.id} title={spot.name} icon={LocateFixed} badge={`#${spot.id}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm text-emerald-900/80">{spot.description}</p>
+                        <a
+                          href={getSpotHref(spot)}
+                          className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-emerald-700 underline underline-offset-4 hover:text-emerald-800"
+                        >
+                          詳細を見る
+                        </a>
+                      </div>
+                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
+                        {imageUrl ? (
+                          <Image src={imageUrl} alt={spot.name} fill sizes="96px" className="object-cover" />
+                        ) : (
+                          <div className="grid h-full w-full place-items-center text-emerald-700/70">
+                            <ImageIcon className="h-4 w-4" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </GlassCard>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div className="px-1">
+              <h2 className="text-lg font-semibold text-[#0f1c1a]">新着イベント</h2>
+              <p className="text-sm text-emerald-900/70">直近で開催予定のイベントをまとめています。</p>
+            </div>
+            <div className="card-grid">
+              {defaultEvents.map((event) => {
+                const imagePath = getEventImagePathValue(event);
+                const imageUrl = imagePath
+                  ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
+                  : null;
+                return (
+                  <GlassCard key={event.id} title={event.title} icon={Navigation} badge={event.start_date ?? ""}>
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-emerald-900/80">{event.location ?? "未設定"}</p>
+                      </div>
+                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={event.location ?? event.title}
+                            fill
+                            sizes="96px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="grid h-full w-full place-items-center text-emerald-700/70">
+                            <ImageIcon className="h-4 w-4" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </GlassCard>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      ) : (
+        <div className="card-grid">
+          {tab === "spot" &&
           (activeItems as Spot[]).map((spot) => {
             const imagePath = getSpotImagePathValue(spot);
             const imageUrl = imagePath
@@ -329,71 +442,122 @@ export function SearchSurface({ cities, genres }: Props) {
             );
           })}
 
-        {tab === "event" &&
-          (activeItems as Event[]).map((event) => {
-            const imagePath = getEventImagePathValue(event);
-            const imageUrl = imagePath
-              ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
-              : null;
-            return (
-              <GlassCard key={event.id} title={event.title} icon={Navigation} badge={event.start_date ?? ""}>
-                <div className="flex items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-emerald-900/80">{event.location ?? "未設定"}</p>
-                  </div>
-                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
-                    {imageUrl ? (
-                      <Image
-                        src={imageUrl}
-                        alt={event.location ?? event.title}
-                        fill
-                        sizes="96px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="grid h-full w-full place-items-center text-emerald-700/70">
-                        <ImageIcon className="h-4 w-4" />
+          {tab === "event" && groupedEvents.upcoming.length > 0 && (
+            <>
+              <div className="col-span-full px-1">
+                <h2 className="text-lg font-semibold text-[#0f1c1a]">開催予定</h2>
+              </div>
+              {groupedEvents.upcoming.map((event) => {
+                const imagePath = getEventImagePathValue(event);
+                const imageUrl = imagePath
+                  ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
+                  : null;
+                return (
+                  <GlassCard key={event.id} title={event.title} icon={Navigation} badge={event.start_date ?? ""}>
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-emerald-900/80">{event.location ?? "未設定"}</p>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </GlassCard>
-            );
-          })}
+                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={event.location ?? event.title}
+                            fill
+                            sizes="96px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="grid h-full w-full place-items-center text-emerald-700/70">
+                            <ImageIcon className="h-4 w-4" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </GlassCard>
+                );
+              })}
+            </>
+          )}
 
-        {activeItems.length === 0 && !isLoading && (
-          <GlassCard title="該当なし" icon={Search}>
-            {keyword ? "別のキーワードを試してください。" : "条件を指定して検索してください。"}
-          </GlassCard>
-        )}
-      </div>
+          {tab === "event" && groupedEvents.past.length > 0 && (
+            <>
+              <div className="col-span-full px-1">
+                <h2 className="text-lg font-semibold text-[#0f1c1a]">過去のイベント</h2>
+              </div>
+              {groupedEvents.past.map((event) => {
+                const imagePath = getEventImagePathValue(event);
+                const imageUrl = imagePath
+                  ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
+                  : null;
+                return (
+                  <GlassCard key={event.id} title={event.title} icon={Navigation} badge={event.start_date ?? ""}>
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-emerald-900/80">{event.location ?? "未設定"}</p>
+                      </div>
+                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={event.location ?? event.title}
+                            fill
+                            sizes="96px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="grid h-full w-full place-items-center text-emerald-700/70">
+                            <ImageIcon className="h-4 w-4" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </GlassCard>
+                );
+              })}
+            </>
+          )}
 
-      <div className="flex items-center justify-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!hasPrev || isLoading}
-          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-          className="gap-1"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          前へ
-        </Button>
-        <span className="text-xs text-emerald-900/75">
-          page {page}
-          {isLoading ? " / 読み込み中..." : ""}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!hasNext || isLoading}
-          onClick={() => setPage((prev) => prev + 1)}
-          className="gap-1"
-        >
-          次へ
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+          {activeItems.length === 0 && !isLoading && (
+            <GlassCard title="該当なし" icon={Search}>
+              {tab === "spot"
+                ? debouncedKeyword
+                  ? `"${debouncedKeyword}" に一致するスポットは見つかりませんでした`
+                  : "条件に一致するスポットは見つかりませんでした。"
+                : "条件に一致するイベントは見つかりませんでした。"}
+            </GlassCard>
+          )}
+        </div>
+      )}
+
+      {!isIdleState && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!hasPrev || isLoading}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            className="gap-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            前へ
+          </Button>
+          <span className="text-xs text-emerald-900/75">
+            page {page}
+            {isLoading ? " / 読み込み中..." : ""}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!hasNext || isLoading}
+            onClick={() => setPage((prev) => prev + 1)}
+            className="gap-1"
+          >
+            次へ
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

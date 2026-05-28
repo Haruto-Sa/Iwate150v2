@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { StudioNav } from "@/components/studio/StudioNav";
 import { fetchAppUserByIdentity } from "@/lib/authServer";
@@ -21,12 +21,12 @@ export default async function StudioWorkspaceLayout({ children }: Props) {
   const session = await auth();
   const identityId = session?.user?.id;
   if (!identityId) {
-    notFound();
+    redirect("/login?next=/studio");
   }
 
   const currentUser = await fetchAppUserByIdentity(identityId);
   if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-    notFound();
+    redirect("/studio/access?denied=1");
   }
 
   return (
@@ -60,4 +60,3 @@ export default async function StudioWorkspaceLayout({ children }: Props) {
     </div>
   );
 }
-

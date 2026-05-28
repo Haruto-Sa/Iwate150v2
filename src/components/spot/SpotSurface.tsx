@@ -157,6 +157,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
     () => buildNearbyByExpandingRadius(spotsWithDistance, nearbyTargetCount, maxSearchRadius),
     [maxSearchRadius, nearbyTargetCount, spotsWithDistance]
   );
+  const hasSpots = spotsWithDistance.length > 0;
   const focusedSpot = useMemo(() => {
     if (!focusSpotId) return null;
     return spotsWithDistance.find((spot) => spot.id === focusSpotId) ?? null;
@@ -171,7 +172,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
       .slice(0, nearbyTargetCount);
   }, [focusedSpot, nearbyResult.items, nearbyTargetCount]);
 
-  const displaySpots = showAllSpots ? spotsWithDistance : nearbyDisplaySpots;
+  const displaySpots = hasSpots ? (showAllSpots ? spotsWithDistance : nearbyDisplaySpots) : [];
 
   /**
    * スポットへのルート検索を実行し、外部地図アプリを開く。
@@ -207,163 +208,181 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
       />
 
       <div className="glass rounded-3xl border border-white/10 p-4 ring-1 ring-white/15">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <label className="flex items-center gap-2 text-sm text-emerald-900/85">
-            <input
-              type="checkbox"
-              checked={showAllSpots}
-              onChange={(event) => setShowAllSpots(event.target.checked)}
-              className="accent-emerald-500"
-            />
-            すべての観光地を表示する
-          </label>
-          <label className="flex items-center gap-2 text-sm text-emerald-900/80">
-            <input
-              type="checkbox"
-              checked={autoUpdate}
-              onChange={(event) => setAutoUpdate(event.target.checked)}
-              className="accent-emerald-500"
-            />
-            地図表示中は位置情報を自動更新
-          </label>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              if (!navigator.geolocation) {
-                setLocError("位置情報に対応していません。");
-                return;
-              }
-              navigator.geolocation.getCurrentPosition(
-                (position) => {
-                  const next = { lat: position.coords.latitude, lng: position.coords.longitude };
-                  setUserPos(next);
-                  setMapCenter(next);
-                  setInitialCentered(true);
-                  setLocError(null);
-                },
-                () => setLocError("位置情報を更新できませんでした。"),
-                { enableHighAccuracy: true, timeout: 8000 }
-              );
-            }}
-          >
-            現在地を更新
-          </Button>
-          <div className="flex items-center gap-2 text-sm text-emerald-900/80">
-            <Navigation className="h-4 w-4 text-emerald-700" />
-            <span>ルート検索は地図アプリで案内を開きます</span>
-          </div>
-        </div>
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <label className="flex items-center justify-between gap-3 rounded-lg border border-emerald-900/10 bg-white/75 px-3 py-2 text-sm text-emerald-900/90">
-            <span>表示件数</span>
-            <select
-              value={nearbyTargetCount}
-              onChange={(event) => setNearbyTargetCount(Number(event.target.value))}
-              className="rounded-md border border-emerald-900/15 bg-white px-2 py-1 text-emerald-900"
-            >
-              {TARGET_NEARBY_OPTIONS.map((count) => (
-                <option key={count} value={count}>
-                  {count} 件
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center justify-between gap-3 rounded-lg border border-emerald-900/10 bg-white/75 px-3 py-2 text-sm text-emerald-900/90">
-            <span>最大検索半径</span>
-            <select
-              value={maxSearchRadius}
-              onChange={(event) => setMaxSearchRadius(Number(event.target.value))}
-              className="rounded-md border border-emerald-900/15 bg-white px-2 py-1 text-emerald-900"
-            >
-              {MAX_SEARCH_RADIUS_OPTIONS.map((radius) => (
-                <option key={radius} value={radius}>
-                  {radius >= 1000 ? `${radius / 1000} km` : `${radius} m`}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        {hasSpots ? (
+          <>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <label className="flex items-center gap-2 text-sm text-emerald-900/85">
+                <input
+                  type="checkbox"
+                  checked={showAllSpots}
+                  onChange={(event) => setShowAllSpots(event.target.checked)}
+                  className="accent-emerald-500"
+                />
+                すべての観光地を表示する
+              </label>
+              <label className="flex items-center gap-2 text-sm text-emerald-900/80">
+                <input
+                  type="checkbox"
+                  checked={autoUpdate}
+                  onChange={(event) => setAutoUpdate(event.target.checked)}
+                  className="accent-emerald-500"
+                />
+                地図表示中は位置情報を自動更新
+              </label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!navigator.geolocation) {
+                    setLocError("位置情報に対応していません。");
+                    return;
+                  }
+                  navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                      const next = { lat: position.coords.latitude, lng: position.coords.longitude };
+                      setUserPos(next);
+                      setMapCenter(next);
+                      setInitialCentered(true);
+                      setLocError(null);
+                    },
+                    () => setLocError("位置情報を更新できませんでした。"),
+                    { enableHighAccuracy: true, timeout: 8000 }
+                  );
+                }}
+              >
+                現在地を更新
+              </Button>
+              <div className="flex items-center gap-2 text-sm text-emerald-900/80">
+                <Navigation className="h-4 w-4 text-emerald-700" />
+                <span>ルート検索は地図アプリで案内を開きます</span>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-emerald-900/10 bg-white/75 px-3 py-2 text-sm text-emerald-900/90">
+                <span>表示件数</span>
+                <select
+                  value={nearbyTargetCount}
+                  onChange={(event) => setNearbyTargetCount(Number(event.target.value))}
+                  className="rounded-md border border-emerald-900/15 bg-white px-2 py-1 text-emerald-900"
+                >
+                  {TARGET_NEARBY_OPTIONS.map((count) => (
+                    <option key={count} value={count}>
+                      {count} 件
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-emerald-900/10 bg-white/75 px-3 py-2 text-sm text-emerald-900/90">
+                <span>最大検索半径</span>
+                <select
+                  value={maxSearchRadius}
+                  onChange={(event) => setMaxSearchRadius(Number(event.target.value))}
+                  className="rounded-md border border-emerald-900/15 bg-white px-2 py-1 text-emerald-900"
+                >
+                  {MAX_SEARCH_RADIUS_OPTIONS.map((radius) => (
+                    <option key={radius} value={radius}>
+                      {radius >= 1000 ? `${radius / 1000} km` : `${radius} m`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
-        {!showAllSpots && (
-          <div className="mt-2 rounded-lg border border-emerald-300/50 bg-emerald-50 px-3 py-2 text-xs text-emerald-900/90">
-            近傍探索中: 採用半径{" "}
-            <span className="font-semibold">
-              {nearbyResult.adoptedRadius ? `${nearbyResult.adoptedRadius} m` : "未計測"}
-            </span>
-            {" / "}表示件数 <span className="font-semibold">{nearbyDisplaySpots.length} 件</span>
-            {" / "}設定上限 <span className="font-semibold">{nearbyTargetCount} 件</span>
-            {" / "}最大半径{" "}
-            <span className="font-semibold">
-              {maxSearchRadius >= 1000 ? `${maxSearchRadius / 1000} km` : `${maxSearchRadius} m`}
-            </span>
-          </div>
-        )}
-        {showAllSpots && (
-          <div className="mt-2 rounded-lg border border-sky-300/50 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-            全件表示モード: {spotsWithDistance.length} 件
-          </div>
-        )}
-        {locError && (
-          <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            {locError}
-          </div>
-        )}
-        {routeNotice && (
-          <div className="mt-2 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-            {routeNotice}
-          </div>
-        )}
+            {!showAllSpots && (
+              <div className="mt-2 rounded-lg border border-emerald-300/50 bg-emerald-50 px-3 py-2 text-xs text-emerald-900/90">
+                近傍探索中: 採用半径{" "}
+                <span className="font-semibold">
+                  {nearbyResult.adoptedRadius ? `${nearbyResult.adoptedRadius} m` : "未計測"}
+                </span>
+                {" / "}表示件数 <span className="font-semibold">{nearbyDisplaySpots.length} 件</span>
+                {" / "}設定上限 <span className="font-semibold">{nearbyTargetCount} 件</span>
+                {" / "}最大半径{" "}
+                <span className="font-semibold">
+                  {maxSearchRadius >= 1000 ? `${maxSearchRadius / 1000} km` : `${maxSearchRadius} m`}
+                </span>
+              </div>
+            )}
+            {showAllSpots && (
+              <div className="mt-2 rounded-lg border border-sky-300/50 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+                全件表示モード: {spotsWithDistance.length} 件
+              </div>
+            )}
+            {locError && (
+              <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                {locError}
+              </div>
+            )}
+            {routeNotice && (
+              <div className="mt-2 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+                {routeNotice}
+              </div>
+            )}
 
-        <div className="mt-4 overflow-hidden rounded-2xl border border-emerald-900/10">
-          <LeafletMap
-            center={mapCenter}
-            zoom={9}
-            spots={displaySpots}
-            showUser
-            userPosition={userPos}
-            onRouteRequest={handleRouteRequest}
-          />
-        </div>
+            <div className="mt-4 overflow-hidden rounded-2xl border border-emerald-900/10">
+              <LeafletMap
+                center={mapCenter}
+                zoom={9}
+                spots={displaySpots}
+                showUser
+                userPosition={userPos}
+                onRouteRequest={handleRouteRequest}
+              />
+            </div>
+          </>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-emerald-900/15 bg-white/70 px-4 py-8 text-center text-sm text-emerald-900/70">
+            DB に登録された公開スポットがまだ見つかりません。地図と一覧は DB 登録後に表示されます。
+          </div>
+        )}
       </div>
 
       <SectionTitle
-        label={showAllSpots ? "すべての観光地" : "近傍の観光地"}
+        label={hasSpots ? (showAllSpots ? "すべての観光地" : "近傍の観光地") : "スポット一覧"}
         description={
-          showAllSpots
-            ? "全件表示中"
-            : `盛岡駅/現在地を中心に近い順で最大${nearbyTargetCount}件表示します`
+          hasSpots
+            ? showAllSpots
+              ? "全件表示中"
+              : `盛岡駅/現在地を中心に近い順で最大${nearbyTargetCount}件表示します`
+            : "公開中スポットの登録を待っています"
         }
         icon={SlidersHorizontal}
       />
       <div className="card-grid">
-        {displaySpots.map((spot) => (
-          <GlassCard
-            key={spot.id}
-            title={spot.name}
-            icon={MapPin}
-            badge={`${Math.round(spot.distance)} m`}
-          >
-            <p className="line-clamp-2 text-sm text-emerald-900/80">{spot.description}</p>
-            <div className="mt-3 flex items-center gap-3">
-              <a
-                href={getSpotHref(spot)}
-                className="inline-flex items-center gap-2 text-xs text-emerald-800 underline underline-offset-4"
-              >
-                詳細を見る
-              </a>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleRouteRequest({ lat: spot.lat, lng: spot.lng })}
-                className="gap-1"
-              >
-                <Navigation className="h-3 w-3" />
-                ルート検索
-              </Button>
-            </div>
+        {hasSpots ? (
+          displaySpots.map((spot) => (
+            <GlassCard
+              key={spot.id}
+              title={spot.name}
+              icon={MapPin}
+              badge={`${Math.round(spot.distance)} m`}
+            >
+              <p className="line-clamp-2 text-sm text-emerald-900/80">{spot.description}</p>
+              <div className="mt-3 flex items-center gap-3">
+                <a
+                  href={getSpotHref(spot)}
+                  className="inline-flex items-center gap-2 text-xs text-emerald-800 underline underline-offset-4"
+                >
+                  詳細を見る
+                </a>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRouteRequest({ lat: spot.lat, lng: spot.lng })}
+                  className="gap-1"
+                >
+                  <Navigation className="h-3 w-3" />
+                  ルート検索
+                </Button>
+              </div>
+            </GlassCard>
+          ))
+        ) : (
+          <GlassCard title="公開スポットはまだありません" icon={MapPin}>
+            <p className="text-sm text-emerald-900/75">
+              `/map` では DB に登録された公開スポットのみを表示します。登録が完了するとここに一覧が表示されます。
+            </p>
           </GlassCard>
-        ))}
+        )}
       </div>
     </div>
   );

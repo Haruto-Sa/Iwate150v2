@@ -1,5 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { mockCities, mockGenres, mockSpots, mockEvents } from "./mockData";
+import { IWATE_PUBLIC_BOUNDS } from "./config";
+import { mockCities, mockEvents, mockFavorites, mockGenres, mockSpots } from "./mockData";
+import { getCurrentDateKey, getUpcomingEvents, sortEventsForTimeline } from "./eventFilters";
 import {
   AdminDashboardEventSummary,
   AdminDashboardSpotSummary,
@@ -9,6 +11,7 @@ import {
   AdminUserSummary,
   City,
   Event,
+  Favorite,
   Genre,
   Spot,
   Stamp,
@@ -139,6 +142,16 @@ export type EventSearchParams = {
   pageSize?: number;
 };
 
+export type FetchEventsOptions = {
+  includePast?: boolean;
+  limit?: number;
+  referenceDate?: string;
+};
+
+export type FetchSpotsOptions = {
+  fallback?: "mock" | "empty";
+};
+
 const SEARCH_DEFAULT_PAGE_SIZE = 50;
 const SEARCH_MAX_PAGE_SIZE = 100;
 const SEARCH_MAX_KEYWORD_LENGTH = 100;
@@ -237,7 +250,7 @@ function buildSpotMockSearchResult(
 ): PagedResult<Spot> {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  let local = [...mockSpots];
+  let local = [...getPublicMockSpots()];
   if (params.cityId) local = local.filter((spot) => spot.city_id === params.cityId);
   if (params.genreId) local = local.filter((spot) => spot.genre_id === params.genreId);
   if (keyword) {
@@ -280,9 +293,56 @@ function buildEventMockSearchResult(
         (event.location ?? "").toLowerCase().includes(lower)
     );
   }
+  local = sortEventsForTimeline(local);
   const total = local.length;
   const items = local.slice(from, to + 1);
   return buildPagedResult(items, total, page, pageSize);
+}
+
+/**
+ * 公開画面に出してよいスポットか判定する。
+ *
+ * `spots` テーブルに公開フラグがないため、現状は
+ * 市区町村・ジャンルが紐づき、岩手県内の妥当な座標を持つものだけを公開対象とする。
+ *
+ * @param spot - 判定対象スポット
+ * @returns 公開可能なら true
+ * @example
+ * isPublicSpot(mockSpots[0]);
+ */
+function isPublicSpot(spot: Spot): boolean {
+  if (!Number.isFinite(spot.lat) || !Number.isFinite(spot.lng)) return false;
+  if (spot.city_id == null || spot.genre_id == null) return false;
+
+  return (
+    spot.lat >= IWATE_PUBLIC_BOUNDS.minLat &&
+    spot.lat <= IWATE_PUBLIC_BOUNDS.maxLat &&
+    spot.lng >= IWATE_PUBLIC_BOUNDS.minLng &&
+    spot.lng <= IWATE_PUBLIC_BOUNDS.maxLng
+  );
+}
+
+/**
+ * 公開条件に一致するスポット配列だけを返す。
+ *
+ * @param spots - 元スポット配列
+ * @returns 公開可能なスポット配列
+ * @example
+ * const safeSpots = filterPublicSpots(mockSpots);
+ */
+function filterPublicSpots(spots: Spot[]): Spot[] {
+  return spots.filter(isPublicSpot);
+}
+
+/**
+ * モックデータから公開条件に一致するスポット一覧を返す。
+ *
+ * @returns 公開可能なモックスポット配列
+ * @example
+ * const fallbackSpots = getPublicMockSpots();
+ */
+function getPublicMockSpots(): Spot[] {
+  return filterPublicSpots(mockSpots);
 }
 
 export async function fetchCities(): Promise<City[]> {
@@ -305,41 +365,100 @@ export async function fetchGenres(): Promise<Genre[]> {
   return data as Genre[];
 }
 
-export async function fetchSpots(): Promise<Spot[]> {
-  if (!client) return mockSpots;
+/**
+ * 公開向けスポット一覧を取得する。
+ *
+ * 既定では Supabase 取得失敗時にモックへフォールバックするが、
+ * 画面要件に応じて空配列を返す厳格モードへ切り替えられる。
+ *
+ * @param options - フォールバック設定
+ * @returns スポット配列
+ * @example
+ * await fetchSpots({ fallback: "empty" });
+ */
+export async function fetchSpots(options: FetchSpotsOptions = {}): Promise<Spot[]> {
+  const fallbackMode = options.fallback ?? "mock";
+  if (!client) {
+    return fallbackMode === "empty" ? [] : getPublicMockSpots();
+  }
   const { data, error } = await client
     .from("spots")
     .select("*")
+    .not("city_id", "is", null)
+    .not("genre_id", "is", null)
+    .gte("lat", IWATE_PUBLIC_BOUNDS.minLat)
+    .lte("lat", IWATE_PUBLIC_BOUNDS.maxLat)
+    .gte("lng", IWATE_PUBLIC_BOUNDS.minLng)
+    .lte("lng", IWATE_PUBLIC_BOUNDS.maxLng)
     .order("id")
     .limit(500);
   if (error) {
     console.warn("[supabase] spots fetch error, fallback to mock", error);
-    return mockSpots;
+    return fallbackMode === "empty" ? [] : getPublicMockSpots();
   }
-  return data as Spot[];
+  return (data ?? []) as Spot[];
 }
 
 export async function fetchSpot(id: number): Promise<Spot | null> {
-  if (!client) return mockSpots.find((s) => s.id === id) ?? null;
-  const { data, error } = await client.from("spots").select("*").eq("id", id).single();
+  const fallbackSpot = getPublicMockSpots().find((spot) => spot.id === id) ?? null;
+  if (!client) return fallbackSpot;
+  const { data, error } = await client
+    .from("spots")
+    .select("*")
+    .eq("id", id)
+    .not("city_id", "is", null)
+    .not("genre_id", "is", null)
+    .gte("lat", IWATE_PUBLIC_BOUNDS.minLat)
+    .lte("lat", IWATE_PUBLIC_BOUNDS.maxLat)
+    .gte("lng", IWATE_PUBLIC_BOUNDS.minLng)
+    .lte("lng", IWATE_PUBLIC_BOUNDS.maxLng)
+    .maybeSingle();
   if (error) {
     console.warn("[supabase] spot fetch error, fallback to mock", error);
-    return mockSpots.find((s) => s.id === id) ?? null;
+    return fallbackSpot;
   }
-  return data as Spot;
+  return (data as Spot | null) ?? null;
 }
 
-export async function fetchEvents(): Promise<Event[]> {
-  if (!client) return mockEvents;
+/**
+ * イベント一覧を取得する。
+ *
+ * 既定では開催予定/開催中イベントのみ返し、必要に応じて過去イベントを含める。
+ *
+ * @param options - 取得オプション
+ * @returns イベント配列
+ * @example
+ * await fetchEvents({ includePast: true, limit: 20 });
+ */
+export async function fetchEvents(options: FetchEventsOptions = {}): Promise<Event[]> {
+  const referenceDate = options.referenceDate ?? getCurrentDateKey();
+
+  /**
+   * 取得済みイベントへ共通のフィルタ・件数制限を適用する。
+   *
+   * @param events - 元イベント配列
+   * @returns 整形済みイベント配列
+   * @example
+   * applyEventFilters(mockEvents);
+   */
+  function applyEventFilters(events: Event[]): Event[] {
+    const base = options.includePast
+      ? sortEventsForTimeline(events, referenceDate)
+      : getUpcomingEvents(events, referenceDate);
+    return typeof options.limit === "number" ? base.slice(0, options.limit) : base;
+  }
+
+  if (!client) return applyEventFilters(mockEvents);
   const { data, error } = await client
     .from("events")
     .select("*")
-    .order("start_date", { ascending: true });
+    .order("start_date", { ascending: true })
+    .order("id", { ascending: true });
   if (error) {
     console.warn("[supabase] events fetch error, fallback to mock", error);
-    return mockEvents;
+    return applyEventFilters(mockEvents);
   }
-  return data as Event[];
+  return applyEventFilters((data ?? []) as Event[]);
 }
 
 /**
@@ -361,7 +480,16 @@ export async function searchSpots(params: SpotSearchParams): Promise<PagedResult
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  let query = client.from("spots").select("*", { count: "exact" }).order("id");
+  let query = client
+    .from("spots")
+    .select("*", { count: "exact" })
+    .not("city_id", "is", null)
+    .not("genre_id", "is", null)
+    .gte("lat", IWATE_PUBLIC_BOUNDS.minLat)
+    .lte("lat", IWATE_PUBLIC_BOUNDS.maxLat)
+    .gte("lng", IWATE_PUBLIC_BOUNDS.minLng)
+    .lte("lng", IWATE_PUBLIC_BOUNDS.maxLng)
+    .order("id");
 
   if (params.cityId) query = query.eq("city_id", params.cityId);
   if (params.genreId) query = query.eq("genre_id", params.genreId);
@@ -397,9 +525,6 @@ export async function searchEvents(params: EventSearchParams): Promise<PagedResu
   if (!client) {
     return buildEventMockSearchResult(params, page, pageSize, keyword);
   }
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
   let query = client
     .from("events")
     .select("*", { count: "exact" })
@@ -413,14 +538,16 @@ export async function searchEvents(params: EventSearchParams): Promise<PagedResu
     query = query.or(`title.ilike.${pattern},location.ilike.${pattern}`);
   }
 
-  const { data, error, count } = await query.range(from, to);
+  const { data, error, count } = await query;
   if (error) {
     console.warn("[supabase] events search error, fallback to mock", error);
     return buildEventMockSearchResult(params, page, pageSize, keyword);
   }
-  const safeItems = (data ?? []) as Event[];
+  const safeItems = sortEventsForTimeline((data ?? []) as Event[]);
   const total = Number.isFinite(count) ? (count as number) : safeItems.length;
-  return buildPagedResult(safeItems, total, page, pageSize);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize;
+  return buildPagedResult(safeItems.slice(from, to), total, page, pageSize);
 }
 
 /**
@@ -819,4 +946,110 @@ export async function createStamp(userId: number, spotId: number): Promise<Stamp
   }
 
   return data as Stamp;
+}
+
+/**
+ * ユーザーのお気に入り一覧を取得する。
+ *
+ * @param userId - public.users.id
+ * @returns お気に入り配列
+ * @example
+ * await fetchUserFavorites(8);
+ */
+export async function fetchUserFavorites(userId: number): Promise<Favorite[]> {
+  if (!client) return mockFavorites;
+
+  const { data, error } = await client
+    .from("favorites")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.warn("[supabase] favorites fetch error:", error);
+    return mockFavorites;
+  }
+
+  return (data ?? []) as Favorite[];
+}
+
+/**
+ * お気に入りを追加する。
+ *
+ * @param userId - public.users.id
+ * @param spotId - spot id
+ * @returns 登録レコード
+ * @example
+ * await addFavorite(3, 10);
+ */
+export async function addFavorite(userId: number, spotId: number): Promise<Favorite | null> {
+  if (!client) return null;
+
+  const { data, error } = await client
+    .from("favorites")
+    .upsert({ user_id: userId, spot_id: spotId }, { onConflict: "user_id,spot_id" })
+    .select("*")
+    .single();
+
+  if (error) {
+    console.warn("[supabase] favorite insert error:", error);
+    return null;
+  }
+
+  return data as Favorite;
+}
+
+/**
+ * お気に入りを削除する。
+ *
+ * @param userId - public.users.id
+ * @param spotId - spot id
+ * @returns 削除成功時 true
+ * @example
+ * await removeFavorite(3, 10);
+ */
+export async function removeFavorite(userId: number, spotId: number): Promise<boolean> {
+  if (!client) return false;
+
+  const { error } = await client
+    .from("favorites")
+    .delete()
+    .eq("user_id", userId)
+    .eq("spot_id", spotId);
+
+  if (error) {
+    console.warn("[supabase] favorite delete error:", error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * guest から持ち込んだお気に入りをまとめて同期する。
+ *
+ * @param userId - public.users.id
+ * @param spotIds - 同期対象 spot id 配列
+ * @returns 同期後のお気に入り配列
+ * @example
+ * await mergeFavorites(userId, [1, 2, 3]);
+ */
+export async function mergeFavorites(userId: number, spotIds: number[]): Promise<Favorite[]> {
+  if (!client) return mockFavorites;
+
+  const uniqueSpotIds = [...new Set(spotIds.filter((spotId) => Number.isFinite(spotId) && spotId > 0))];
+  if (uniqueSpotIds.length === 0) {
+    return fetchUserFavorites(userId);
+  }
+
+  const payload = uniqueSpotIds.map((spotId) => ({ user_id: userId, spot_id: spotId }));
+  const { error } = await client
+    .from("favorites")
+    .upsert(payload, { onConflict: "user_id,spot_id", ignoreDuplicates: true });
+
+  if (error) {
+    console.warn("[supabase] favorites merge error:", error);
+  }
+
+  return fetchUserFavorites(userId);
 }

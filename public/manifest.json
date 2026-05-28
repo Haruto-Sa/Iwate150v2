@@ -1,0 +1,22 @@
+{
+  "name": "VOJA IWATE",
+  "short_name": "VOJA",
+  "description": "岩手の旅先を地図、検索、カメラ体験で気軽に楽しめる観光アプリです。",
+  "theme_color": "#0f3a3a",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

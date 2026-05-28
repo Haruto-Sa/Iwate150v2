@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withSerwistInit from "@serwist/next";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const remotePatterns: Exclude<NonNullable<NextConfig["images"]>["remotePatterns"], undefined> = [];
@@ -47,6 +48,7 @@ if (supabaseUrl) {
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  turbopack: {},
   images: {
     remotePatterns,
   },
@@ -90,4 +92,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default process.env.NODE_ENV === "production"
+  ? withSerwistInit({
+      swSrc: "src/app/sw.ts",
+      swDest: "public/sw.js",
+      cacheOnNavigation: true,
+      additionalPrecacheEntries: [
+        {
+          url: "/offline",
+          revision: process.env.VERCEL_GIT_COMMIT_SHA ?? "offline-v1",
+        },
+      ],
+    })(nextConfig)
+  : nextConfig;

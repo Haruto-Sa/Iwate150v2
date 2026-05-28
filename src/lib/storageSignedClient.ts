@@ -281,13 +281,16 @@ export function useResolvedStorageUrls(
 
   useEffect(() => {
     let cancelled = false;
+    // paths の参照ではなく key（文字列）だけを依存にすることで、
+    // 毎レンダーで新しい配列参照が渡されても無限ループを防ぐ
     resolveClientStorageUrls(paths, type).then((nextMap) => {
       if (!cancelled) setUrlMap(nextMap);
     });
     return () => {
       cancelled = true;
     };
-  }, [key, paths, type]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, type]);
 
   return urlMap;
 }

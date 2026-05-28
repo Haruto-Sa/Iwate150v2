@@ -20,6 +20,7 @@ import { SessionProvider } from "@/components/auth/SessionProvider";
 import { buildPageMetadata } from "@/lib/seo";
 import { APP_THEME_COLOR } from "@/lib/config";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 const display = Cormorant_Garamond({
   variable: "--font-display",
@@ -67,6 +68,7 @@ export default function RootLayout({
             <PwaInstallPrompt />
             <OnboardingOverlay />
             <SpeedInsights />
+            <Analytics />
           </div>
         </SessionProvider>
       </body>

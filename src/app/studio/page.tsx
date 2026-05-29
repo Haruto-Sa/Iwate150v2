@@ -1,5 +1,5 @@
 import { BarChart3, ShieldCheck, Sparkles, Users } from "lucide-react";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { StudioNav } from "@/components/studio/StudioNav";
 import { fetchAppUserByIdentity } from "@/lib/authServer";
@@ -24,7 +24,7 @@ export default async function StudioPage() {
   const session = await auth();
   const identityId = session?.user?.id;
   if (!identityId) {
-    redirect("/login?next=/studio");
+    notFound();
   }
 
   const currentUser = await fetchAppUserByIdentity(identityId);

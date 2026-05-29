@@ -1,32 +1,19 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { PUBLIC_LOGIN_PATH, SECRET_WORKSPACE_PATH } from "@/lib/config";
+import type { NextRequest } from "next/server";
 
 /**
- * 保護対象ルートへ未認証で来た場合にログインページへ送る middleware。
+ * ミドルウェア。
  *
- * @param request - 認証付き request
+ * Studio 配下の認証は各ページ・レイアウトで個別に処理するため、
+ * ここでは何もせずそのまま通す。
+ *
+ * @param _request - リクエスト
  * @returns NextResponse
- * @example
- * export default auth((request) => { ... });
  */
-export default auth((request) => {
-  const pathname = request.nextUrl.pathname;
-  const isProtected = pathname.startsWith(SECRET_WORKSPACE_PATH);
-
-  if (!isProtected) {
-    return NextResponse.next();
-  }
-
-  if (request.auth?.user) {
-    return NextResponse.next();
-  }
-
-  const loginUrl = new URL(PUBLIC_LOGIN_PATH, request.nextUrl.origin);
-  loginUrl.searchParams.set("next", pathname);
-  return NextResponse.redirect(loginUrl);
-});
+export default function middleware(_request: NextRequest) {
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: ["/studio/:path*"],
+  matcher: [],
 };

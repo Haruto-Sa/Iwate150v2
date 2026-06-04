@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { Camera, ChevronRight, Map, Sparkles, Stamp, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { useIsMobileViewport } from "@/hooks/useIsMobileViewport";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { ONBOARDING_COMPLETED_KEY } from "@/lib/config";
 
 const steps = [
@@ -108,14 +109,8 @@ export function OnboardingOverlay() {
   );
   const shouldRender = visible && !hiddenRoute && isMobileViewport;
 
-  useEffect(() => {
-    if (!shouldRender || typeof document === "undefined") return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [shouldRender]);
+  // iOS Safari でも確実に効くスクロールロック（解除後にスクロール不能になる不具合対策）
+  useBodyScrollLock(shouldRender);
 
   /**
    * オンボーディングを完了扱いにする。

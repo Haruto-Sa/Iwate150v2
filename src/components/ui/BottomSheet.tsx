@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useIsMobileViewport } from "@/hooks/useIsMobileViewport";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 type Props = {
   open: boolean;
@@ -25,14 +25,8 @@ export function BottomSheet({ open, title, onClose, children, className = "" }: 
   const isMobileViewport = useIsMobileViewport();
   const shouldRender = open && isMobileViewport;
 
-  useEffect(() => {
-    if (!shouldRender || typeof document === "undefined") return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [shouldRender]);
+  // iOS Safari 対応のスクロールロック（解除後にスクロール不能になる不具合対策）
+  useBodyScrollLock(shouldRender);
 
   if (!shouldRender) return null;
 

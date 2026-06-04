@@ -158,46 +158,6 @@ function resolveActiveFacingMode(
 }
 
 /**
- * facingMode を優先指定して camera stream を取得する。
- *
- * まず `exact` で切替を強制し、未対応端末のみ緩い指定へフォールバックする。
- *
- * @param targetFacingMode - 起動したい facingMode
- * @returns 取得した MediaStream
- * @example
- * const stream = await requestCameraStream("user");
- */
-async function requestCameraStream(targetFacingMode: CameraFacingMode): Promise<MediaStream> {
-  const baseVideoConstraints = {
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
-  } satisfies MediaTrackConstraints;
-
-  try {
-    return await navigator.mediaDevices.getUserMedia({
-      video: {
-        ...baseVideoConstraints,
-        facingMode: { exact: targetFacingMode },
-      },
-      audio: false,
-    });
-  } catch (error) {
-    const isConstraintError =
-      error instanceof DOMException &&
-      (error.name === "OverconstrainedError" || error.name === "ConstraintNotSatisfiedError");
-    if (!isConstraintError) throw error;
-
-    return navigator.mediaDevices.getUserMedia({
-      video: {
-        ...baseVideoConstraints,
-        facingMode: targetFacingMode,
-      },
-      audio: false,
-    });
-  }
-}
-
-/**
  * モデルURLから読み込みフォーマットを判定する。
  *
  * @param modelPath - モデルパス
@@ -345,11 +305,19 @@ export function CameraCapture() {
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [detection, setDetection] = useState<Detection>(null);
   const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied">("idle");
+  // status を ref でも保持する。reactCompiler 有効下では useCallback のクロージャが
+  // 古い status を掴んだままになり得るため、ガード判定は常に最新値を見る ref で行う。
+  const statusRef = useRef(status);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [modelStatusMap, setModelStatusMap] = useState<Record<string, ModelLoadStatus>>({});
   const [activeFacingMode, setActiveFacingMode] = useState<CameraFacingMode>("user");
   const facingModeRef = useRef<CameraFacingMode>("user");
   const router = useRouter();
+
+  // status の最新値を ref に同期する（auto-start 効果より前に宣言し先に走らせる）
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   useEffect(() => {
     activeFacingModeRef.current = activeFacingMode;
@@ -527,6 +495,11 @@ export function CameraCapture() {
     }
     if (videoRef.current) {
       videoRef.current.pause();
+      // MediaPipe Camera が srcObject にセットした stream のトラックも確実に停止する
+      const currentSrc = videoRef.current.srcObject;
+      if (currentSrc instanceof MediaStream) {
+        currentSrc.getTracks().forEach((track) => track.stop());
+      }
       videoRef.current.srcObject = null;
     }
     detectionRef.current = null;
@@ -542,7 +515,7 @@ export function CameraCapture() {
    * await startCamera("environment");
    */
   const startCamera = useCallback(async (targetFacingMode: CameraFacingMode = facingModeRef.current) => {
-    if (startInProgressRef.current || status === "starting" || status === "ready") return;
+    if (startInProgressRef.current || statusRef.current === "starting" || statusRef.current === "ready") return;
     startInProgressRef.current = true;
 
     const isLocalhost =
@@ -579,100 +552,106 @@ export function CameraCapture() {
         throw new Error("Camera constructor is unavailable in @mediapipe/camera_utils");
       }
 
-      const stream = await requestCameraStream(targetFacingMode);
-      const resolvedFacingMode = resolveActiveFacingMode(stream, targetFacingMode);
+      if (!videoRef.current) {
+        throw new Error("video element is unavailable");
+      }
+
+      // MediaPipe Camera を唯一の stream オーナーにする。
+      // Camera.start() が内部で getUserMedia({ facingMode }) を呼び srcObject を設定するため、
+      // facingMode を渡すことで内カメ/外カメを正しく選択させる（自前 getUserMedia との二重取得を避ける）。
+      const mpCamera = new Camera(videoRef.current, {
+        onFrame: async () => {
+          try {
+            if (faceMeshRef.current && videoRef.current) {
+              await faceMeshRef.current.send({ image: videoRef.current });
+            }
+          } catch (err) {
+            if (isFaceMeshModuleArgumentsError(err) && !recoveringFaceMeshRef.current) {
+              recoveringFaceMeshRef.current = true;
+              try {
+                const recovered = await recreateFaceMeshInstance();
+                recovered.onResults((results) => faceResultHandlerRef.current(results));
+                faceMeshRef.current = recovered;
+              } catch (recoverError) {
+                console.warn("faceMesh recovery error", recoverError);
+              } finally {
+                recoveringFaceMeshRef.current = false;
+              }
+              return;
+            }
+            console.warn("faceMesh onFrame error", err);
+          }
+        },
+        facingMode: targetFacingMode,
+        width: 1280,
+        height: 720,
+      });
+      await mpCamera.start();
+      mediaPipeCameraRef.current = mpCamera;
+
+      // 起動後の実 facingMode を track settings から解決して反映する
+      const activeStream = videoRef.current.srcObject;
+      const resolvedFacingMode =
+        activeStream instanceof MediaStream
+          ? resolveActiveFacingMode(activeStream, targetFacingMode)
+          : targetFacingMode;
       facingModeRef.current = resolvedFacingMode;
       setActiveFacingMode(resolvedFacingMode);
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch((err) => {
-          if (err?.name !== "AbortError") throw err;
-        });
-        setStatus("ready");
+      setStatus("ready");
 
-        initThreeScene();
-        const resolvedCatalog = await Promise.all(
-          characterModelCatalog.map(async (modelInfo) => {
-            const [signedModelUrl, signedMtlUrl] = await Promise.all([
-              resolveClientStorageUrl(modelInfo.model_path, "model"),
-              resolveClientStorageUrl(modelInfo.mtl_path, "model"),
-            ]);
-            const resolvedModelUrl =
-              toLocalAssetUrl(modelInfo.model_path) ??
-              signedModelUrl ??
-              getModelUrl(modelInfo.model_path);
-            const resolvedMtlUrl =
-              toLocalAssetUrl(modelInfo.mtl_path) ??
-              signedMtlUrl ??
-              getModelUrl(modelInfo.mtl_path);
-            return {
-              id: modelInfo.id,
-              modelUrl: resolvedModelUrl,
-              mtlUrl: resolvedMtlUrl,
-            };
-          })
-        );
-        const nextSourceMap: Record<string, ModelSource> = {};
-        const nextStatusMap: Record<string, ModelLoadStatus> = {};
-        resolvedCatalog.forEach((item) => {
-          if (!item.modelUrl) {
-            nextStatusMap[item.id] = "error";
-            return;
-          }
-          nextSourceMap[item.id] = { modelUrl: item.modelUrl, mtlUrl: item.mtlUrl ?? null };
-          nextStatusMap[item.id] = modelMapRef.current[item.id] ? "ready" : "idle";
-        });
-        modelSourceMapRef.current = nextSourceMap;
-        setModelStatusMap((prev) => ({ ...prev, ...nextStatusMap }));
-
-        // FaceMesh: singleton 取得。初回エラー時は再生成を1回試みる
-        if (!faceMeshRef.current) {
-          try {
-            const faceMesh = await acquireFaceMeshInstance();
-            faceMesh.onResults((results) => faceResultHandlerRef.current(results));
-            faceMeshRef.current = faceMesh;
-          } catch (error) {
-            if (!isFaceMeshModuleArgumentsError(error)) throw error;
-            const recovered = await recreateFaceMeshInstance();
-            recovered.onResults((results) => faceResultHandlerRef.current(results));
-            faceMeshRef.current = recovered;
-          }
+      initThreeScene();
+      const resolvedCatalog = await Promise.all(
+        characterModelCatalog.map(async (modelInfo) => {
+          const [signedModelUrl, signedMtlUrl] = await Promise.all([
+            resolveClientStorageUrl(modelInfo.model_path, "model"),
+            resolveClientStorageUrl(modelInfo.mtl_path, "model"),
+          ]);
+          const resolvedModelUrl =
+            toLocalAssetUrl(modelInfo.model_path) ??
+            signedModelUrl ??
+            getModelUrl(modelInfo.model_path);
+          const resolvedMtlUrl =
+            toLocalAssetUrl(modelInfo.mtl_path) ??
+            signedMtlUrl ??
+            getModelUrl(modelInfo.mtl_path);
+          return {
+            id: modelInfo.id,
+            modelUrl: resolvedModelUrl,
+            mtlUrl: resolvedMtlUrl,
+          };
+        })
+      );
+      const nextSourceMap: Record<string, ModelSource> = {};
+      const nextStatusMap: Record<string, ModelLoadStatus> = {};
+      resolvedCatalog.forEach((item) => {
+        if (!item.modelUrl) {
+          nextStatusMap[item.id] = "error";
+          return;
         }
+        nextSourceMap[item.id] = { modelUrl: item.modelUrl, mtlUrl: item.mtlUrl ?? null };
+        nextStatusMap[item.id] = modelMapRef.current[item.id] ? "ready" : "idle";
+      });
+      modelSourceMapRef.current = nextSourceMap;
+      setModelStatusMap((prev) => ({ ...prev, ...nextStatusMap }));
 
-        // MediaPipe Camera: ビデオストリームに紐づくため常に新規作成
-        const mpCamera = new Camera(videoRef.current, {
-          onFrame: async () => {
-            try {
-              if (faceMeshRef.current && videoRef.current) {
-                await faceMeshRef.current.send({ image: videoRef.current });
-              }
-            } catch (err) {
-              if (isFaceMeshModuleArgumentsError(err) && !recoveringFaceMeshRef.current) {
-                recoveringFaceMeshRef.current = true;
-                try {
-                  const recovered = await recreateFaceMeshInstance();
-                  recovered.onResults((results) => faceResultHandlerRef.current(results));
-                  faceMeshRef.current = recovered;
-                } catch (recoverError) {
-                  console.warn("faceMesh recovery error", recoverError);
-                } finally {
-                  recoveringFaceMeshRef.current = false;
-                }
-                return;
-              }
-              console.warn("faceMesh onFrame error", err);
-            }
-          },
-          width: 1280,
-          height: 720,
-        });
-        mediaPipeCameraRef.current = mpCamera;
-        mpCamera.start();
+      // FaceMesh: singleton 取得。初回エラー時は再生成を1回試みる
+      // （onFrame は faceMeshRef 未取得の間 no-op のため Camera 起動を先行しても安全）
+      if (!faceMeshRef.current) {
+        try {
+          const faceMesh = await acquireFaceMeshInstance();
+          faceMesh.onResults((results) => faceResultHandlerRef.current(results));
+          faceMeshRef.current = faceMesh;
+        } catch (error) {
+          if (!isFaceMeshModuleArgumentsError(error)) throw error;
+          const recovered = await recreateFaceMeshInstance();
+          recovered.onResults((results) => faceResultHandlerRef.current(results));
+          faceMeshRef.current = recovered;
+        }
       }
     } catch (e) {
       console.error("camera permission error", e);
       const message = e instanceof Error ? e.message : String(e);
+      const domName = e instanceof DOMException ? e.name : "";
       if (/module\.arguments/i.test(message)) {
         setErrorMessage(
           "カメラ演出の準備に少し時間がかかっています。数秒待っても改善しない場合のみ再試行してください。"
@@ -681,6 +660,12 @@ export function CameraCapture() {
         setErrorMessage(
           "カメラ演出ライブラリの初期化に失敗しました。ページを再読み込みしてから再試行してください。"
         );
+      } else if (domName === "NotReadableError" || domName === "TrackStartError") {
+        setErrorMessage(
+          "カメラの切り替えに失敗しました。ページを再読み込みしてからお試しください。"
+        );
+      } else if (domName === "NotFoundError" || domName === "DevicesNotFoundError") {
+        setErrorMessage("外カメラが見つかりません。端末のカメラをご確認ください。");
       } else {
         setErrorMessage("カメラの利用が許可されていません。ブラウザ設定からカメラを許可してください。");
       }
@@ -690,7 +675,7 @@ export function CameraCapture() {
         startInProgressRef.current = false;
       }
     }
-  }, [initThreeScene, loadModel, status, stopStream]);
+  }, [initThreeScene, loadModel, stopStream]);
 
   /**
    * 内カメと外カメを切り替える。

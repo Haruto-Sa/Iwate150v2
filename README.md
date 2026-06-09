@@ -1,102 +1,89 @@
 # VOJA IWATE
 
-`VojaIwate` は、岩手の旅先を地図、検索、カメラ体験で気軽に楽しめる一般ユーザ向け観光アプリです。表示名は **VOJA IWATE** を使用します。
+**VOJA IWATE** は、岩手の旅をもっと身近に楽しむための観光アプリです。
+地図・検索・カメラ体験を通して、「今いる場所」や「今日の気分」にぴったりの旅先をすばやく見つけられます。
 
-このリポジトリは公開用構成です。環境変数が未設定でも、サンプル / モックデータで主要画面を確認できます。
+スマートフォンでもPCでも、ブラウザを開くだけですぐに使えます。
 
-## Stack
+<p align="center">
+  <img src="docs/screenshots/home.png" width="240" alt="ホーム画面" />
+  <img src="docs/screenshots/map.png" width="240" alt="地図画面" />
+  <img src="docs/screenshots/search.png" width="240" alt="検索画面" />
+</p>
 
-- Next.js 16 (App Router)
-- TypeScript
-- Supabase
-- NextAuth
-- Leaflet / OpenStreetMap
-- MediaPipe
-- Three.js
-- bun
+---
 
-## Public Routes
+## できること
 
-- `/` Home
-- `/map` Map
-- `/search` Search
-- `/guide` Guide
-- `/camera` Camera
-- `/spots/[slug]` Spot details
-- `/stamps` Stamps
-- `/favorites` Favorites
-- `/login` Login
+### 🗓 今日の気分で旅先を見つける（ホーム）
 
-旧ルートの一部は互換用に残しつつ、新ルートへ順次移行しています。
+岩手のイベントやおすすめスポットを、カレンダー形式でひと目で確認できます。
+気になる日付や予定をタップすると、そのまま詳細・地図・カメラ体験へ進めます。
 
-## Private Workspace
+<img src="docs/screenshots/home.png" width="260" alt="ホーム - イベントカレンダー" />
 
-- `/studio/access` Studio 入口
-- `/studio` 管理ダッシュボード
-- `/studio/spots` スポット CRUD
-- `/studio/events` イベント CRUD
+### 🗺 近くのスポットを地図で探す（地図）
 
-`/admin` と `/admin/login` は互換リダイレクトとして残っていますが、運用上は `/studio` を使用します。
+現在地のまわりにある観光スポットを地図上に表示します。
+表示する件数や検索範囲（半径）を自由に調整でき、気になる場所はそのまま地図アプリでルート案内へつなげられます。
 
-## Setup
+<img src="docs/screenshots/map.png" width="260" alt="地図 - 近くのスポット表示" />
 
-### 1. Install
+### 🔍 キーワード・エリア・ジャンルで検索（検索）
 
-```bash
-bun install
-```
+行きたい場所やイベントを、キーワード・市区町村・ジャンルから検索できます。
+まだ条件を決めていなくても、今日のおすすめスポットや直近のイベントを提案してくれます。
 
-### 2. Start
+<img src="docs/screenshots/search.png" width="260" alt="検索 - スポットとイベント" />
 
-```bash
-bun run dev
-```
+### 📸 ゆるキャラと一緒に写真を撮る（カメラ）
 
-### 3. Optional environment variables
+カメラを許可すると、岩手のガイドキャラクターと一緒に写真が撮れます。
+そばっち・カリンちゃん・ケロ平など、お気に入りのキャラクターを最大5体まで選んで撮影。
+撮った写真はその場で編集して、SNSでシェアできます。
 
-最低限、環境変数がなくてもモックデータで動作します。実運用で Supabase / NextAuth を有効にする場合のみ設定してください。
+<img src="docs/screenshots/camera.png" width="260" alt="カメラ - キャラクターと撮影" />
 
-- `NEXT_PUBLIC_SITE_URL`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `AUTH_SECRET`
-- `AUTH_GOOGLE_ID`
-- `AUTH_GOOGLE_SECRET`
-- `AUTH_GITHUB_ID`
-- `AUTH_GITHUB_SECRET`
-- `AUTH_EMAIL_FROM`
-- `AUTH_EMAIL_SERVER_HOST`
-- `AUTH_EMAIL_SERVER_PORT`
-- `AUTH_EMAIL_SERVER_SECURE`
-- `AUTH_EMAIL_SERVER_USER`
-- `AUTH_EMAIL_SERVER_PASSWORD`
-- `ADMIN_BOOTSTRAP_EMAILS`
+### 🧸 ゆるキャラをじっくり眺める（キャラクター）
 
-## Commands
+岩手のゆるキャラを3Dモデルで表示。拡大・縮小・回転で好きな角度から眺められます。
+それぞれのキャラクターの由来やプロフィールも読めます。
 
-```bash
-bun run dev
-bun run lint
-bun run typecheck
-bun run test
-bun run test:e2e
-bun run build
-```
+<img src="docs/screenshots/character.png" width="260" alt="キャラクター - 3D表示" />
 
-## Authentication Policy
+### 🏅 スタンプを集めて旅の記録を残す（スタンプ）
 
-- Home / Map / Search / Spot details / Camera は未ログインでも利用できます。
-- Favorites や将来の進捗保存機能は、必要になったタイミングでログインを促します。
-- Secret workspace は一般ナビゲーションに出さず、サーバ側の role 判定で保護します。
-- Studio で管理操作を行う場合は `SUPABASE_SERVICE_ROLE_KEY` と `ADMIN_BOOTSTRAP_EMAILS` の設定が必要です。
+ログインすると、観光スポットの近くでスタンプを集められます。
+達成率や獲得履歴が残るので、岩手を巡った思い出をコレクションとして楽しめます。
 
-## Data Policy
+<img src="docs/screenshots/stamps.png" width="260" alt="スタンプラリー" />
 
-- 公開リポジトリには価値の高い SQL、内部データ定義、運用データを含めません。
-- 実データの投入手順や内部管理方法は公開 README には記載しません。
-- 公開版はモックデータ中心で確認できる構成です。
+---
 
-## License
+## 使い方
 
-依存物、画像、モデルの権利確認中のため、ライセンスはまだ確定していません。
+1. アプリを開くと、最初に簡単な使い方ガイド（オンボーディング）が表示されます。
+2. 画面下のメニューから **ホーム / 地図 / 検索 / カメラ / その他** をいつでも切り替えられます。
+3. **地図・検索・カメラ・スポット詳細** は、ログインなしですぐに利用できます。
+4. **スタンプ収集やお気に入りの保存** など、記録を残す機能を使うときだけログインを促します。
+
+> 📱 スマートフォンでの利用を第一に設計していますが、PCのブラウザにも対応しています。
+
+---
+
+## こんなときに
+
+- 岩手に旅行に行く前に、行き先の候補を探したい
+- 旅行中に、今いる場所の近くにある観光スポットを知りたい
+- 旅先で、ゆるキャラと記念写真を撮りたい
+- 訪れた場所をスタンプで記録して、旅の思い出を残したい
+
+---
+
+## 開発者向け情報
+
+ローカルでの起動方法や技術的な詳細は **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** を参照してください。
+
+## ライセンス
+
+依存物・画像・3Dモデルの権利確認中のため、ライセンスは未確定です。

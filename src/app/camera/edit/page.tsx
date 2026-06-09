@@ -57,6 +57,8 @@ export default function CameraEditPage() {
   
   const stageRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef<{ type: "sticker" | "text"; id: string; startX: number; startY: number; startSize: number } | null>(null);
+  // 編集中の最新の合成画像（File）。タップ時に await を挟まず即 navigator.share に渡すため事前生成しておく
+  const composedFileRef = useRef<File | null>(null);
 
   // Load captured photo + detection
   useEffect(() => {
@@ -236,7 +238,7 @@ export default function CameraEditPage() {
   };
 
   // 画像生成
-  const generateImage = async (): Promise<Blob | null> => {
+  const generateImage = useCallback(async (): Promise<Blob | null> => {
     if (!photo) return null;
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -273,7 +275,26 @@ export default function CameraEditPage() {
     return new Promise((resolve) => {
       canvas.toBlob((blob) => resolve(blob), "image/png");
     });
-  };
+  }, [photo, stickers, texts]);
+
+  // 編集内容が変わるたびに合成画像を事前生成して ref に保持する（iOS の共有失敗対策）。
+  // これにより共有ハンドラはタップ時に await を挟まず即 navigator.share を呼べる。
+  useEffect(() => {
+    if (!photo) {
+      composedFileRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const blob = await generateImage();
+      if (cancelled || !blob) return;
+      composedFileRef.current = new File([blob], "iwate-memory.png", { type: "image/png" });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [photo, stickers, texts, generateImage]);
 
   const saveBlobAsFile = useCallback((blob: Blob, fileName = "iwate-memory.png") => {
     const url = URL.createObjectURL(blob);
@@ -289,43 +310,54 @@ export default function CameraEditPage() {
   const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
   const canShareFiles = canShare && typeof navigator.canShare === "function";
 
-  // Web Share API（iPhoneの共有シート対応）
-  const handleShare = async () => {
-    if (isSaving) return;
-    setIsSaving(true);
-    setShareMessage(null);
-    try {
-      const blob = await generateImage();
-      if (!blob) return;
-      const file = new File([blob], "iwate-memory.png", { type: "image/png" });
+  const shareUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const baseShareText = "岩手旅の思い出をシェア！ #岩手旅 #Iwate150 #VOJAIWATE";
 
-      if (canShareFiles && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "岩手の思い出",
-          text: "岩手旅行の写真",
-        });
-      } else if (canShare) {
-        await navigator.share({
-          title: "岩手の思い出",
-          text: "岩手旅行の写真",
-        });
-      } else {
-        saveBlobAsFile(blob);
-        setShareMessage("共有API非対応のため、画像を保存しました。");
-      }
-    } catch (err) {
-      const name = (err as Error)?.name;
-      if (name !== "AbortError" && name !== "InvalidStateError") {
-        console.error("Share failed:", err);
-      }
-    } finally {
-      setIsSaving(false);
+  // 共有失敗時に握りつぶしてよいエラーか（ユーザーがキャンセルした等）
+  const isIgnorableShareError = (err: unknown) => {
+    const name = (err as Error)?.name;
+    return name === "AbortError" || name === "InvalidStateError";
+  };
+
+  // 事前生成済み File を使い、await を挟まず即 navigator.share を呼ぶ（iOS の user activation 失効対策）。
+  // 共有シートが開けたら true を返す。
+  const shareFileImmediately = (text?: string): boolean => {
+    const file = composedFileRef.current;
+    if (!canShareFiles || !file || !navigator.canShare?.({ files: [file] })) {
+      return false;
+    }
+    navigator
+      .share({ files: [file], title: "岩手の思い出", ...(text ? { text } : {}) })
+      .catch((err) => {
+        if (!isIgnorableShareError(err)) console.error("Share failed:", err);
+      });
+    return true;
+  };
+
+  // Web Share API（汎用「共有...」ボタン）
+  const handleShare = async () => {
+    setShareMessage(null);
+    if (shareFileImmediately(baseShareText)) {
       setShowSaveMenu(false);
+      return;
+    }
+    // file共有非対応端末
+    setShowSaveMenu(false);
+    const blob = await generateImage();
+    if (!blob) return;
+    if (canShare) {
+      try {
+        await navigator.share({ title: "岩手の思い出", text: baseShareText });
+      } catch (err) {
+        if (!isIgnorableShareError(err)) console.error("Share failed:", err);
+      }
+    } else {
+      saveBlobAsFile(blob);
+      setShareMessage("共有API非対応のため、画像を保存しました。");
     }
   };
 
-  // ダウンロード保存
+  // ファイルに保存（ダウンロード）。iOSでは保存先に「ファイルに保存」が選べる。
   const handleDownload = async () => {
     if (isSaving) return;
     setIsSaving(true);
@@ -341,68 +373,51 @@ export default function CameraEditPage() {
     }
   };
 
-  // 写真ライブラリに保存（iOS）/ PCではダウンロードにフォールバック
+  // 写真（カメラロール）に保存。iOSは共有シートの「写真に保存」、非対応端末はダウンロードにフォールバック。
   const handleSaveToPhotos = async () => {
-    if (isSaving) return;
-    setIsSaving(true);
     setShareMessage(null);
-    try {
-      const blob = await generateImage();
-      if (!blob) return;
-      const file = new File([blob], "iwate-memory.png", { type: "image/png" });
-      if (canShareFiles && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "岩手の思い出" });
-      } else {
-        saveBlobAsFile(blob);
-        setShareMessage("写真共有に非対応のため、画像を保存しました。");
-      }
-    } catch (err) {
-      const name = (err as Error)?.name;
-      if (name !== "AbortError" && name !== "InvalidStateError") {
-        console.error("Save to photos failed:", err);
-      }
-    } finally {
-      setIsSaving(false);
+    // 共有シート経由（iOSで「写真に保存」が出る）。await無しで即起動。
+    if (shareFileImmediately()) {
       setShowSaveMenu(false);
+      return;
     }
+    setShowSaveMenu(false);
+    const blob = await generateImage();
+    if (!blob) return;
+    saveBlobAsFile(blob);
+    setShareMessage("写真共有に非対応のため、画像を保存しました。");
   };
 
   const openSocialIntent = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
+  // SNSボタン: モバイルは写真添付の共有シートを即起動（→投稿画面に写真が乗る）。
+  // PC等のfile共有非対応端末は、画像を保存して各SNSの投稿画面（テキスト/URL）を開く。
   const shareToSocial = async (platform: SocialPlatform) => {
+    setShareMessage(null);
+
+    // モバイル主経路: 写真添付の共有シートを即起動
+    if (shareFileImmediately(baseShareText)) {
+      setShareMessage("共有メニューから投稿先アプリを選ぶと、写真付きで投稿画面が開きます。");
+      return;
+    }
+
+    // file共有非対応（PC等）: 画像を保存＋Web Intent
     if (isSaving) return;
     setIsSaving(true);
-    setShareMessage(null);
     try {
       const blob = await generateImage();
       if (!blob) return;
-      const file = new File([blob], "iwate-memory.png", { type: "image/png" });
-      const shareUrl = typeof window !== "undefined" ? window.location.origin : "";
-      const baseText = "岩手旅行の思い出を作成しました";
-
-      if (canShareFiles && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "岩手の思い出",
-          text: baseText,
-        });
-        setShareMessage(`${platform.toUpperCase()}向けの共有シートを開きました。`);
-        return;
-      }
-
-      // ファイル共有非対応時は保存＋Web Intent
       saveBlobAsFile(blob);
 
       if (platform === "instagram") {
         setShareMessage("画像を保存しました。Instagramアプリで画像を選択して投稿してください。");
         return;
       }
-
       if (platform === "x") {
         openSocialIntent(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(baseText)}&url=${encodeURIComponent(shareUrl)}`
+          `https://twitter.com/intent/tweet?text=${encodeURIComponent(baseShareText)}&url=${encodeURIComponent(shareUrl)}`
         );
       } else if (platform === "line") {
         openSocialIntent(
@@ -410,15 +425,10 @@ export default function CameraEditPage() {
         );
       } else if (platform === "facebook") {
         openSocialIntent(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(baseText)}`
+          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(baseShareText)}`
         );
       }
-      setShareMessage("画像を保存し、SNS投稿画面を開きました。");
-    } catch (err) {
-      const name = (err as Error)?.name;
-      if (name !== "AbortError" && name !== "InvalidStateError") {
-        console.error("SNS share failed:", err);
-      }
+      setShareMessage("画像を保存しました。開いた投稿画面で画像を添付して投稿してください。");
     } finally {
       setIsSaving(false);
     }
@@ -534,7 +544,7 @@ export default function CameraEditPage() {
               <Download className="h-5 w-5 text-emerald-600" />
               <div>
                 <div className="font-medium">ファイルに保存</div>
-                <div className="text-xs text-emerald-700/70">ダウンロードフォルダに保存</div>
+                <div className="text-xs text-emerald-700/70">ファイルアプリ／ダウンロードに保存</div>
               </div>
             </Button>
             {canShare && (
@@ -594,7 +604,7 @@ export default function CameraEditPage() {
           </Button>
         </div>
         <p className="mt-2 text-xs text-emerald-900/65">
-          画像付き共有に対応する端末では共有シートが開きます。非対応端末では画像保存後に投稿画面を開きます。
+          スマホでは共有メニューが開くので投稿先アプリを選ぶと、写真付きで投稿画面に進めます。PCでは画像を保存後に各SNSの投稿画面を開きます（画像は手動で添付）。
         </p>
         {shareMessage && (
           <p className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">

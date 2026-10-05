@@ -7,6 +7,7 @@ import { Spot } from "@/lib/types";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
+import { useExternalNavigation } from "@/components/ui/ExternalNavigation";
 import { SlidersHorizontal, MapPin, Navigation } from "lucide-react";
 import { haversineDistance } from "@/lib/geo";
 import { buildRouteUrl } from "@/lib/routeProviders";
@@ -76,6 +77,7 @@ function buildNearbyByExpandingRadius(
  * <SpotSurface spots={spots} />
  */
 export function SpotSurface({ spots, focusSpotId = null }: Props) {
+  const { requestNavigation, confirmation } = useExternalNavigation();
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(MORIOKA_STATION);
   const [initialCentered, setInitialCentered] = useState(false);
@@ -178,12 +180,13 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
    * スポットへのルート検索を実行し、外部地図アプリを開く。
    *
    * @param destination - 目的地座標
+   * @param trigger - 確認終了後にフォーカスを戻す操作要素
    * @returns なし
    * @example
    * handleRouteRequest({ lat: 39.7, lng: 141.1 });
    */
   const handleRouteRequest = useCallback(
-    (destination: { lat: number; lng: number }) => {
+    (destination: { lat: number; lng: number }, trigger?: HTMLElement) => {
       const result = buildRouteUrl("free", userPos, destination);
       if (result.ok) {
         if (result.fellBack) {
@@ -191,16 +194,17 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
         } else {
           setRouteNotice(null);
         }
-        window.open(result.url, "_blank", "noopener,noreferrer");
+        requestNavigation(result.url, trigger);
       } else {
         setRouteNotice(result.error);
       }
     },
-    [userPos]
+    [userPos, requestNavigation]
   );
 
   return (
     <div className="space-y-8">
+      {confirmation}
       <SectionTitle
         label="Map"
         description="現在地や気になるエリアから、岩手のスポットを地図で見つけられます。"
@@ -367,7 +371,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleRouteRequest({ lat: spot.lat, lng: spot.lng })}
+                  onClick={(event) => handleRouteRequest({ lat: spot.lat, lng: spot.lng }, event.currentTarget)}
                   className="gap-1"
                 >
                   <Navigation className="h-3 w-3" />

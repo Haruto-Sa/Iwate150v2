@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DivIcon, Icon } from "leaflet";
 import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
+import { ConfirmedExternalLink } from "@/components/ui/ExternalNavigation";
 import { Spot } from "@/lib/types";
 import { getImageUrl } from "@/lib/storage";
 import { useResolvedStorageUrls } from "@/lib/storageSignedClient";
@@ -83,7 +84,7 @@ type Props = {
   showUser?: boolean;
   userPosition?: { lat: number; lng: number } | null;
   /** スポットへのルート検索リクエスト時に呼ばれるコールバック */
-  onRouteRequest?: (destination: { lat: number; lng: number }) => void;
+  onRouteRequest?: (destination: { lat: number; lng: number }, trigger?: HTMLElement) => void;
 };
 
 /**
@@ -216,14 +217,12 @@ export function LeafletMap({
                     />
                   )}
                   {spot.reference_url && (
-                    <a
+                    <ConfirmedExternalLink
                       className="text-emerald-600 underline underline-offset-2"
                       href={spot.reference_url}
-                      target="_blank"
-                      rel="noreferrer"
                     >
                       関連リンク
-                    </a>
+                    </ConfirmedExternalLink>
                   )}
                   <div className="flex items-center gap-2">
                     <a
@@ -236,7 +235,7 @@ export function LeafletMap({
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={() => onRouteRequest({ lat: spot.lat, lng: spot.lng })}
+                        onClick={(event) => onRouteRequest({ lat: spot.lat, lng: spot.lng }, event.currentTarget)}
                       >
                         ルート検索
                       </Button>

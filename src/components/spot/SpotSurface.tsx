@@ -5,6 +5,7 @@ import { LeafletMap } from "@/components/map/LeafletMap";
 import { MORIOKA_STATION } from "@/lib/config";
 import { Spot } from "@/lib/types";
 import { SectionTitle } from "@/components/ui/SectionTitle";
+import { PageShortcut } from "@/components/ui/PageShortcut";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { useExternalNavigation } from "@/components/ui/ExternalNavigation";
@@ -205,6 +206,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
   return (
     <div className="space-y-8">
       {confirmation}
+      <div className="flex justify-end"><PageShortcut target="favorites" /></div>
       <SectionTitle
         label="Map"
         description="現在地や気になるエリアから、岩手のスポットを地図で見つけられます。"

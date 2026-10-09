@@ -5,6 +5,7 @@ import { City, Event, Genre, Spot } from "@/lib/types";
 import { Search, LocateFixed, Navigation, Image as ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
+import { PageShortcut } from "@/components/ui/PageShortcut";
 import { getImageUrl } from "@/lib/storage";
 import Image from "next/image";
 import { useResolvedStorageUrls } from "@/lib/storageSignedClient";
@@ -237,6 +238,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
 
   return (
     <div className="space-y-4 rounded-3xl border border-emerald-900/10 bg-gradient-to-b from-[#f9fffc] to-[#eef8f4] p-4 shadow-sm ring-1 ring-emerald-900/10 sm:space-y-6 sm:p-5">
+      <div className="flex justify-end"><PageShortcut target="favorites" /></div>
       <div className="flex items-center gap-3 rounded-2xl border border-emerald-900/15 bg-white px-4 py-3 shadow-sm">
         <Search className="h-5 w-5 text-emerald-700" strokeWidth={1.8} />
         <input

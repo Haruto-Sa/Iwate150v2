@@ -24,18 +24,19 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe("Headerのその他メニュー", () => {
-  it("ヘッダー内から補助メニューを開きCharacterとGuideを除外する", async () => {
+  it("ヘッダー内から補助メニューを開きCharacterとFavoriteを表示しGuideを除外する", async () => {
     render(<Header />);
+    expect(within(screen.getByRole("navigation", { name: "主要ページ" })).getAllByRole("link").map(link => link.textContent)).toEqual(["Home", "Camera", "Search", "Map", "Stamp"]);
     const trigger = screen.getByRole("button", { name: "その他" });
     expect(trigger.closest("header")).not.toBeNull();
     await userEvent.click(trigger);
     const dialog = screen.getByRole("dialog", { name: "その他" });
-    expect(within(dialog).getByRole("link", { name: /Stamps/ })).toBeInTheDocument();
-    expect(within(dialog).getByRole("link", { name: /Favorites/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: /Character/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: /Favorite/ })).toBeInTheDocument();
     expect(within(dialog).getByRole("link", { name: "ログイン" })).toHaveAttribute("href", "/login");
-    expect(within(dialog).queryByRole("link", { name: /Character|Guide/ })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("link", { name: /Guide/ })).not.toBeInTheDocument();
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await userEvent.click(within(dialog).getByRole("link", { name: /Stamps/ }));
+    await userEvent.click(within(dialog).getByRole("link", { name: /Character/ }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(trigger).toHaveFocus();
@@ -63,13 +64,13 @@ describe("Headerのその他メニュー", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("その他配下だけを強調しCharacterは主要導線として扱う", () => {
+  it("その他のCharacterを強調しStampは主要導線として扱う", () => {
     mockPathname.mockReturnValue("/character");
     const { rerender } = render(<Header />);
-    expect(screen.getByRole("button", { name: "その他" }).className).not.toContain("bg-emerald-100");
+    expect(screen.getByRole("button", { name: "その他" }).className).toContain("bg-emerald-100");
     mockPathname.mockReturnValue("/stamps");
     rerender(<Header />);
-    expect(screen.getByRole("button", { name: "その他" }).className).toContain("bg-emerald-100");
+    expect(screen.getByRole("button", { name: "その他" }).className).not.toContain("bg-emerald-100");
   });
 
   it("開いているメニューをルート変更時に閉じる", async () => {

@@ -91,7 +91,8 @@ export const characters: Character[] = [
     region: "一戸",
     description:
       "世界遺産「御所野遺跡」のPRキャラクター。5000年前の森の妖精として町内外のイベントに参加し情報を発信している。",
-    model_path: "models/goshodon.obj",
+    // legacy の埋め込みテクスチャ付きモデルを同梱し、Storage の有無によらず色を復元する。
+    model_path: "/assets/characters/goshodon.fbx",
     thumbnail: "images/cities/Ichinohe_icon.jpg",
     tags: ["縄文", "遺跡"],
     renderProfile: {

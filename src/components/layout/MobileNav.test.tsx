@@ -1,5 +1,4 @@
 import type { AnchorHTMLAttributes } from "react";
-import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -43,6 +42,7 @@ describe("MobileNav", () => {
   it("現在タブだけを強く強調しつつ5項目ナビを表示する", () => {
     render(<MobileNav />);
 
+    expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/", "/camera", "/search", "/map", "/stamps"]);
     const homeLink = screen.getByRole("link", { name: "ホーム" });
     expect(screen.getByRole("link", { name: "ホーム" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "地図" })).toBeInTheDocument();
@@ -53,7 +53,8 @@ describe("MobileNav", () => {
     expect(cameraLink).toBeInTheDocument();
     expect(cameraLink.className).not.toContain("bg-[#0f3a3a]");
     expect(cameraLink.className).not.toContain("-mt-6");
-    expect(screen.getByRole("button", { name: "その他" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "スタンプ" })).toHaveAttribute("href", "/stamps");
+    expect(screen.queryByRole("button", { name: "その他" })).not.toBeInTheDocument();
   });
 
   it("カメラ以外の選択中タブでも同じ強調を出す", () => {
@@ -64,22 +65,16 @@ describe("MobileNav", () => {
     expect(screen.getByRole("link", { name: "カメラ" }).className).not.toContain("bg-[#0f3a3a]");
   });
 
-  it("More シートを開いてメニューを閉じられる", async () => {
+  it("スタンプを選択中の下部タブとして表示する", () => {
+    mockUsePathname.mockReturnValue("/stamps");
     render(<MobileNav />);
-    const user = userEvent.setup();
-
-    await user.click(screen.getByRole("button", { name: "その他" }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("3D キャラクターを見る")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("link", { name: /Character/ }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "スタンプ" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "スタンプ" }).className).toContain("bg-[#0f3a3a]");
   });
 
-  it("More 配下ルートではその他をアクティブ表示する", async () => {
-    mockUsePathname.mockReturnValue("/favorites");
-    render(<MobileNav />);
-
-    expect(screen.getByRole("button", { name: "その他" }).className).toContain("bg-emerald-100");
+  it("Studioでは下部ナビを表示しない", () => {
+    mockUsePathname.mockReturnValue("/studio/spots");
+    const { container } = render(<MobileNav />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

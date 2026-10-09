@@ -37,25 +37,23 @@ export const IWATE_PUBLIC_BOUNDS = {
 
 export const PUBLIC_NAV_ITEMS = [
   { href: "/", label: "Home" },
-  { href: MAP_PATH, label: "Map" },
-  { href: "/search", label: "Search" },
-  { href: CHARACTER_PATH, label: "Character" },
   { href: "/camera", label: "Camera" },
+  { href: "/search", label: "Search" },
+  { href: MAP_PATH, label: "Map" },
+  { href: STAMPS_PATH, label: "Stamp" },
 ] as const;
 
 export const MOBILE_NAV_ITEMS = [
   { href: "/", label: "ホーム", icon: "home" },
-  { href: MAP_PATH, label: "地図", icon: "spot" },
-  { href: "/search", label: "検索", icon: "search" },
   { href: "/camera", label: "カメラ", icon: "camera" },
-  { href: "#more", label: "その他", icon: "more" },
+  { href: "/search", label: "検索", icon: "search" },
+  { href: MAP_PATH, label: "地図", icon: "spot" },
+  { href: STAMPS_PATH, label: "スタンプ", icon: "stamp" },
 ] as const;
 
 export const MORE_MENU_ITEMS = [
   { href: CHARACTER_PATH, label: "Character", description: "3D キャラクターを見る", icon: "character" },
-  { href: STAMPS_PATH, label: "Stamps", description: "旅先でスタンプを集める", icon: "stamp" },
-  { href: FAVORITES_PATH, label: "Favorites", description: "気になるスポットを保存", icon: "favorite" },
-  { href: LEGACY_GUIDE_PATH, label: "Guide", description: "旅の使い方を確認", icon: "guide" },
+  { href: FAVORITES_PATH, label: "Favorite", description: "気になるスポットを保存", icon: "favorite" },
 ] as const;
 
 export const INSTALL_PROMPT_VISIT_KEY = "voja_install_prompt_visits";

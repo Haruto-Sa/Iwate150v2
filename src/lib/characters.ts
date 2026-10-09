@@ -28,8 +28,10 @@ export const characters: Character[] = [
     name: "カリンちゃん",
     region: "遠野",
     description:
-      "遠野物語のカッパをモチーフにした遠野市公式キャラクター。観光イベントや特産品PRにも参加し、カッパらしくきゅうり好き。",
-    model_path: "models/kappa.obj",
+      "遠野物語にも登場するカッパをモチーフにした遠野市公式キャラクター。名所のめがね橋と市の花のやまゆりを取り入れ、さまざまなイベントで親しまれている。",
+    // 既存の形状・UVに部位別の配色を焼き込み、両画面で同じローカル素材を使う。
+    model_path: "/assets/characters/karin/karin.obj",
+    mtl_path: "/assets/characters/karin/karin.mtl",
     thumbnail: "images/cities/Tono_icon.jpg",
     tags: ["カッパ", "伝承"],
     renderProfile: {

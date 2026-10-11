@@ -60,21 +60,3 @@ export const INSTALL_PROMPT_VISIT_KEY = "voja_install_prompt_visits";
 export const INSTALL_PROMPT_DISMISS_UNTIL_KEY = "voja_install_prompt_dismiss_until";
 export const ONBOARDING_COMPLETED_KEY = "onboarding_completed";
 export const GUEST_FAVORITES_KEY = "voja_guest_favorites";
-
-// ---------------------------------------------------------------------------
-// Route provider settings（ルートプロバイダ設定）
-// ---------------------------------------------------------------------------
-
-/**
- * ルートプロバイダの設定オブジェクト
- *
- * - defaultMode: アプリ起動時のデフォルトモード
- * - openRouteServiceApiKey: OpenRouteService の API キー（有料プロバイダ用）
- *   環境変数 `NEXT_PUBLIC_ORS_API_KEY` から取得。未設定時は無料 (OSRM) へフォールバック。
- */
-export const ROUTE_CONFIG = {
-  /** デフォルトのルートモード */
-  defaultMode: "free" as "free" | "paid",
-  /** OpenRouteService API キー（NEXT_PUBLIC_ORS_API_KEY） */
-  openRouteServiceApiKey: process.env.NEXT_PUBLIC_ORS_API_KEY ?? "",
-} as const;

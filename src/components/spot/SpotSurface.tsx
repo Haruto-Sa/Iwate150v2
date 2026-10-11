@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { useExternalNavigation } from "@/components/ui/ExternalNavigation";
 import { SlidersHorizontal, MapPin, Navigation } from "lucide-react";
 import { haversineDistance } from "@/lib/geo";
-import { buildRouteUrl } from "@/lib/routeProviders";
+import { buildGoogleMapsUrl } from "@/lib/routeProviders";
 import { getSpotHref } from "@/lib/spotRoutes";
 
 type Props = {
@@ -78,7 +78,7 @@ function buildNearbyByExpandingRadius(
  * <SpotSurface spots={spots} />
  */
 export function SpotSurface({ spots, focusSpotId = null }: Props) {
-  const { requestNavigation, confirmation } = useExternalNavigation();
+  const { requestNavigation, confirmation } = useExternalNavigation("Google Mapsでルート検索を開きます");
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(MORIOKA_STATION);
   const [initialCentered, setInitialCentered] = useState(false);
@@ -188,13 +188,9 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
    */
   const handleRouteRequest = useCallback(
     (destination: { lat: number; lng: number }, trigger?: HTMLElement) => {
-      const result = buildRouteUrl("free", userPos, destination);
+      const result = buildGoogleMapsUrl(destination, userPos);
       if (result.ok) {
-        if (result.fellBack) {
-          setRouteNotice(result.reason);
-        } else {
-          setRouteNotice(null);
-        }
+        setRouteNotice(null);
         requestNavigation(result.url, trigger);
       } else {
         setRouteNotice(result.error);
@@ -260,7 +256,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
               </Button>
               <div className="flex items-center gap-2 text-sm text-emerald-900/80">
                 <Navigation className="h-4 w-4 text-emerald-700" />
-                <span>ルート検索は地図アプリで案内を開きます</span>
+                <span>ルート検索はGoogle Mapsで開きます</span>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -319,7 +315,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
               </div>
             )}
             {routeNotice && (
-              <div className="mt-2 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+              <div role="alert" className="mt-2 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-xs text-sky-900">
                 {routeNotice}
               </div>
             )}

@@ -4,8 +4,6 @@ import type { User, UserRole } from "@/lib/types";
 
 type IdentityPayload = {
   identityId: string;
-  email?: string | null;
-  name?: string | null;
 };
 
 let adminClient: SupabaseClient | null | undefined;
@@ -52,36 +50,6 @@ export function isUserRole(value: unknown): value is UserRole {
 }
 
 /**
- * 管理者ブートストラップ対象メール一覧を取得する。
- *
- * @returns 小文字化済みメール集合
- * @example
- * getBootstrapEmails().has("admin@example.com");
- */
-export function getBootstrapEmails(): Set<string> {
-  return new Set(
-    (process.env.ADMIN_BOOTSTRAP_EMAILS ?? "")
-      .split(",")
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
-
-/**
- * 表示名の既定値を返す。
- *
- * @param payload - identity 情報
- * @returns 表示名
- * @example
- * deriveDisplayName({ identityId: "1", email: "test@example.com" });
- */
-export function deriveDisplayName(payload: IdentityPayload): string {
-  if (payload.name?.trim()) return payload.name.trim();
-  if (payload.email?.trim()) return payload.email.split("@")[0] || "Traveler";
-  return "Traveler";
-}
-
-/**
  * identity ID で公開ユーザーを取得する。
  *
  * @param identityId - 認証 ID
@@ -95,7 +63,7 @@ export async function fetchAppUserByIdentity(identityId: string): Promise<User |
 
   const { data, error } = await client.from("users").select("*").eq("auth_id", identityId).maybeSingle();
   if (error) {
-    console.warn("[auth] app user lookup failed", error.message);
+    console.warn("[auth] app user lookup failed");
     return null;
   }
   return (data as User | null) ?? null;
@@ -107,12 +75,9 @@ export async function fetchAppUserByIdentity(identityId: string): Promise<User |
  * @param payload - identity 情報
  * @returns 同期後ユーザー。Supabase 未設定・失敗時は null
  * @example
- * await syncAppUserFromIdentity({ identityId: "user_123", email: "test@example.com" });
+ * await syncAppUserFromIdentity({ identityId: "user_123" });
  */
 export async function syncAppUserFromIdentity(payload: IdentityPayload): Promise<User | null> {
-  const normalizedEmail = payload.email?.trim().toLowerCase() ?? null;
-  const nextRole: UserRole =
-    normalizedEmail && getBootstrapEmails().has(normalizedEmail) ? "super_admin" : "user";
   const existing = await fetchAppUserByIdentity(payload.identityId);
 
   if (!getServerAdminClient()) return null;
@@ -121,20 +86,18 @@ export async function syncAppUserFromIdentity(payload: IdentityPayload): Promise
   if (!client) return existing;
 
   if (existing) {
-    const desiredRole = existing.role === "admin" || existing.role === "super_admin" ? existing.role : nextRole;
     const { data, error } = await client
       .from("users")
       .update({
-        email: normalizedEmail,
-        display_name: deriveDisplayName(payload),
-        role: desiredRole,
+        email: null,
+        display_name: "Traveler",
       })
       .eq("id", existing.id)
       .select("*")
       .single();
 
     if (error) {
-      console.warn("[auth] app user update failed", error.message);
+      console.warn("[auth] app user update failed");
       return existing;
     }
     return data as User;
@@ -144,9 +107,9 @@ export async function syncAppUserFromIdentity(payload: IdentityPayload): Promise
     .from("users")
     .insert({
       auth_id: payload.identityId,
-      email: normalizedEmail,
-      display_name: deriveDisplayName(payload),
-      role: nextRole,
+      email: null,
+      display_name: "Traveler",
+      role: "user",
     })
     .select("*")
     .single();
@@ -154,7 +117,7 @@ export async function syncAppUserFromIdentity(payload: IdentityPayload): Promise
   if (error) {
     // 同時の初回ログインではUNIQUE制約の勝者が作った行を再取得する。
     if (error.code === "23505") return fetchAppUserByIdentity(payload.identityId);
-    console.warn("[auth] app user insert failed", error.message);
+    console.warn("[auth] app user insert failed");
     return null;
   }
   return data as User;

@@ -42,3 +42,24 @@ describe("OAuth identity", () => {
     expect(token?.role).toBe("user");
   });
 });
+
+describe("プロフィール最小化", () => {
+  it("OAuthプロフィールをDB同期へ渡さず、既存JWTからも削除する", async () => {
+    const token = await captured.config!.callbacks!.jwt!({
+      token: { sub: "oauth:google:123", email: "old@example.com", name: "Old Name", picture: "https://example.com/photo", displayName: "Old Name" },
+      user: { id: "123", email: "new@example.com", name: "New Name", image: "https://example.com/new" },
+      account: null, trigger: "update",
+    });
+    expect(captured.sync).toHaveBeenCalledWith({ identityId: "oauth:google:123" });
+    expect(token).toEqual({ sub: "oauth:google:123", role: "user" });
+  });
+
+  it("プロフィールをセッションAPIから返さない", async () => {
+    const callback = captured.config!.callbacks!.session!;
+    const result = await callback({
+      session: { user: { id: "123", email: "test@example.com", name: "Name", image: "https://example.com/photo" }, expires: "2030-01-01" },
+      token: { sub: "oauth:google:123", role: "user" },
+    } as unknown as Parameters<typeof callback>[0]);
+    expect(result.user).toEqual({ id: "oauth:google:123", role: "user" });
+  });
+});

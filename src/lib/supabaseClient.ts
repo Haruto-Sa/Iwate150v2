@@ -551,20 +551,6 @@ export async function searchEvents(params: EventSearchParams): Promise<PagedResu
 }
 
 /**
- * 認証ユーザーから表示名を導出する。
- *
- * @param email - メールアドレス
- * @returns 表示名
- * @example
- * const name = deriveDisplayNameFromEmail("user@example.com");
- */
-function deriveDisplayNameFromEmail(email: string | null | undefined): string {
-  if (!email) return "User";
-  const name = email.split("@")[0];
-  return name || "User";
-}
-
-/**
  * 現在ログイン中ユーザーの `public.users` 情報を取得する。
  *
  * レコード未作成時は `public.users` に最小情報で作成し、再取得して返す。
@@ -600,8 +586,8 @@ export async function fetchCurrentAppUser(): Promise<User | null> {
     .from("users")
     .insert({
       auth_id: authUser.id,
-      email: authUser.email ?? null,
-      display_name: deriveDisplayNameFromEmail(authUser.email),
+      email: null,
+      display_name: "Traveler",
       role: "user",
     })
     .select("*")

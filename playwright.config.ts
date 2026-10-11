@@ -1,6 +1,8 @@
+import { randomBytes } from "node:crypto";
 import { defineConfig, devices } from "@playwright/test";
 
-const production = process.env.E2E_SERVER_MODE === "production";
+// CIはオンデマンドコンパイル・HMRの影響を受けない本番サーバーで検証する。
+const production = process.env.CI === "true" || process.env.E2E_SERVER_MODE === "production";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -10,10 +12,12 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: production ? "bun run start" : "bun run dev",
+    command: production ? "bun run build && bun run start" : "bun run dev",
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI && !production,
-    timeout: 120_000,
+    timeout: 180_000,
+    // テストサーバーだけに渡す毎回異なる鍵。本番設定への既定値は追加しない。
+    env: { AUTH_SECRET: process.env.AUTH_SECRET ?? randomBytes(32).toString("hex") },
   },
   projects: [
     {

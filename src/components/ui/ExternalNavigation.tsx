@@ -26,10 +26,11 @@ export function resolveExternalDestination(href: string): Destination | null {
 
 /**
  * 外部遷移の依頼と確認UIを共有する。
+ * @param description - 用途に応じた確認文。省略時は共通説明を表示
  * @returns 確認依頼関数と描画する確認要素
  * @example const { requestNavigation, confirmation } = useExternalNavigation();
  */
-export function useExternalNavigation() {
+export function useExternalNavigation(description?: string) {
   const [opener, setOpener] = useState<HTMLElement | null>(null);
   const [destination, setDestination] = useState<Destination | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +47,7 @@ export function useExternalNavigation() {
       <>
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
         {destination && (
-          <ExternalNavigationDialog destination={destination} opener={opener} onClose={() => setDestination(null)} />
+          <ExternalNavigationDialog destination={destination} opener={opener} description={description} onClose={() => setDestination(null)} />
         )}
       </>
     ),
@@ -77,8 +78,8 @@ export function ConfirmedExternalLink({ href, children, className }: {
  * @returns bodyへ配置するネイティブダイアログ
  * @example <ExternalNavigationDialog destination={destination} onClose={close} />
  */
-function ExternalNavigationDialog({ destination, opener, onClose }: {
-  destination: Destination; opener: HTMLElement | null; onClose: () => void;
+function ExternalNavigationDialog({ destination, opener, description, onClose }: {
+  destination: Destination; opener: HTMLElement | null; description?: string; onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -105,7 +106,7 @@ function ExternalNavigationDialog({ destination, opener, onClose }: {
       <ExternalLink aria-hidden="true" className="mb-4 h-6 w-6 text-emerald-700" />
       <h2 id={titleId} className="text-xl font-semibold">外部サイトへ移動します</h2>
       <p id={descriptionId} className="mt-3 text-sm text-emerald-900/80">
-        新しいタブで外部サイトを開きます。端末によっては地図アプリが起動する場合があります。
+        {description ?? "新しいタブで外部サイトを開きます。端末によっては地図アプリが起動する場合があります。"}
       </p>
       <p className="mt-4 break-all rounded-xl bg-emerald-50 px-4 py-3 text-sm">{destination.hostname}</p>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">

@@ -94,7 +94,7 @@ describe("useFavorites", () => {
       status: "authenticated",
     });
     mockEnsurePublicUser.mockResolvedValue(publicUser);
-    mockMergeFavorites.mockResolvedValue(mergedFavorites);
+    mockMergeFavorites.mockResolvedValue([2, 1]);
     mockFetchUserFavorites.mockResolvedValue(mergedFavorites);
 
     const { result } = renderHook(() => useFavorites());
@@ -103,10 +103,92 @@ describe("useFavorites", () => {
       expect(result.current.isReady).toBe(true);
     });
 
-    expect(mockEnsurePublicUser).toHaveBeenCalledWith("auth-user", "traveler@example.com");
-    expect(mockMergeFavorites).toHaveBeenCalledWith(9, [2, 1]);
+    expect(mockEnsurePublicUser).not.toHaveBeenCalled();
+    expect(mockMergeFavorites).toHaveBeenCalledWith("auth-user", [2, 1]);
     expect(window.localStorage.getItem(GUEST_FAVORITES_KEY)).toBeNull();
     expect(result.current.favoriteIds).toEqual([2, 1]);
     expect(result.current.favoriteSpots.map((spot) => spot.id)).toEqual([2, 1]);
   });
+  it("同期が失敗しても端末データを残し本人の保存済み一覧を表示する", async () => {
+    window.localStorage.setItem(GUEST_FAVORITES_KEY, "[1]");
+    mockUseAuthSession.mockReturnValue({ user: { id: "A" }, status: "authenticated" });
+    mockMergeFavorites.mockRejectedValue(new Error("503"));
+    mockFetchUserFavorites.mockResolvedValue([{ spot_id: 2 }]);
+    const { result } = renderHook(() => useFavorites());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    expect(window.localStorage.getItem(GUEST_FAVORITES_KEY)).toBe("[1]");
+    expect(result.current.favoriteIds).toEqual([2]);
+    expect(result.current.error).toContain("同期できません");
+  });
+
+  it("部分成功では保存を確認できた分だけ端末から削除する", async () => {
+    window.localStorage.setItem(GUEST_FAVORITES_KEY, "[1,2]");
+    mockUseAuthSession.mockReturnValue({ user: { id: "A" }, status: "authenticated" });
+    mockMergeFavorites.mockResolvedValue([1]);
+    mockFetchUserFavorites.mockResolvedValue([{ spot_id: 1 }]);
+    const { result } = renderHook(() => useFavorites());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    expect(window.localStorage.getItem(GUEST_FAVORITES_KEY)).toBe("[2]");
+  });
+
+  it("同期中に追加された端末データを上書きしない", async () => {
+    window.localStorage.setItem(GUEST_FAVORITES_KEY, "[1]");
+    mockUseAuthSession.mockReturnValue({ user: { id: "A" }, status: "authenticated" });
+    mockMergeFavorites.mockImplementation(async () => {
+      window.localStorage.setItem(GUEST_FAVORITES_KEY, "[1,2]");
+      return [1];
+    });
+    mockFetchUserFavorites.mockResolvedValue([{ spot_id: 1 }]);
+    const { result } = renderHook(() => useFavorites());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    expect(window.localStorage.getItem(GUEST_FAVORITES_KEY)).toBe("[1,2]");
+  });
+
+  it("旧Aの同期応答をBの画面へ反映せずゲスト記録も消さない", async () => {
+    window.localStorage.setItem(GUEST_FAVORITES_KEY, "[1]");
+    let resolve!: (ids: number[]) => void;
+    mockMergeFavorites.mockReturnValue(new Promise<number[]>((done) => { resolve = done; }));
+    mockFetchUserFavorites.mockResolvedValue([{ spot_id: 2 }]);
+    mockUseAuthSession.mockReturnValue({ user: { id: "A" }, status: "authenticated" });
+    const { result, rerender } = renderHook(() => useFavorites());
+    await waitFor(() => expect(mockMergeFavorites).toHaveBeenCalled());
+    mockUseAuthSession.mockReturnValue({ user: { id: "B" }, status: "authenticated" });
+    rerender();
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    await act(async () => resolve([1]));
+    expect(result.current.favoriteIds).toEqual([2]);
+    expect(window.localStorage.getItem(GUEST_FAVORITES_KEY)).toBe("[1]");
+    expect(mockMergeFavorites).toHaveBeenCalledTimes(1);
+  });
+
+  it("ゲスト記録を全削除すると旧同期先を解除する", async () => {
+    window.localStorage.setItem(GUEST_FAVORITES_KEY, "[1]");
+    window.localStorage.setItem(`${GUEST_FAVORITES_KEY}:sync-owner`, "A");
+    mockUseAuthSession.mockReturnValue({ user: null, status: "unauthenticated" });
+    const { result } = renderHook(() => useFavorites());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    await act(async () => { await result.current.toggleFavorite(1); });
+    expect(window.localStorage.getItem(`${GUEST_FAVORITES_KEY}:sync-owner`)).toBeNull();
+  });
+
+  it("A→B→Aで旧操作の遅延応答が最新一覧を上書きしない", async () => {
+    mockUseAuthSession.mockReturnValue({ user: { id: "A" }, status: "authenticated" });
+    mockFetchUserFavorites.mockResolvedValue([]);
+    let resolve!: (value: unknown) => void;
+    mockAddFavorite.mockReturnValue(new Promise((done) => { resolve = done; }));
+    const { result, rerender } = renderHook(() => useFavorites());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    let operation!: Promise<boolean>;
+    act(() => { operation = result.current.toggleFavorite(1); });
+    mockUseAuthSession.mockReturnValue({ user: { id: "B" }, status: "authenticated" });
+    rerender();
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    mockFetchUserFavorites.mockResolvedValue([{ spot_id: 2 }]);
+    mockUseAuthSession.mockReturnValue({ user: { id: "A" }, status: "authenticated" });
+    rerender();
+    await waitFor(() => expect(result.current.favoriteIds).toEqual([2]));
+    await act(async () => { resolve({ spot_id: 1 }); await operation; });
+    expect(result.current.favoriteIds).toEqual([2]);
+  });
+
 });

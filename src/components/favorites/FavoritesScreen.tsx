@@ -33,6 +33,7 @@ export function FavoritesScreen() {
 
   return (
     <div className="space-y-6">
+      {favorites.error && <p role="alert" className="text-sm text-red-800">{favorites.error}</p>}
       {!favorites.isAuthenticated && (
         <GlassCard title="ログインすると同期できます" icon={Sparkles} badge="Guest mode">
           <p className="text-sm leading-6 text-emerald-900/75">

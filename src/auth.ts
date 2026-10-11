@@ -3,6 +3,7 @@ import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Nodemailer from "next-auth/providers/nodemailer";
 import type { Provider } from "next-auth/providers";
+import { oauthIdentity } from "@/lib/oauthIdentity";
 import { syncAppUserFromIdentity } from "@/lib/authServer";
 
 /**
@@ -18,7 +19,7 @@ function buildProviders(): Provider[] {
   if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
     providers.push(
       Google({
-        allowDangerousEmailAccountLinking: true,
+        allowDangerousEmailAccountLinking: false,
       })
     );
   }
@@ -26,7 +27,7 @@ function buildProviders(): Provider[] {
   if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
     providers.push(
       GitHub({
-        allowDangerousEmailAccountLinking: true,
+        allowDangerousEmailAccountLinking: false,
       })
     );
   }
@@ -77,7 +78,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
      * @example
      * await callbacks.jwt(params);
      */
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // 検証済みOAuth callbackでのみIDを確定。クライアントのsession updateは信用しない。
+      if (account && (account.provider === "google" || account.provider === "github")) {
+        token.sub = oauthIdentity(account.provider, account.providerAccountId);
+      }
       const identityId = typeof token.sub === "string" ? token.sub : typeof user?.id === "string" ? user.id : null;
       if (!identityId) return token;
 

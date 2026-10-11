@@ -1,3 +1,4 @@
+import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { User, UserRole } from "@/lib/types";
 
@@ -27,6 +28,9 @@ export function getServerAdminClient(): SupabaseClient | null {
   }
 
   adminClient = createClient(url, serviceRoleKey, {
+    global: {
+      fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(10_000) }),
+    },
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -101,7 +105,7 @@ export async function fetchAppUserByIdentity(identityId: string): Promise<User |
  * 認証ユーザーを `public.users` と同期する。
  *
  * @param payload - identity 情報
- * @returns 同期後ユーザー。Supabase 未設定時は仮ユーザー
+ * @returns 同期後ユーザー。Supabase 未設定・失敗時は null
  * @example
  * await syncAppUserFromIdentity({ identityId: "user_123", email: "test@example.com" });
  */
@@ -111,16 +115,7 @@ export async function syncAppUserFromIdentity(payload: IdentityPayload): Promise
     normalizedEmail && getBootstrapEmails().has(normalizedEmail) ? "super_admin" : "user";
   const existing = await fetchAppUserByIdentity(payload.identityId);
 
-  if (!getServerAdminClient()) {
-    return existing ?? {
-      id: 0,
-      auth_id: payload.identityId,
-      email: normalizedEmail,
-      role: nextRole,
-      display_name: deriveDisplayName(payload),
-      created_at: new Date().toISOString(),
-    };
-  }
+  if (!getServerAdminClient()) return null;
 
   const client = getServerAdminClient();
   if (!client) return existing;
@@ -157,6 +152,8 @@ export async function syncAppUserFromIdentity(payload: IdentityPayload): Promise
     .single();
 
   if (error) {
+    // 同時の初回ログインではUNIQUE制約の勝者が作った行を再取得する。
+    if (error.code === "23505") return fetchAppUserByIdentity(payload.identityId);
     console.warn("[auth] app user insert failed", error.message);
     return null;
   }

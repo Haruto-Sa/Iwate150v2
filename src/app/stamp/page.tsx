@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   MapPin,
@@ -17,7 +17,6 @@ import {
   fetchSpots,
   fetchUserStamps,
   createStamp,
-  ensurePublicUser,
 } from "@/lib/supabaseClient";
 import { filterNearby, formatDistance } from "@/lib/geo";
 import type { Spot, Stamp } from "@/lib/types";
@@ -27,11 +26,20 @@ const STAMP_RADIUS = 200; // meters
 
 type NearbySpot = Spot & { distance: number };
 
+/**
+ * 本人APIでスタンプを保存する画面。
+ * @returns スタンプ一覧と位置情報操作
+ * @example <StampPage />
+ */
 export default function StampPage() {
   const { user, status } = useAuthSession();
 
   // State
-  const [publicUserId, setPublicUserId] = useState<number | null>(null);
+  const identity = user?.id ?? null;
+  const activeIdentity = useRef(identity);
+  const [loadedIdentity, setLoadedIdentity] = useState<string | null | undefined>(undefined);
+  const generation = useRef(0);
+  useEffect(() => { activeIdentity.current = identity; generation.current += 1; }, [identity]);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [userStamps, setUserStamps] = useState<Stamp[]>([]);
   const [nearbySpots, setNearbySpots] = useState<NearbySpot[]>([]);
@@ -42,46 +50,46 @@ export default function StampPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [initError, setInitError] = useState<string | null>(null);
 
-  // Initialize user and fetch data
+  // 古いユーザーの応答を新しいユーザーの画面へ反映しない。
   useEffect(() => {
+    let cancelled = false;
+    /**
+     * 公開スポットと本人スタンプを読み込む。
+     * @returns 完了Promise
+     * @example await init();
+     */
     async function init() {
       setLoading(true);
       setInitError(null);
+      setUserStamps([]);
+      setMessage(null);
+      setStampingSpotId(null);
       try {
         const allSpots = await fetchSpots();
+        const stamps = identity ? await fetchUserStamps(identity) : [];
+        if (cancelled) return;
         setSpots(allSpots);
-        if (allSpots.length === 0) {
-          setInitError("スタンプ対象のスポットをまだ表示できません。時間をおいて再度お試しください。");
+        setUserStamps(stamps);
+        if (allSpots.length === 0) setInitError("スタンプ対象のスポットをまだ表示できません。時間をおいて再度お試しください。");
+      } catch {
+        if (!cancelled) {
+          setInitError("スタンプページの読み込みに失敗しました。再読み込みしてもう一度お試しください。");
+          setSpots([]);
+          setUserStamps([]);
         }
-
-        if (user?.id) {
-          const ensured = await ensurePublicUser(user.id, user.email ?? "");
-          if (!ensured) {
-            setInitError("スタンプ情報の初期化に失敗しました。再読み込み後にもう一度お試しください。");
-            setPublicUserId(null);
-            setUserStamps([]);
-          } else {
-            setPublicUserId(ensured.id);
-            const stamps = await fetchUserStamps(ensured.id);
-            setUserStamps(stamps);
-          }
-        }
-      } catch (error) {
-        console.error("[stamp] init failed", error);
-        setInitError("スタンプページの読み込みに失敗しました。再読み込みしてもう一度お試しください。");
-        setSpots([]);
-        setUserStamps([]);
-        setPublicUserId(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) { setLoadedIdentity(identity); setLoading(false); }
       }
     }
-    if (status !== "loading") {
-      init();
-    }
-  }, [status, user]);
+    if (status !== "loading") void init();
+    return () => { cancelled = true; };
+  }, [status, identity]);
 
   // Get user location
+  /**
+   * @returns なし
+   * @example requestLocation();
+   */
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setLocationError("このブラウザは位置情報に対応していません。");
@@ -112,8 +120,13 @@ export default function StampPage() {
   }, [spots]);
 
   // Handle stamp press
+  /**
+   * @param spotId - 対象スポット
+   * @returns 保存完了Promise
+   * @example await handleStamp(1);
+   */
   const handleStamp = async (spotId: number) => {
-    if (!publicUserId) {
+    if (!identity) {
       setMessage({ type: "error", text: "ログインが必要です。" });
       return;
     }
@@ -124,17 +137,23 @@ export default function StampPage() {
       return;
     }
 
+    const operationGeneration = generation.current;
     setStampingSpotId(spotId);
     setMessage(null);
 
-    const stamp = await createStamp(publicUserId, spotId);
-    setStampingSpotId(null);
-
-    if (stamp) {
-      setUserStamps((prev) => [stamp, ...prev]);
-      setMessage({ type: "success", text: "スタンプを獲得しました！" });
-    } else {
-      setMessage({ type: "error", text: "スタンプの登録に失敗しました。" });
+    try {
+      const stamp = await createStamp(identity, spotId);
+      if (activeIdentity.current !== identity || generation.current !== operationGeneration) return;
+      if (stamp) {
+        setUserStamps((prev) => prev.some((item) => item.spot_id === stamp.spot_id) ? prev : [stamp, ...prev]);
+        setMessage({ type: "success", text: "スタンプを獲得しました！" });
+      } else {
+        setMessage({ type: "error", text: "スタンプの登録に失敗しました。" });
+      }
+    } catch {
+      if (activeIdentity.current === identity && generation.current === operationGeneration) setMessage({ type: "error", text: "スタンプの登録に失敗しました。再試行してください。" });
+    } finally {
+      if (activeIdentity.current === identity && generation.current === operationGeneration) setStampingSpotId(null);
     }
   };
 
@@ -144,10 +163,15 @@ export default function StampPage() {
   const achievementRate = totalSpots > 0 ? Math.round((earnedCount / totalSpots) * 100) : 0;
 
   // Check if spot is already stamped
+  /**
+   * @param spotId - 対象スポット
+   * @returns 取得済みか
+   * @example isStamped(1);
+   */
   const isStamped = (spotId: number) => userStamps.some((s) => s.spot_id === spotId);
 
   // Loading state
-  if (status === "loading" || loading) {
+  if (status === "loading" || loading || loadedIdentity !== identity) {
     return (
       <div className="space-y-6">
         <GlassCard title="スタンプラリーを読み込み中" icon={Loader2} badge="Loading">

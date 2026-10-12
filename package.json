@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "bun run test:unit",
     "test:unit": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=chromium",
+    "test:screenshots": "playwright test --project=screenshots",
     "storage:migrate": "bun run scripts/migrate_storage_assets.ts",
     "storage:verify": "bun run scripts/verify_storage_links.ts",
     "add": "liftkit add"

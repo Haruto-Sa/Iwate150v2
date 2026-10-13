@@ -1,11 +1,4 @@
-import { expect, test } from "@playwright/test";
-
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem("onboarding_completed", "true");
-    localStorage.setItem("voja_install_prompt_dismiss_until", String(Date.now() + 86400000));
-  });
-});
+import { expect, test } from "./fixtures";
 
 test("主要メニューの順序とその他の補助ページ", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 844 });
@@ -36,5 +29,10 @@ for (const [source, label, destination] of [
     await expect(shortcut).toHaveAttribute("href", destination);
     await shortcut.click();
     await expect(page).toHaveURL(new RegExp(`${destination}$`));
+    if (destination === "/favorites") {
+      await expect(page.getByRole("main").getByRole("heading", { name: "ログインすると同期できます" })).toBeVisible();
+    } else {
+      await expect(page.getByRole("main").getByText("キャラクターを選ぶ", { exact: true })).toBeVisible();
+    }
   });
 }

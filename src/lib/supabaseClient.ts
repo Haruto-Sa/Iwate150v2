@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { IWATE_PUBLIC_BOUNDS } from "./config";
-import { mockCities, mockEvents, mockFavorites, mockGenres, mockSpots } from "./mockData";
+import { mockCities, mockEvents, mockGenres, mockSpots } from "./mockData";
 import { getCurrentDateKey, getUpcomingEvents, sortEventsForTimeline } from "./eventFilters";
 import {
   AdminDashboardEventSummary,
@@ -551,20 +551,6 @@ export async function searchEvents(params: EventSearchParams): Promise<PagedResu
 }
 
 /**
- * 認証ユーザーから表示名を導出する。
- *
- * @param email - メールアドレス
- * @returns 表示名
- * @example
- * const name = deriveDisplayNameFromEmail("user@example.com");
- */
-function deriveDisplayNameFromEmail(email: string | null | undefined): string {
-  if (!email) return "User";
-  const name = email.split("@")[0];
-  return name || "User";
-}
-
-/**
  * 現在ログイン中ユーザーの `public.users` 情報を取得する。
  *
  * レコード未作成時は `public.users` に最小情報で作成し、再取得して返す。
@@ -600,8 +586,8 @@ export async function fetchCurrentAppUser(): Promise<User | null> {
     .from("users")
     .insert({
       auth_id: authUser.id,
-      email: authUser.email ?? null,
-      display_name: deriveDisplayNameFromEmail(authUser.email),
+      email: null,
+      display_name: "Traveler",
       role: "user",
     })
     .select("*")
@@ -834,222 +820,134 @@ export async function uploadAdminAsset(
 }
 
 // ─────────────────────────────────────────────────────────────
-// User / Stamp functions
-// ─────────────────────────────────────────────────────────────
+// 本人データはサーバーセッションを検証するAPI経由でのみ操作する。
 
 /**
- * Get or create public.users record for an auth user
- */
-export async function ensurePublicUser(authId: string, email: string): Promise<User | null> {
-  if (!client) return null;
-
-  // Check if user exists
-  const { data: existing } = await client
-    .from("users")
-    .select("*")
-    .eq("auth_id", authId)
-    .single();
-
-  if (existing) {
-    return existing as User;
-  }
-
-  // Create new user record
-  const displayName = email.split("@")[0] || "User";
-  const { data: newUser, error } = await client
-    .from("users")
-    .insert({ auth_id: authId, email, role: "user", display_name: displayName })
-    .select()
-    .single();
-
-  if (error) {
-    console.error("[ensurePublicUser] insert error:", error);
-    return null;
-  }
-
-  return newUser as User;
-}
-
-/**
- * Get public.users.id from auth_id
- */
-export async function getPublicUserId(authId: string): Promise<number | null> {
-  if (!client) return null;
-
-  const { data } = await client
-    .from("users")
-    .select("id")
-    .eq("auth_id", authId)
-    .single();
-
-  return data?.id ?? null;
-}
-
-/**
- * Fetch all stamps for a user
- */
-export async function fetchUserStamps(userId: number): Promise<Stamp[]> {
-  if (!client) return [];
-
-  const { data, error } = await client
-    .from("stamps")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.warn("[supabase] stamps fetch error:", error);
-    return [];
-  }
-
-  return data as Stamp[];
-}
-
-/**
- * Check if user already has a stamp for a spot
- */
-export async function hasStamp(userId: number, spotId: number): Promise<boolean> {
-  if (!client) return false;
-
-  const { data } = await client
-    .from("stamps")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("spot_id", spotId)
-    .single();
-
-  return Boolean(data);
-}
-
-/**
- * Create a new stamp (if not already exists)
- */
-export async function createStamp(userId: number, spotId: number): Promise<Stamp | null> {
-  if (!client) return null;
-
-  // Check for duplicate
-  const exists = await hasStamp(userId, spotId);
-  if (exists) {
-    console.warn("[createStamp] stamp already exists");
-    return null;
-  }
-
-  const { data, error } = await client
-    .from("stamps")
-    .insert({ user_id: userId, spot_id: spotId })
-    .select()
-    .single();
-
-  if (error) {
-    console.error("[createStamp] insert error:", error);
-    return null;
-  }
-
-  return data as Stamp;
-}
-
-/**
- * ユーザーのお気に入り一覧を取得する。
+ * 本人APIへリクエストする。失敗を空一覧や保存成功に変換しない。
  *
- * @param userId - public.users.id
- * @returns お気に入り配列
- * @example
- * await fetchUserFavorites(8);
+ * @param path - API名
+ * @param identity - 開始時のセッションID（所有者指定には使わない）
+ *
+ * @param method - HTTP method
+ * @param body - 本文
+ *
+ * @returns API結果
+ *
+ * @example await requestPrivateData("favorites", identity);
  */
-export async function fetchUserFavorites(userId: number): Promise<Favorite[]> {
-  if (!client) return mockFavorites;
-
-  const { data, error } = await client
-    .from("favorites")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.warn("[supabase] favorites fetch error:", error);
-    return mockFavorites;
-  }
-
-  return (data ?? []) as Favorite[];
+async function requestPrivateData<T>(path: string, identity: string, method = "GET", body?: unknown): Promise<T> {
+  const response = await fetch(`/api/me/${path}`, {
+    method, credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(15_000),
+    headers: { "Content-Type": "application/json", "X-Session-User": identity },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  if (!response.ok) throw new Error("保存サービスに接続できません。再読み込みしてお試しください。");
+  return response.json() as Promise<T>;
 }
 
 /**
- * お気に入りを追加する。
+ * 本人の一覧を上限付きで全ページ取得する。
  *
- * @param userId - public.users.id
- * @param spotId - spot id
- * @returns 登録レコード
- * @example
- * await addFavorite(3, 10);
+ * @param table - 一覧名
+ * @param identity - 開始時セッション
+ *
+ * @returns 本人の保存済みレコード
+ *
+ * @example await fetchPrivateRecords<Favorite>("favorites", identity);
  */
-export async function addFavorite(userId: number, spotId: number): Promise<Favorite | null> {
-  if (!client) return null;
-
-  const { data, error } = await client
-    .from("favorites")
-    .upsert({ user_id: userId, spot_id: spotId }, { onConflict: "user_id,spot_id" })
-    .select("*")
-    .single();
-
-  if (error) {
-    console.warn("[supabase] favorite insert error:", error);
-    return null;
+async function fetchPrivateRecords<T>(table: string, identity: string): Promise<T[]> {
+  const items: T[] = [];
+  let offset: number | null = 0;
+  for (let page = 0; page < 100 && offset !== null; page++) {
+    const result: { items: T[]; nextOffset: number | null } = await requestPrivateData(`${table}?offset=${offset}`, identity);
+    items.push(...result.items);
+    offset = result.nextOffset;
   }
-
-  return data as Favorite;
+  if (offset !== null) throw new Error("保存件数が多すぎます。サポートへお問い合わせください。");
+  return items;
 }
 
 /**
- * お気に入りを削除する。
+ * 本人のスタンプを取得する。
  *
- * @param userId - public.users.id
- * @param spotId - spot id
- * @returns 削除成功時 true
- * @example
- * await removeFavorite(3, 10);
+ * @param identity - 開始時セッションID
+ * @returns 保存済みスタンプ
+ *
+ * @example await fetchUserStamps(user.id);
  */
-export async function removeFavorite(userId: number, spotId: number): Promise<boolean> {
-  if (!client) return false;
+export async function fetchUserStamps(identity: string): Promise<Stamp[]> {
+  return fetchPrivateRecords("stamps", identity);
+}
 
-  const { error } = await client
-    .from("favorites")
-    .delete()
-    .eq("user_id", userId)
-    .eq("spot_id", spotId);
+/**
+ * 本人のスタンプを冪等に保存する。
+ *
+ * @param identity - 開始時セッションID
+ * @param spotId - スポットID
+ *
+ * @returns 保存確認済みスタンプ
+ *
+ * @example await createStamp(user.id, 10);
+ */
+export async function createStamp(identity: string, spotId: number): Promise<Stamp | null> {
+  const result = await requestPrivateData<{ items: Stamp[] }>("stamps", identity, "POST", { spotId });
+  return result.items.find((item) => item.spot_id === spotId) ?? null;
+}
 
-  if (error) {
-    console.warn("[supabase] favorite delete error:", error);
-    return false;
-  }
+/**
+ * 本人のお気に入りを取得する。
+ *
+ * @param identity - 開始時セッションID
+ * @returns 保存済みお気に入り
+ *
+ * @example await fetchUserFavorites(user.id);
+ */
+export async function fetchUserFavorites(identity: string): Promise<Favorite[]> {
+  return fetchPrivateRecords("favorites", identity);
+}
 
+/**
+ * 本人のお気に入りを冪等に追加する。
+ *
+ * @param identity - 開始時セッションID
+ * @param spotId - スポットID
+ *
+ * @returns 保存確認済みお気に入り
+ *
+ * @example await addFavorite(user.id, 10);
+ */
+export async function addFavorite(identity: string, spotId: number): Promise<Favorite | null> {
+  const result = await requestPrivateData<{ items: Favorite[] }>("favorites", identity, "PUT", { spotId });
+  return result.items.find((item) => item.spot_id === spotId) ?? null;
+}
+
+/**
+ * 本人のお気に入りだけを削除する。
+ *
+ * @param identity - 開始時セッションID
+ * @param spotId - スポットID
+ *
+ * @returns 成功時true、通信失敗時は例外
+ *
+ * @example await removeFavorite(user.id, 10);
+ */
+export async function removeFavorite(identity: string, spotId: number): Promise<boolean> {
+  await requestPrivateData("favorites", identity, "DELETE", { spotId });
   return true;
 }
 
 /**
- * guest から持ち込んだお気に入りをまとめて同期する。
+ * 一回の同期で保存を確認したIDを返す。
  *
- * @param userId - public.users.id
- * @param spotIds - 同期対象 spot id 配列
- * @returns 同期後のお気に入り配列
- * @example
- * await mergeFavorites(userId, [1, 2, 3]);
+ * @param identity - 開始時セッションID
+ * @param spotIds - 最大100件のスポットID
+ *
+ * @returns 保存確認済みID
+ *
+ * @example await mergeFavorites(user.id, [1, 2]);
  */
-export async function mergeFavorites(userId: number, spotIds: number[]): Promise<Favorite[]> {
-  if (!client) return mockFavorites;
-
-  const uniqueSpotIds = [...new Set(spotIds.filter((spotId) => Number.isFinite(spotId) && spotId > 0))];
-  if (uniqueSpotIds.length === 0) {
-    return fetchUserFavorites(userId);
-  }
-
-  const payload = uniqueSpotIds.map((spotId) => ({ user_id: userId, spot_id: spotId }));
-  const { error } = await client
-    .from("favorites")
-    .upsert(payload, { onConflict: "user_id,spot_id", ignoreDuplicates: true });
-
-  if (error) {
-    console.warn("[supabase] favorites merge error:", error);
-  }
-
-  return fetchUserFavorites(userId);
+export async function mergeFavorites(identity: string, spotIds: number[]): Promise<number[]> {
+  if (!spotIds.length) return [];
+  const result = await requestPrivateData<{ persistedSpotIds: number[] }>("favorites", identity, "POST", { spotIds });
+  return result.persistedSpotIds;
 }

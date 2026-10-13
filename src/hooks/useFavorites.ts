@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthSession } from "@/components/auth/SessionProvider";
 import { GUEST_FAVORITES_KEY } from "@/lib/config";
 import {
   addFavorite,
-  ensurePublicUser,
   fetchSpots,
   fetchUserFavorites,
   mergeFavorites,
@@ -17,6 +16,7 @@ type FavoritesState = {
   favoriteIds: number[];
   favoriteSpots: Spot[];
   isReady: boolean;
+  error: string | null;
   isAuthenticated: boolean;
   isFavorite: (spotId: number) => boolean;
   toggleFavorite: (spotId: number) => Promise<boolean>;
@@ -53,18 +53,7 @@ function readGuestFavoriteIds(): number[] {
 function writeGuestFavoriteIds(spotIds: number[]): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(GUEST_FAVORITES_KEY, JSON.stringify([...new Set(spotIds)]));
-}
-
-/**
- * guest favorites を削除する。
- *
- * @returns なし
- * @example
- * clearGuestFavoriteIds();
- */
-function clearGuestFavoriteIds(): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(GUEST_FAVORITES_KEY);
+  if (!spotIds.length) window.localStorage.removeItem(`${GUEST_FAVORITES_KEY}:sync-owner`);
 }
 
 /**
@@ -100,6 +89,18 @@ export function useFavorites(): FavoritesState {
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [favoriteSpots, setFavoriteSpots] = useState<Spot[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loadedIdentity, setLoadedIdentity] = useState<string | null | undefined>(undefined);
+  const identity = user?.id ?? null;
+  const activeIdentity = useRef(identity);
+  const busy = useRef(false);
+  const generation = useRef(0);
+
+  useEffect(() => {
+    activeIdentity.current = identity;
+    generation.current += 1;
+    busy.current = false;
+  }, [identity]);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,44 +116,54 @@ export function useFavorites(): FavoritesState {
       if (status === "loading") return;
 
       setIsReady(false);
-
-      if (!user) {
+      setError(null);
+      setFavoriteIds([]);
+      setFavoriteSpots([]);
+      try {
         const guestIds = readGuestFavoriteIds();
+        let ids = guestIds;
+        if (identity) {
+          try {
+            const ownerKey = `${GUEST_FAVORITES_KEY}:sync-owner`;
+            const owner = window.localStorage.getItem(ownerKey);
+            if (guestIds.length && (!owner || owner === identity)) {
+              // 応答消失後に別の利用者へ再送しないよう、送信前に同期先を固定する。
+              window.localStorage.setItem(ownerKey, identity);
+              const snapshot = window.localStorage.getItem(GUEST_FAVORITES_KEY);
+              const persisted = await mergeFavorites(identity, guestIds.slice(0, 100));
+              if (cancelled) return;
+              // 同期中の端末操作を上書きしない。変更があれば次回再試行する。
+              if (window.localStorage.getItem(GUEST_FAVORITES_KEY) === snapshot &&
+                  window.localStorage.getItem(ownerKey) === identity) {
+                const confirmed = new Set(persisted);
+                const remaining = guestIds.filter((id) => !confirmed.has(id));
+                if (remaining.length) writeGuestFavoriteIds(remaining);
+                else {
+                  window.localStorage.removeItem(GUEST_FAVORITES_KEY);
+                  window.localStorage.removeItem(ownerKey);
+                }
+              }
+              if (guestIds.some((id) => !persisted.includes(id))) {
+                setError("未同期のお気に入りは端末に保持しています。再読み込みで再試行できます。");
+              }
+            } else if (guestIds.length) {
+              setError("別のアカウントへの未同期データは端末に保持しています。元のアカウントで再試行してください。");
+            }
+          } catch {
+            if (!cancelled) setError("端末のお気に入りを同期できませんでした。未同期データは保持しています。");
+          }
+          if (cancelled) return;
+          ids = (await fetchUserFavorites(identity)).map((favorite) => favorite.spot_id);
+        }
         const spots = await fetchSpots();
         if (!cancelled) {
-          setFavoriteIds(guestIds);
-          setFavoriteSpots(sortFavoriteSpotsByIds(spots, guestIds));
-          setIsReady(true);
+          setFavoriteIds(ids);
+          setFavoriteSpots(sortFavoriteSpotsByIds(spots, ids));
         }
-        return;
-      }
-
-      const publicUser = await ensurePublicUser(user.id, user.email ?? "");
-      if (!publicUser) {
-        if (!cancelled) {
-          setFavoriteIds([]);
-          setFavoriteSpots([]);
-          setIsReady(true);
-        }
-        return;
-      }
-
-      const guestIds = readGuestFavoriteIds();
-      const mergedFavorites =
-        guestIds.length > 0
-          ? await mergeFavorites(publicUser.id, guestIds)
-          : await fetchUserFavorites(publicUser.id);
-      const spots = await fetchSpots();
-
-      if (!cancelled) {
-        const ids = mergedFavorites.map((favorite) => favorite.spot_id);
-        setFavoriteIds(ids);
-        setFavoriteSpots(sortFavoriteSpotsByIds(spots, ids));
-        setIsReady(true);
-      }
-
-      if (guestIds.length > 0) {
-        clearGuestFavoriteIds();
+      } catch {
+        if (!cancelled) setError("お気に入りを取得・保存できませんでした。未同期データは端末に保持しています。再読み込みしてお試しください。");
+      } finally {
+        if (!cancelled) { setLoadedIdentity(identity); setIsReady(true); }
       }
     }
 
@@ -160,7 +171,7 @@ export function useFavorites(): FavoritesState {
     return () => {
       cancelled = true;
     };
-  }, [status, user]);
+  }, [status, identity]);
 
   /**
    * 指定スポットがお気に入り済みか返す。
@@ -171,7 +182,7 @@ export function useFavorites(): FavoritesState {
    * isFavorite(10);
    */
   function isFavorite(spotId: number): boolean {
-    return favoriteIds.includes(spotId);
+    return loadedIdentity === identity && favoriteIds.includes(spotId);
   }
 
   /**
@@ -183,50 +194,39 @@ export function useFavorites(): FavoritesState {
    * await toggleFavorite(10);
    */
   async function toggleFavorite(spotId: number): Promise<boolean> {
-    const nextIsFavorite = !favoriteIds.includes(spotId);
-
-    if (!user) {
-      const nextIds = nextIsFavorite
-        ? [...favoriteIds, spotId]
-        : favoriteIds.filter((id) => id !== spotId);
-      writeGuestFavoriteIds(nextIds);
-      setFavoriteIds(nextIds);
-
-      if (nextIsFavorite) {
-        const spots = await fetchSpots();
-        setFavoriteSpots(sortFavoriteSpotsByIds(spots, nextIds));
+    const wasFavorite = favoriteIds.includes(spotId);
+    if (busy.current || loadedIdentity !== identity || !isReady) return wasFavorite;
+    busy.current = true;
+    const operationGeneration = generation.current;
+    const nextIsFavorite = !wasFavorite;
+    try {
+      setError(null);
+      if (identity) {
+        if (nextIsFavorite) {
+          if (!await addFavorite(identity, spotId)) throw new Error("Save not confirmed");
+        } else if (!await removeFavorite(identity, spotId)) throw new Error("Delete not confirmed");
       } else {
-        setFavoriteSpots((current) => current.filter((spot) => spot.id !== spotId));
+        const current = readGuestFavoriteIds();
+        writeGuestFavoriteIds(nextIsFavorite ? [...current, spotId] : current.filter((id) => id !== spotId));
       }
-
-      return nextIsFavorite;
-    }
-
-    const publicUser = await ensurePublicUser(user.id, user.email ?? "");
-    if (!publicUser) return favoriteIds.includes(spotId);
-
-    if (nextIsFavorite) {
-      const inserted = await addFavorite(publicUser.id, spotId);
-      if (!inserted) return false;
-      const spots = await fetchSpots();
-      const nextIds = [...favoriteIds, spotId];
+      const spots = nextIsFavorite ? await fetchSpots() : [];
+      if (activeIdentity.current !== identity || generation.current !== operationGeneration) return wasFavorite;
+      const nextIds = nextIsFavorite ? [...new Set([...favoriteIds, spotId])] : favoriteIds.filter((id) => id !== spotId);
       setFavoriteIds(nextIds);
-      setFavoriteSpots(sortFavoriteSpotsByIds(spots, nextIds));
-      return true;
-    }
-
-    const removed = await removeFavorite(publicUser.id, spotId);
-    if (!removed) return true;
-    const nextIds = favoriteIds.filter((id) => id !== spotId);
-    setFavoriteIds(nextIds);
-    setFavoriteSpots((current) => current.filter((spot) => spot.id !== spotId));
-    return false;
+      if (nextIsFavorite) setFavoriteSpots(sortFavoriteSpotsByIds(spots, nextIds));
+      else setFavoriteSpots((current) => current.filter((spot) => spot.id !== spotId));
+      return nextIsFavorite;
+    } catch {
+      if (activeIdentity.current === identity && generation.current === operationGeneration) setError("お気に入りを保存できませんでした。再試行してください。");
+      return wasFavorite;
+    } finally { if (generation.current === operationGeneration) busy.current = false; }
   }
 
   return {
-    favoriteIds,
-    favoriteSpots,
-    isReady,
+    favoriteIds: loadedIdentity === identity ? favoriteIds : [],
+    favoriteSpots: loadedIdentity === identity ? favoriteSpots : [],
+    isReady: isReady && loadedIdentity === identity,
+    error: loadedIdentity === identity ? error : null,
     isAuthenticated: Boolean(user),
     isFavorite,
     toggleFavorite,

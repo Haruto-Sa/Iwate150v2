@@ -1,6 +1,6 @@
 "use client";
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import StampPage from "@/app/stamp/page";
@@ -159,7 +159,7 @@ describe("StampPage", () => {
     await user.click(screen.getByRole("button", { name: "スタンプ" }));
 
     await waitFor(() => {
-      expect(mockCreateStamp).toHaveBeenCalledWith(10, 1);
+      expect(mockCreateStamp).toHaveBeenCalledWith("auth-user", 1);
     });
     expect(await screen.findByText("スタンプを獲得しました！")).toBeInTheDocument();
     expect(screen.getByText("取得済み")).toBeInTheDocument();
@@ -234,4 +234,25 @@ describe("StampPage", () => {
       await screen.findByText("位置情報の許可が必要です。ブラウザ設定から許可してください。")
     ).toBeInTheDocument();
   });
+  it("A→B→Aの切り替え後に古いスタンプ保存応答を表示しない", async () => {
+    installGeolocationMock((success) => success({ coords: { latitude: 39.7, longitude: 141.1 } } as GeolocationPosition));
+    mockUseAuthSession.mockReturnValue({ user: mockUser, status: "authenticated" });
+    mockFetchSpots.mockResolvedValue([stampableSpot]);
+    let resolve!: (stamp: Stamp) => void;
+    mockCreateStamp.mockReturnValue(new Promise<Stamp>((done) => { resolve = done; }));
+    const { rerender } = render(<StampPage />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "位置情報を取得" }));
+    await user.click(await screen.findByRole("button", { name: "スタンプ" }));
+    mockUseAuthSession.mockReturnValue({ user: { ...mockUser, id: "B" }, status: "authenticated" });
+    rerender(<StampPage />);
+    await screen.findByText("スタンプ達成率");
+    mockUseAuthSession.mockReturnValue({ user: mockUser, status: "authenticated" });
+    rerender(<StampPage />);
+    await screen.findByText("スタンプ達成率");
+    await act(async () => resolve(earnedStamp));
+    expect(screen.queryByText("スタンプを獲得しました！")).not.toBeInTheDocument();
+    expect(screen.queryByText("取得済み")).not.toBeInTheDocument();
+  });
+
 });

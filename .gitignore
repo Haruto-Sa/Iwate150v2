@@ -86,3 +86,6 @@ public/db/
 # 公開リポジトリには SQL / 内部 DB 定義を含めない
 supabase/schema.sql
 supabase/*.sql
+
+# Local private implementation plans
+/plan/

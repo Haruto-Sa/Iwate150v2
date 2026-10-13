@@ -24,20 +24,23 @@ export function FavoriteToggleButton({ spotId }: Props) {
   const active = favorites.isFavorite(spotId);
 
   return (
-    <Button
-      variant={active ? "primary" : "outline"}
-      className={`mt-5 inline-flex items-center gap-2 ${pulse ? "scale-105" : ""}`}
-      disabled={!favorites.isReady || isPending}
-      onClick={() => {
-        setPulse(true);
-        startTransition(async () => {
-          await favorites.toggleFavorite(spotId);
-          window.setTimeout(() => setPulse(false), 220);
-        });
-      }}
-    >
-      <Heart className={`h-4 w-4 transition ${active ? "fill-current text-white" : "text-emerald-900"}`} />
-      {active ? "お気に入り済み" : "お気に入りに残す"}
-    </Button>
+    <>
+      <Button
+        variant={active ? "primary" : "outline"}
+        className={`mt-5 inline-flex items-center gap-2 ${pulse ? "scale-105" : ""}`}
+        disabled={!favorites.isReady || isPending}
+        onClick={() => {
+          setPulse(true);
+          startTransition(async () => {
+            await favorites.toggleFavorite(spotId);
+            window.setTimeout(() => setPulse(false), 220);
+          });
+        }}
+      >
+        <Heart className={`h-4 w-4 transition ${active ? "fill-current text-white" : "text-emerald-900"}`} />
+        {active ? "お気に入り済み" : "お気に入りに残す"}
+      </Button>
+      {favorites.error && <p role="alert" className="text-sm text-red-800">{favorites.error}</p>}
+    </>
   );
 }

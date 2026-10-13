@@ -4,7 +4,7 @@
 
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { CacheFirst, ExpirationPlugin, NetworkFirst, Serwist } from "serwist";
+import { CacheFirst, ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -51,6 +51,13 @@ const serwist = new Serwist({
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
+    {
+      matcher({ request, url }) {
+        return request.headers.has("authorization") ||
+          (url.origin === self.location.origin && url.pathname.startsWith("/api/"));
+      },
+      handler: new NetworkOnly(),
+    },
     {
       matcher({ request, url }) {
         return request.destination === "image" && isLeafletTileRequest(url);
@@ -106,6 +113,23 @@ const serwist = new Serwist({
       },
     ],
   },
+});
+
+// 以前のNetworkFirstが保存した認証API応答も更新時に除去する。
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    // 旧版が個人REST応答を含めていたキャッシュは丸ごと破棄する。
+    await caches.delete("voja-network-data");
+    for (const name of await caches.keys()) {
+      const cache = await caches.open(name);
+      for (const request of await cache.keys()) {
+        const url = new URL(request.url);
+        if (url.origin === self.location.origin && url.pathname.startsWith("/api/")) {
+          await cache.delete(request);
+        }
+      }
+    }
+  })());
 });
 
 serwist.addEventListeners();

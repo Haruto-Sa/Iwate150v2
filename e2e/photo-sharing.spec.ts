@@ -1,5 +1,21 @@
 import { test, expect } from "./fixtures";
 
+test("カメラ不在でも警告ダイアログを開かず関連ページへ移動できる", async ({ page }) => {
+  const dialogs: string[] = [];
+  page.on("dialog", async (dialog) => { dialogs.push(dialog.message()); await dialog.dismiss(); });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
+      value: async () => { throw new DOMException("Requested device not found", "NotFoundError"); },
+    });
+  });
+  await page.goto("/camera");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("カメラが見つかりません");
+  await page.getByRole("link", { name: "キャラクターを見る", exact: true }).click();
+  await expect(page).toHaveURL(/\/character$/);
+  expect(dialogs).toEqual([]);
+});
+
+
 test("撮影画像がない場合はカメラへ戻れる", async ({ page }) => {
   await page.goto("/camera/edit");
   await expect(page.getByRole("link", { name: "写真を撮りに行く" })).toHaveAttribute("href", "/camera");

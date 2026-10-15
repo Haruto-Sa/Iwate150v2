@@ -50,7 +50,7 @@ export default defineConfig({
     },
     {
       name: "webkit-ui",
-      testMatch: ["**/screenshots.spec.ts", "**/dialogs.spec.ts"],
+      testMatch: ["**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts"],
       use: { ...devices["Desktop Safari"] },
     },
   ],

@@ -1,92 +1,250 @@
 "use client";
 
-import { PageHeading } from "@/components/ui/PageHeading";
-
 import Link from "next/link";
+import { Heart, LogIn } from "lucide-react";
+import { PageHeading } from "@/components/ui/PageHeading";
 import { TravelImage } from "@/components/ui/TravelImage";
-import { Heart, LogIn, Sparkles } from "lucide-react";
+import { SpotCard } from "@/components/ui/SpotCard";
+import { Button } from "@/components/ui/Button";
+import { GlassCard } from "@/components/ui/GlassCard";
 import { useResolvedStorageUrls } from "@/lib/storageSignedClient";
 import { getImageUrl } from "@/lib/storage";
 import { getSpotHref } from "@/lib/spotRoutes";
-import { Button } from "@/components/ui/Button";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { useFavorites } from "@/hooks/useFavorites";
 import { PUBLIC_LOGIN_PATH } from "@/lib/config";
 
 /**
- * favorites 一覧画面。
- *
- * @returns FavoritesScreen
- * @example
- * <FavoritesScreen />
+ * ゲストには保存例、ログイン後は本人の一覧を表示する。
+ * @returns サンプル・本人データ・旧保存の追加を区別した画面
+ * @example <FavoritesScreen />
  */
 export function FavoritesScreen() {
   const favorites = useFavorites();
-  const imagePaths = favorites.favoriteSpots.map((spot) => spot.image_thumb_path ?? spot.image_path ?? null);
+  const shownSpots = favorites.isAuthenticated
+    ? favorites.favoriteSpots
+    : favorites.sampleSpots;
+  const imagePaths = shownSpots.map(
+    (spot) => spot.image_thumb_path ?? spot.image_path ?? null,
+  );
   const resolvedImageMap = useResolvedStorageUrls(imagePaths, "image");
-
-  if (!favorites.isReady) {
-    return (
-      <GlassCard title="保存したスポット" icon={Heart} badge="Loading">
-        <p className="text-sm text-emerald-900/75">お気に入り一覧を準備しています。</p>
-      </GlassCard>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <PageHeading eyebrow="YOUR TRAVEL NOTES" title="また会いたい、あの場所。" description="気になった旅先を保存して、次のお出かけに。" actions={<Link href="/search" className="action-link action-link-secondary">旅先を探す</Link>} />
-      {favorites.error && <p role="alert" className="text-sm text-red-800">{favorites.error}</p>}
-      {!favorites.isAuthenticated && (
-        <GlassCard title="ログインすると同期できます" icon={Sparkles} badge="この端末に保存">
-          <p className="text-sm leading-6 text-emerald-900/75">
-            この端末のお気に入りは保存されています。ログインするとデバイス間で同期できます。
-          </p>
-          <Link href={PUBLIC_LOGIN_PATH} className="action-link mt-4"><LogIn className="h-4 w-4" aria-hidden="true" />ログインする</Link>
+      <PageHeading
+        eyebrow="YOUR TRAVEL NOTES"
+        title="また会いたい、あの場所。"
+        description="気になった旅先を保存して、次のお出かけに。"
+        actions={
+          <Link href="/search" className="action-link action-link-secondary">
+            旅先を探す
+          </Link>
+        }
+      />
+      {!favorites.isReady ? (
+        <GlassCard title="お気に入りを準備しています" icon={Heart}>
+          <p role="status">保存した旅先を確認しています。</p>
         </GlassCard>
-      )}
-
-      <GlassCard title="保存したスポット" icon={Heart} badge={`${favorites.favoriteIds.length}件`}>
-        {favorites.favoriteSpots.length === 0 ? (
-          <p className="text-sm leading-6 text-emerald-900/75">
-            まだお気に入りはありません。スポット詳細から気になる場所を保存できます。
-          </p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {favorites.favoriteSpots.map((spot) => {
-              const imagePath = spot.image_thumb_path ?? spot.image_path ?? null;
-              const imageUrl = imagePath
-                ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
-                : null;
-              return (
-                <article
-                  key={spot.id}
-                  className="overflow-hidden rounded-[1.5rem] border border-emerald-900/10 bg-white/75"
-                >
-                  <div className="relative h-40 bg-emerald-50">
-                    <TravelImage src={imageUrl} alt={spot.name} />
-                  </div>
-                  <div className="space-y-3 p-4">
-                    <h2 className="font-semibold text-[#0f1c1a]">{spot.name}</h2>
-                    <p className="line-clamp-2 text-sm leading-6 text-emerald-900/75">{spot.description}</p>
-                    <div className="flex gap-3">
-                      <Link href={getSpotHref(spot)} className="action-link">詳細を見る</Link>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          void favorites.toggleFavorite(spot.id);
-                        }}
+      ) : (
+        <>
+          {favorites.error && (
+            <p
+              role="alert"
+              className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-7 text-red-800"
+            >
+              {favorites.error}
+            </p>
+          )}
+          {favorites.notice && (
+            <p
+              role="status"
+              className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-7"
+            >
+              {favorites.notice}
+            </p>
+          )}
+          {favorites.loadFailed ? (
+            <Button onClick={favorites.reload}>もう一度読み込む</Button>
+          ) : (
+            <>
+              {!favorites.isAuthenticated ? (
+                <>
+                  <GlassCard
+                    title="あなただけの旅先リストを"
+                    icon={LogIn}
+                    badge="保存例を表示中"
+                  >
+                    <p>
+                      下の一覧はお気に入りのサンプルです。あなたが保存した内容ではありません。ログインすると、自分だけの旅先リストを作れます。
+                    </p>
+                    <p className="mt-2">
+                      サンプルがアカウントに追加されることはありません。
+                    </p>
+                    <Link
+                      href={`${PUBLIC_LOGIN_PATH}?next=${encodeURIComponent("/favorites")}`}
+                      className="action-link mt-4"
+                    >
+                      ログインして自分の一覧を作る
+                    </Link>
+                  </GlassCard>
+                  <section
+                    aria-labelledby="favorite-samples-title"
+                    className="space-y-4"
+                  >
+                    <div>
+                      <h2
+                        id="favorite-samples-title"
+                        className="font-display text-2xl"
                       >
-                        削除
-                      </Button>
+                        お気に入りのサンプル
+                      </h2>
+                      <p className="mt-2 text-sm text-emerald-900/80">
+                        こんなふうに、気になる場所をまとめられます。
+                      </p>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </GlassCard>
+                    <div className="card-grid">
+                      {favorites.sampleSpots.map((spot) => {
+                        const path = spot.image_thumb_path ?? spot.image_path;
+                        return (
+                          <SpotCard
+                            key={spot.id}
+                            spot={spot}
+                            imageUrl={
+                              path
+                                ? (resolvedImageMap.get(path) ??
+                                  getImageUrl(path))
+                                : null
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                    {favorites.sampleSpots.length === 0 && (
+                      <p className="text-sm">
+                        サンプルを準備しています。検索から旅先を探せます。
+                      </p>
+                    )}
+                  </section>
+                  <p className="text-xs leading-6 text-emerald-900/75">
+                    以前この端末で保存した内容は、そのまま保持しています。ログイン後に確認して、自分の一覧へ追加できます。
+                  </p>
+                </>
+              ) : (
+                <>
+                  <GlassCard
+                    title="あなたが保存したスポット"
+                    icon={Heart}
+                    badge={`${favorites.favoriteIds.length}件`}
+                  >
+                    {favorites.favoriteIds.length === 0 ? (
+                      <div className="space-y-4">
+                        <p>
+                          まだお気に入りはありません。スポット詳細から気になる場所を保存できます。
+                        </p>
+                        <Link href="/search" className="action-link">
+                          最初の旅先を探す
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {favorites.favoriteSpots.map((spot) => {
+                            const path =
+                              spot.image_thumb_path ?? spot.image_path;
+                            return (
+                              <article
+                                key={spot.id}
+                                className="overflow-hidden rounded-2xl border border-emerald-900/15 bg-white"
+                              >
+                                <div className="relative aspect-[3/2]">
+                                  <TravelImage
+                                    src={
+                                      path
+                                        ? (resolvedImageMap.get(path) ??
+                                          getImageUrl(path))
+                                        : null
+                                    }
+                                    alt={spot.name}
+                                  />
+                                </div>
+                                <div className="space-y-3 p-4">
+                                  <h3 className="font-display text-xl">
+                                    {spot.name}
+                                  </h3>
+                                  <p className="line-clamp-2 text-sm leading-7">
+                                    {spot.description}
+                                  </p>
+                                  <div className="flex flex-wrap gap-3">
+                                    <Link
+                                      href={getSpotHref(spot)}
+                                      className="action-link"
+                                    >
+                                      詳細を見る
+                                    </Link>
+                                    <Button
+                                      variant="outline"
+                                      aria-label={`${spot.name}をお気に入りから削除`}
+                                      disabled={favorites.isMutating}
+                                      onClick={() => {
+                                        void favorites.toggleFavorite(spot.id);
+                                      }}
+                                    >
+                                      削除
+                                    </Button>
+                                  </div>
+                                </div>
+                              </article>
+                            );
+                          })}
+                        </div>
+                        {favorites.favoriteIds.length >
+                          favorites.favoriteSpots.length && (
+                          <p className="mt-3 text-sm">
+                            一部のスポット情報を現在表示できません。保存した記録はそのまま保持しています。
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </GlassCard>
+                  {favorites.legacySpots.length > 0 && (
+                    <section className="rounded-2xl border border-emerald-900/15 bg-white p-5">
+                      <h2 className="font-display text-xl">
+                        以前この端末に保存したスポット
+                      </h2>
+                      <p className="mt-2 text-sm leading-7">
+                        まだこのアカウントに追加されていない保存です。内容を確認してから追加してください。元の端末データは消えません。
+                      </p>
+                      <details className="mt-4">
+                        <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">
+                          追加する内容を確認（{favorites.legacySpots.length}件）
+                        </summary>
+                        <ul className="max-h-60 space-y-2 overflow-y-auto py-3 text-sm">
+                          {favorites.legacySpots.map((spot) => (
+                            <li key={spot.id}>{spot.name}</li>
+                          ))}
+                        </ul>
+                        <Button
+                          className="mt-3"
+                          disabled={favorites.isMutating}
+                          onClick={() => {
+                            void favorites.importLegacyFavorites();
+                          }}
+                        >
+                          表示中の{favorites.legacySpots.length}
+                          件をこのアカウントに追加
+                        </Button>
+                      </details>
+                    </section>
+                  )}
+                  {favorites.hasOtherLegacyOwner && (
+                    <p className="text-sm leading-7 text-emerald-900/80">
+                      以前の端末保存は元のアカウントで確認できます。このアカウントには追加していません。
+                    </p>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }

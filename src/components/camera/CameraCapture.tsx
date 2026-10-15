@@ -853,7 +853,11 @@ export function CameraCapture() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Capture photo
+  /**
+   * 表示中のカメラとキャラクターを合成し編集画面へ渡す。
+   * @returns 保存できた場合は編集画面へ遷移。失敗時は撮影画面で案内する
+   * @example onClick={handleCapture}
+   */
   const handleCapture = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
@@ -898,10 +902,17 @@ export function CameraCapture() {
       ctx.drawImage(overlayCanvasRef.current, 0, 0, canvas.width, canvas.height);
     }
 
-    const dataUrl = canvas.toDataURL("image/png");
-    sessionStorage.setItem("capturedPhoto", dataUrl);
-    sessionStorage.setItem("capturedModels", JSON.stringify(selectedModels));
-    if (detection) sessionStorage.setItem("capturedDetection", JSON.stringify(detection));
+    try {
+      const dataUrl = canvas.toDataURL("image/png");
+      // 前の写真の顔位置を次の撮影へ持ち越さない。
+      sessionStorage.removeItem("capturedDetection");
+      sessionStorage.setItem("capturedModels", JSON.stringify(selectedModels));
+      if (detection) sessionStorage.setItem("capturedDetection", JSON.stringify(detection));
+      sessionStorage.setItem("capturedPhoto", dataUrl);
+    } catch {
+      setErrorMessage("撮影した写真を一時保存できませんでした。ブラウザの空き容量や保存設定を確認して、もう一度撮影してください。");
+      return;
+    }
 
     // ページ遷移前にカメラ・FaceMeshを明示的に停止（許可状態はブラウザが保持）
     stopStream();

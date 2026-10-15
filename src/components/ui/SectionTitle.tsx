@@ -6,6 +6,12 @@ type Props = {
   icon?: LucideIcon;
 };
 
+/**
+ * セクションの見出しを表示する。
+ * @param props - 見出し、説明、任意のアイコン
+ * @returns h2を含む見出し
+ * @example <SectionTitle label="旅先のヒント" />
+ */
 export function SectionTitle({ label, description, icon: Icon }: Props) {
   return (
     <div className="flex items-center gap-3">
@@ -15,7 +21,7 @@ export function SectionTitle({ label, description, icon: Icon }: Props) {
         </span>
       )}
       <div>
-        <p className="font-display text-xl text-emerald-950">{label}</p>
+        <h2 className="font-display text-2xl leading-relaxed text-emerald-950">{label}</h2>
         {description && <p className="text-sm text-emerald-900/70">{description}</p>}
       </div>
     </div>

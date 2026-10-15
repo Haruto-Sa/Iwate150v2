@@ -1,5 +1,7 @@
 "use client";
 
+import { PageHeading } from "@/components/ui/PageHeading";
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
@@ -174,6 +176,7 @@ export default function StampPage() {
   if (status === "loading" || loading || loadedIdentity !== identity) {
     return (
       <div className="space-y-6">
+        <PageHeading eyebrow="TRAVEL STAMPS" title="旅の足あとを、集めよう。" description="岩手を歩いて、訪れた場所をひとつずつ思い出に。" />
         <GlassCard title="スタンプラリーを読み込み中" icon={Loader2} badge="Loading">
           <div className="flex items-center gap-3 text-sm text-emerald-900/80">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
@@ -188,13 +191,12 @@ export default function StampPage() {
   if (!user) {
     return (
       <div className="space-y-6">
-        <GlassCard title="Stamps start with login" icon={AlertCircle} badge="Save progress">
+        <PageHeading eyebrow="TRAVEL STAMPS" title="旅の足あとを、集めよう。" description="岩手を歩いて、訪れた場所をひとつずつ思い出に。" />
+        <GlassCard title="ログインして、旅を記録" icon={AlertCircle} badge="スタンプラリー">
           <p className="text-sm text-emerald-900/80">
             スタンプを集めて進捗を残すにはログインが必要です。地図や検索はそのまま楽しめます。
           </p>
-          <Link href="/login">
-            <Button className="mt-4">ログインしてスタンプを始める</Button>
-          </Link>
+          <Link href="/login" className="action-link mt-4">ログインしてスタンプを始める</Link>
         </GlassCard>
         <GlassCard title="できること" icon={StampIcon}>
           <p className="text-sm text-emerald-900/75">
@@ -207,6 +209,7 @@ export default function StampPage() {
 
   return (
     <div className="space-y-6">
+        <PageHeading eyebrow="TRAVEL STAMPS" title="旅の足あとを、集めよう。" description="岩手を歩いて、訪れた場所をひとつずつ思い出に。" />
       {initError && (
         <GlassCard title="スタンプ情報を表示できません" icon={AlertCircle} badge="Retry">
           <p className="text-sm text-emerald-900/80">{initError}</p>
@@ -216,13 +219,13 @@ export default function StampPage() {
       {/* Achievement Card */}
       <GlassCard title="スタンプ達成率" icon={Trophy} badge={`${earnedCount}/${totalSpots}`}>
         <div className="space-y-3">
-          <div className="h-3 overflow-hidden rounded-full bg-white/10">
+          <div role="progressbar" aria-label="スタンプ達成率" aria-valuenow={achievementRate} aria-valuemin={0} aria-valuemax={100} className="h-3 overflow-hidden rounded-full bg-emerald-100">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-500"
+              className="h-full rounded-full bg-emerald-800 transition-all duration-500"
               style={{ width: `${achievementRate}%` }}
             />
           </div>
-          <p className="text-sm text-emerald-50/80">
+          <p className="text-sm text-emerald-900/80">
             {achievementRate}% 達成（{earnedCount}件 / {totalSpots}件）
           </p>
         </div>
@@ -262,8 +265,8 @@ export default function StampPage() {
         <div
           className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${
             message.type === "success"
-              ? "border border-emerald-200/30 bg-emerald-900/30 text-emerald-200"
-              : "border border-red-200/30 bg-red-900/30 text-red-200"
+              ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
+              : "border border-red-200 bg-red-50 text-red-900"
           }`}
         >
           {message.type === "success" ? (
@@ -288,7 +291,7 @@ export default function StampPage() {
               return (
                 <div
                   key={spot.id}
-                  className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
+                  className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
                     stamped
                       ? "border-emerald-300/60 bg-emerald-50"
                       : "border-emerald-900/10 bg-white"
@@ -328,7 +331,7 @@ export default function StampPage() {
 
       {userLocation && nearbySpots.length === 0 && (
         <GlassCard title="近くにスポットがありません" icon={MapPin}>
-          <p className="text-sm text-emerald-50/80">
+          <p className="text-sm text-emerald-900/80">
             {STAMP_RADIUS}m以内にスポットが見つかりませんでした。別の場所で試してみてください。
           </p>
         </GlassCard>

@@ -84,10 +84,10 @@ describe("Home page", () => {
   it("shows upcoming picks when events exist", async () => {
     render(await Home());
 
-    expect(mockFetchEvents).toHaveBeenCalledWith({ limit: 4 });
-    expect(screen.getByText("Today's picks")).toBeInTheDocument();
+    expect(mockFetchEvents).toHaveBeenCalledWith();
+    expect(screen.getByText("もうすぐ、岩手で。")).toBeInTheDocument();
     expect(screen.getByText("盛岡春まつり")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "詳細を見る" })).toHaveAttribute("href", "/spots/1");
+    expect(screen.getByRole("link", { name: /詳細を見る/ })).toHaveAttribute("href", "/spots/1");
   });
 
   it("shows the empty fallback when there are no upcoming events", async () => {

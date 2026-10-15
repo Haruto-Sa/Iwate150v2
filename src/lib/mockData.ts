@@ -56,7 +56,7 @@ export const mockSpots: Spot[] = [
     genre_id: 1,
     lat: 39.7021,
     lng: 141.1527,
-    image_path: "images/spots/Morioka_Activity_MoriokaHanabi.jpg",
+    image_path: "images/spots/Morioka_Nature_MoriokajousiKouen.jpg",
     model_path: null,
     reference_url: "http://www.moriokashiroato.jp/",
   },
@@ -68,7 +68,8 @@ export const mockSpots: Spot[] = [
     genre_id: 1,
     lat: 38.9865,
     lng: 141.1176,
-    image_path: "images/spots/Hiraizumi_Nature_Motsuji.jpg",
+    // 対象の写真がないため、別寺院の写真で代替しない。
+    image_path: null,
     model_path: "models/goshodon.obj",
     reference_url: null,
   },

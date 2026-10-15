@@ -88,7 +88,7 @@ describe("SearchSurface", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows default sections without calling the search API in idle state", () => {
+  it("shows the selected default section without calling the search API", async () => {
     render(
       <SearchSurface
         cities={cities}
@@ -98,9 +98,12 @@ describe("SearchSurface", () => {
       />
     );
 
-    expect(screen.getByText("人気のスポット")).toBeInTheDocument();
-    expect(screen.getByText("新着イベント")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "詳細を見る" })).toHaveAttribute("href", "/spots/1");
+    expect(screen.getByText("旅先のヒント")).toBeInTheDocument();
+    expect(screen.queryByText("もうすぐ開催")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /詳細を見る/ })).toHaveAttribute("href", "/spots/1");
+    await userEvent.click(screen.getByRole("button", { name: "イベント" }));
+    expect(screen.getByText("もうすぐ開催")).toBeInTheDocument();
+    expect(screen.queryByText("旅先のヒント")).not.toBeInTheDocument();
     expect(screen.getByText("盛岡週末ナイトマーケット")).toBeInTheDocument();
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -268,7 +271,7 @@ describe("SearchSurface", () => {
     const user = userEvent.setup();
     const genreSelect = screen.getByLabelText("ジャンル");
     await user.selectOptions(genreSelect, "2");
-    await user.click(screen.getByRole("button", { name: "Events" }));
+    await user.click(screen.getByRole("button", { name: "イベント" }));
     expect(genreSelect).toBeDisabled();
     expect(genreSelect).toHaveValue("all");
 

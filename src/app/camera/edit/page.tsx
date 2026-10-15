@@ -6,6 +6,7 @@ import {
   Move, Maximize2, ChevronDown, ChevronUp, X,
   Download, Share2, Image as ImageIcon
 } from "lucide-react";
+import { PageHeading } from "@/components/ui/PageHeading";
 import { Button } from "@/components/ui/Button";
 
 type StickerItem = { id: string; char: string; x: number; y: number; size: number };
@@ -436,6 +437,7 @@ export default function CameraEditPage() {
 
   return (
     <div className="flex flex-col gap-3 pb-20">
+      <PageHeading eyebrow="MAKE A MEMORY" title="一枚を、旅の思い出に。" />
       {/* ヘッダー説明 */}
       <div className="rounded-xl border border-emerald-900/10 bg-white px-3 py-2 text-xs text-emerald-900/80 shadow-sm">
         ドラッグで移動、モード切替でサイズ変更。タップで選択後、削除や編集ができます。
@@ -614,13 +616,13 @@ export default function CameraEditPage() {
       </div>
 
       {/* 編集モード切り替え */}
-      <div className="flex items-center gap-2 rounded-xl border border-emerald-900/10 bg-white p-2 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-900/10 bg-white p-2">
         <span className="px-2 text-xs text-emerald-900/70">モード:</span>
         <Button
           variant={editMode === "move" ? "primary" : "ghost"}
           size="sm"
           onClick={() => setEditMode("move")}
-          className="gap-1.5"
+          className="shrink-0 gap-1.5"
         >
           <Move className="h-3.5 w-3.5" />
           移動
@@ -629,7 +631,7 @@ export default function CameraEditPage() {
           variant={editMode === "resize" ? "primary" : "ghost"}
           size="sm"
           onClick={() => setEditMode("resize")}
-          className="gap-1.5"
+          className="shrink-0 gap-1.5"
         >
           <Maximize2 className="h-3.5 w-3.5" />
           サイズ
@@ -650,7 +652,7 @@ export default function CameraEditPage() {
           variant="ghost"
           size="sm"
           onClick={resetOverlays}
-          className="gap-1.5"
+          className="shrink-0 gap-1.5"
         >
           <Undo2 className="h-3.5 w-3.5" />
           リセット

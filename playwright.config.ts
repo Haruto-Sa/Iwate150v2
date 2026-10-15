@@ -48,5 +48,10 @@ export default defineConfig({
       testMatch: "**/screenshots.spec.ts",
       use: { ...devices["Desktop Chrome"], viewport: { width: 414, height: 896 } },
     },
+    {
+      name: "webkit-ui",
+      testMatch: ["**/screenshots.spec.ts", "**/dialogs.spec.ts"],
+      use: { ...devices["Desktop Safari"] },
+    },
   ],
 });

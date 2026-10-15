@@ -12,6 +12,8 @@ vi.mock("next/navigation", () => ({
 
 describe("OnboardingOverlay", () => {
   beforeEach(() => {
+    HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
+    HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); };
     window.resizeTo(390, 844);
     window.localStorage.clear();
     mockUsePathname.mockReturnValue("/");

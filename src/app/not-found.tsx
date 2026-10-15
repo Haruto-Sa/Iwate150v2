@@ -27,7 +27,7 @@ export default function NotFoundPage() {
         <p className="font-display mb-2 text-8xl font-bold text-emerald-200 select-none">404</p>
 
         {/* タイトル */}
-        <h1 className="font-display mb-2 text-2xl text-[#0f1c1a]">ページが見つかりません</h1>
+        <h1 className="text-balance font-display mb-2 text-2xl leading-relaxed text-[#0f1c1a]">ページが見つかりません</h1>
         <p className="mb-8 text-sm leading-7 text-emerald-900/70">
           お探しのページは存在しないか、移動した可能性があります。
           <br />

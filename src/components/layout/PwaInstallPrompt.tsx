@@ -16,7 +16,7 @@ import { useInstallPrompt } from "@/hooks/useInstallPrompt";
  */
 export function PwaInstallPrompt() {
   const pathname = usePathname();
-  const { dismissForDays, isIosSafari, promptInstall, shouldShow, visitCount } = useInstallPrompt();
+  const { dismissForDays, isIosSafari, promptInstall, shouldShow } = useInstallPrompt();
   const [isOpen, setIsOpen] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -36,7 +36,6 @@ export function PwaInstallPrompt() {
           <p className="text-sm leading-7 text-emerald-900/80">
             VOJA IWATE をホーム画面に追加すると、すぐにアクセスできます。
           </p>
-          <p className="mt-2 text-xs text-emerald-900/55">訪問回数: {visitCount} 回目</p>
         </div>
 
         {isIosSafari ? (

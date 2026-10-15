@@ -913,7 +913,7 @@ export function CameraCapture() {
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white shadow-2xl sm:aspect-[16/10]">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white sm:aspect-[16/10]">
         <video
           ref={videoRef}
           className="h-full w-full object-cover"
@@ -972,7 +972,7 @@ export function CameraCapture() {
                 onClick={() => {
                   void startCamera();
                 }}
-                variant="glass"
+                variant="outline"
                 className="pointer-events-auto h-12 px-4 text-sm"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -981,6 +981,7 @@ export function CameraCapture() {
             )}
             <button
               onClick={handleCapture}
+              aria-label="写真を撮る"
               disabled={status !== "ready"}
               className="pointer-events-auto grid h-16 w-16 place-items-center rounded-full border-4 border-emerald-200/80 bg-white/90 text-[#0f1c1a] shadow-xl shadow-emerald-200/50 transition active:scale-95 disabled:opacity-60"
             >
@@ -1018,6 +1019,7 @@ export function CameraCapture() {
                 }
               }}
               disabled={isDisabled}
+              aria-pressed={active}
               className="gap-2"
             >
               {active ? <Check className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}

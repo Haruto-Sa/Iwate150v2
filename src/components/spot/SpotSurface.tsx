@@ -1,5 +1,7 @@
 "use client";
 
+import { PageHeading } from "@/components/ui/PageHeading";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LeafletMap } from "@/components/map/LeafletMap";
 import { MORIOKA_STATION } from "@/lib/config";
@@ -202,14 +204,9 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
   return (
     <div className="space-y-8">
       {confirmation}
-      <div className="flex justify-end"><PageShortcut target="favorites" /></div>
-      <SectionTitle
-        label="Map"
-        description="現在地や気になるエリアから、岩手のスポットを地図で見つけられます。"
-        icon={MapPin}
-      />
+      <PageHeading eyebrow="WALK & DISCOVER" title="地図を片手に、岩手を歩く。" description="現在地や気になるエリアから、岩手のスポットを地図で見つけられます。" actions={<PageShortcut target="favorites" />} />
 
-      <div className="glass rounded-3xl border border-white/10 p-4 ring-1 ring-white/15">
+      <div className="rounded-2xl border border-emerald-900/15 bg-white p-4">
         {hasSpots ? (
           <>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -265,7 +262,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
                 <select
                   value={nearbyTargetCount}
                   onChange={(event) => setNearbyTargetCount(Number(event.target.value))}
-                  className="rounded-md border border-emerald-900/15 bg-white px-2 py-1 text-emerald-900"
+                  className="rounded-md border border-emerald-900/15 bg-white px-2 py-2.5 text-emerald-900"
                 >
                   {TARGET_NEARBY_OPTIONS.map((count) => (
                     <option key={count} value={count}>
@@ -279,7 +276,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
                 <select
                   value={maxSearchRadius}
                   onChange={(event) => setMaxSearchRadius(Number(event.target.value))}
-                  className="rounded-md border border-emerald-900/15 bg-white px-2 py-1 text-emerald-900"
+                  className="rounded-md border border-emerald-900/15 bg-white px-2 py-2.5 text-emerald-900"
                 >
                   {MAX_SEARCH_RADIUS_OPTIONS.map((radius) => (
                     <option key={radius} value={radius}>
@@ -333,7 +330,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
           </>
         ) : (
           <div className="rounded-2xl border border-dashed border-emerald-900/15 bg-white/70 px-4 py-8 text-center text-sm text-emerald-900/70">
-            DB に登録された公開スポットがまだ見つかりません。地図と一覧は DB 登録後に表示されます。
+            地図に表示できるスポットを準備しています。検索からも旅先を探せます。
           </div>
         )}
       </div>
@@ -345,7 +342,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
             ? showAllSpots
               ? "全件表示中"
               : `盛岡駅/現在地を中心に近い順で最大${nearbyTargetCount}件表示します`
-            : "公開中スポットの登録を待っています"
+            : "旅先の情報を準備しています"
         }
         icon={SlidersHorizontal}
       />
@@ -381,7 +378,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
         ) : (
           <GlassCard title="公開スポットはまだありません" icon={MapPin}>
             <p className="text-sm text-emerald-900/75">
-              `/map` では DB に登録された公開スポットのみを表示します。登録が完了するとここに一覧が表示されます。
+              スポット情報が公開されると、ここから場所やルートを確認できます。
             </p>
           </GlassCard>
         )}

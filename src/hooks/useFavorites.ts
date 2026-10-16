@@ -15,6 +15,35 @@ import type { Spot } from "@/lib/types";
 const LEGACY_OWNER_KEY = `${GUEST_FAVORITES_KEY}:sync-owner`;
 const IMPORT_BATCH_SIZE = 100;
 
+/**
+ * アカウントごとの旧保存取り込み記録キーを返す。
+ * @param identity - 認証ユーザーID
+ * @returns 端末バックアップと独立したキー
+ * @example legacyImportedKey("user-A");
+ */
+function legacyImportedKey(identity: string): string {
+  return `${GUEST_FAVORITES_KEY}:imported:${encodeURIComponent(identity)}`;
+}
+
+/**
+ * 確認済みの取り込みIDを読む。破損した記録は候補を隠す根拠にしない。
+ * @param identity - 認証ユーザーID
+ * @returns このアカウントで取り込み済みのID
+ * @example readImportedIds("user-A");
+ */
+function readImportedIds(identity: string): number[] {
+  try {
+    const values: unknown = JSON.parse(
+      window.localStorage.getItem(legacyImportedKey(identity)) ?? "[]",
+    );
+    return Array.isArray(values)
+      ? values.filter((id): id is number => Number.isSafeInteger(id) && id > 0)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 type FavoritesState = {
   favoriteIds: number[];
   favoriteSpots: Spot[];
@@ -85,6 +114,7 @@ export function useFavorites(): FavoritesState {
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [legacyIds, setLegacyIds] = useState<number[]>([]);
+  const [importedIds, setImportedIds] = useState<number[]>([]);
   const [hasOtherLegacyOwner, setHasOtherLegacyOwner] = useState(false);
   const [loadedIdentity, setLoadedIdentity] = useState<
     string | null | undefined
@@ -110,6 +140,7 @@ export function useFavorites(): FavoritesState {
     setFavoriteIds([]);
     setSpots([]);
     setLegacyIds([]);
+    setImportedIds([]);
     setHasOtherLegacyOwner(false);
 
     /**
@@ -134,6 +165,7 @@ export function useFavorites(): FavoritesState {
           );
           setHasOtherLegacyOwner(otherOwner && previous.ids.length > 0);
           setLegacyIds(otherOwner ? [] : previous.ids);
+          setImportedIds(readImportedIds(identity));
         }
       } catch {
         if (!cancelled) {
@@ -163,7 +195,9 @@ export function useFavorites(): FavoritesState {
     isReady && identity
       ? selectSpots(
           spots,
-          legacyIds.filter((id) => !favoriteIds.includes(id)),
+          legacyIds.filter(
+            (id) => !favoriteIds.includes(id) && !importedIds.includes(id),
+          ),
         ).slice(0, IMPORT_BATCH_SIZE)
       : [];
 
@@ -239,15 +273,32 @@ export function useFavorites(): FavoritesState {
       const latest = readLegacyFavorites();
       if (latest.owner && latest.owner !== identity)
         throw new Error("Different owner");
+      const alreadyImported = readImportedIds(identity);
       const approved = legacySpots
         .map((spot) => spot.id)
-        .filter((id) => latest.ids.includes(id));
+        .filter(
+          (id) => latest.ids.includes(id) && !alreadyImported.includes(id),
+        );
       if (!approved.length) throw new Error("Device data changed");
       // 応答が消失しても別アカウントに再送しない。元の保存内容は変更しない。
       window.localStorage.setItem(LEGACY_OWNER_KEY, identity);
       const persisted = await mergeFavorites(identity, approved);
-      if (generation.current !== operation) return;
       const confirmed = approved.filter((id) => persisted.includes(id));
+      const imported = [
+        ...new Set([...readImportedIds(identity), ...confirmed]),
+      ];
+      let recorded = true;
+      try {
+        // 応答中にアカウントが切り替わっても、元の本人に紐づく記録だけ残す。
+        window.localStorage.setItem(
+          legacyImportedKey(identity),
+          JSON.stringify(imported),
+        );
+      } catch {
+        recorded = false;
+      }
+      if (generation.current !== operation) return;
+      setImportedIds((current) => [...new Set([...current, ...imported])]);
       setFavoriteIds((current) => [...new Set([...current, ...confirmed])]);
       setLegacyIds(latest.ids);
       setNotice(
@@ -256,6 +307,10 @@ export function useFavorites(): FavoritesState {
       if (confirmed.length !== approved.length)
         setError(
           "追加できなかった保存があります。内容を確認して再試行してください。",
+        );
+      if (!recorded)
+        setError(
+          "追加結果は確認できましたが、端末の取り込み記録を保存できませんでした。再読込後に候補が再表示される場合があります。",
         );
     } catch {
       if (generation.current === operation)

@@ -88,6 +88,66 @@ describe("useFavoritesのサンプルと本人データの分離", () => {
     expect(localStorage.getItem(`${GUEST_FAVORITES_KEY}:sync-owner`)).toBe("A");
   });
 
+  it("取り込み後に削除して再読込しても、元のバックアップを再取り込み候補にしない", async () => {
+    localStorage.setItem(GUEST_FAVORITES_KEY, "[1,2]");
+    session.mockReturnValue({ user: { id: "A" }, status: "authenticated" });
+    api.mergeFavorites.mockResolvedValue([1]);
+    const { result, unmount } = renderHook(() => useFavorites());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    await act(async () => {
+      await result.current.importLegacyFavorites();
+    });
+    await act(async () => {
+      await result.current.toggleFavorite(1);
+    });
+    expect(result.current.favoriteIds).toEqual([]);
+    expect(result.current.legacySpots.map((spot) => spot.id)).toEqual([2]);
+    unmount();
+    const reloaded = renderHook(() => useFavorites());
+    await waitFor(() => expect(reloaded.result.current.isReady).toBe(true));
+    expect(reloaded.result.current.legacySpots.map((spot) => spot.id)).toEqual([
+      2,
+    ]);
+    expect(localStorage.getItem(GUEST_FAVORITES_KEY)).toBe("[1,2]");
+    await act(async () => {
+      await reloaded.result.current.importLegacyFavorites();
+    });
+    expect(api.mergeFavorites).toHaveBeenLastCalledWith("A", [2]);
+  });
+
+  it("取り込み記録はアカウントごとに分離する", async () => {
+    localStorage.setItem(GUEST_FAVORITES_KEY, "[1]");
+    localStorage.setItem(`${GUEST_FAVORITES_KEY}:imported:A`, "[1]");
+    session.mockReturnValue({ user: { id: "B" }, status: "authenticated" });
+    const { result } = renderHook(() => useFavorites());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    expect(result.current.legacySpots.map((spot) => spot.id)).toEqual([1]);
+  });
+
+  it("端末への記録失敗を伝え、確認できた本人保存は維持する", async () => {
+    localStorage.setItem(GUEST_FAVORITES_KEY, "[1]");
+    session.mockReturnValue({ user: { id: "A" }, status: "authenticated" });
+    const original = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+      this: Storage,
+      key,
+      value,
+    ) {
+      if (key.includes(":imported:")) throw new Error("Quota exceeded");
+      original.call(this, key, value);
+    });
+    const { result } = renderHook(() => useFavorites());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    await act(async () => {
+      await result.current.importLegacyFavorites();
+    });
+    expect(result.current.favoriteIds).toEqual([1]);
+    expect(result.current.legacySpots).toEqual([]);
+    expect(result.current.error).toContain(
+      "取り込み記録を保存できませんでした",
+    );
+  });
+
   it("失敗・部分成功でも未確認のIDを保存済みにせず、元データを残す", async () => {
     localStorage.setItem(GUEST_FAVORITES_KEY, "[1,2]");
     session.mockReturnValue({ user: { id: "A" }, status: "authenticated" });

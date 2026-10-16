@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { IWATE_PUBLIC_BOUNDS } from "./config";
-import { mockCities, mockEvents, mockGenres, mockSpots } from "./mockData";
+import { mockCities, mockEvents, mockGenres, mockSpots, mockStampCatalog } from "./mockData";
 import { getCurrentDateKey, getUpcomingEvents, sortEventsForTimeline } from "./eventFilters";
 import {
   AdminDashboardEventSummary,
@@ -15,6 +15,7 @@ import {
   Genre,
   Spot,
   Stamp,
+  StampCatalog,
   User,
   UserRole,
 } from "./types";
@@ -950,4 +951,55 @@ export async function mergeFavorites(identity: string, spotIds: number[]): Promi
   if (!spotIds.length) return [];
   const result = await requestPrivateData<{ persistedSpotIds: number[] }>("favorites", identity, "POST", { spotIds });
   return result.persistedSpotIds;
+}
+
+
+/**
+ * 公開スタンプ対象を同じ取得結果の市町村と組にして読み込む。
+ * @returns データの出所を含む対象。障害時は保存不可のサンプル
+ * @example const catalog = await loadStampCatalog();
+ */
+export async function loadStampCatalog(): Promise<StampCatalog> {
+  if (!client) return mockStampCatalog;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const [spots, cities] = await Promise.all([
+      client.from("spots").select("*")
+        .not("city_id", "is", null).not("genre_id", "is", null)
+        .gte("lat", IWATE_PUBLIC_BOUNDS.minLat).lte("lat", IWATE_PUBLIC_BOUNDS.maxLat)
+        .gte("lng", IWATE_PUBLIC_BOUNDS.minLng).lte("lng", IWATE_PUBLIC_BOUNDS.maxLng)
+        .order("id").limit(500).abortSignal(controller.signal),
+      client.from("cities").select("*").order("id").limit(100).abortSignal(controller.signal),
+    ]);
+    if (spots.error || cities.error) return mockStampCatalog;
+    return { spots: (spots.data ?? []) as Spot[], cities: (cities.data ?? []) as City[], isSample: false };
+  } catch {
+    return mockStampCatalog;
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
+  }
+}
+
+/**
+ * 出所情報を保った公開スタンプカタログを同一オリジンから取得する。
+ * @returns 公開対象。通信失敗時は閲覧専用サンプル
+ * @example const catalog = await fetchStampCatalog();
+ */
+export async function fetchStampCatalog(): Promise<StampCatalog> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch("/api/stamps/catalog", { cache: "no-store", signal: controller.signal });
+    if (!response.ok) return mockStampCatalog;
+    const catalog = await response.json() as StampCatalog;
+    if (!Array.isArray(catalog.spots) || !Array.isArray(catalog.cities) || typeof catalog.isSample !== "boolean") return mockStampCatalog;
+    return catalog;
+  } catch {
+    return mockStampCatalog;
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
+  }
 }

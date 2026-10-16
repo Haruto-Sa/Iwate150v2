@@ -79,6 +79,7 @@ export default function StampPage() {
               className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-7"
             >
               現在はサンプルの対象を表示しています。本人の進捗には結び付けず、収集・保存もできません。
+              サンプルから詳細ページには移動できません。
               <Button
                 variant="outline"
                 className="mt-3"
@@ -139,6 +140,8 @@ export default function StampPage() {
                 center={IWATE_CENTER}
                 spots={progress.targets}
                 showUser={false}
+                showImages={false}
+                showDetailLinks={!collection.isSample}
                 visitedSpotIds={personalReady ? [...progress.earnedIds] : []}
                 stampProgressKnown={personalReady}
               />
@@ -149,7 +152,7 @@ export default function StampPage() {
             )}
             <p className="text-sm">
               ○ 対象スポット {personalReady && "／ ✓ 取得済み"}
-              。地図を使わず、下の市町村一覧からも詳細を開けます。
+              。地図を使わず、下の市町村一覧からも対象を確認できます。
             </p>
           </section>
           <GlassCard title="現在地の近くで集める" icon={MapPin}>
@@ -186,12 +189,16 @@ export default function StampPage() {
                   className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-900/15 bg-white p-4"
                 >
                   <div>
-                    <Link
-                      href={getSpotHref(spot)}
-                      className="font-medium underline underline-offset-4"
-                    >
-                      {spot.name}
-                    </Link>
+                    {collection.isSample ? (
+                      <span className="font-medium">{spot.name}</span>
+                    ) : (
+                      <Link
+                        href={getSpotHref(spot)}
+                        className="font-medium underline underline-offset-4"
+                      >
+                        {spot.name}
+                      </Link>
+                    )}
                     <p className="mt-1 text-sm">
                       現在地から約{formatDistance(spot.distance)}
                     </p>
@@ -262,12 +269,16 @@ export default function StampPage() {
                         key={spot.id}
                         className="flex flex-wrap items-center justify-between gap-2"
                       >
-                        <Link
-                          href={getSpotHref(spot)}
-                          className="py-2 underline underline-offset-4"
-                        >
-                          {spot.name}
-                        </Link>
+                        {collection.isSample ? (
+                          <span className="py-2">{spot.name}</span>
+                        ) : (
+                          <Link
+                            href={getSpotHref(spot)}
+                            className="py-2 underline underline-offset-4"
+                          >
+                            {spot.name}
+                          </Link>
+                        )}
                         {personalReady && (
                           <span className="text-xs">
                             {progress.earnedIds.has(spot.id)

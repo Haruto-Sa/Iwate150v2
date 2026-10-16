@@ -955,6 +955,38 @@ export async function mergeFavorites(identity: string, spotIds: number[]): Promi
 
 
 /**
+ * ID順に公開対象を最後まで取得する。途中失敗・制限超過時は部分一覧を返さない。
+ * @param db - 公開データ用クライアント
+ * @param signal - カタログ全体のタイムアウト
+ * @returns 全対象。取得を完了できなかった場合はnull
+ * @example const spots = await loadAllStampSpots(db, controller.signal);
+ */
+async function loadAllStampSpots(db: SupabaseClient, signal: AbortSignal): Promise<Spot[] | null> {
+  const spots: Spot[] = [];
+  let lastId: number | undefined;
+  // メモリとリクエスト数を制限し、極端に大きい一覧でも無制限に取得しない。
+  for (let page = 0; page < 100; page += 1) {
+    if (signal.aborted) return null;
+    let query = db.from("spots").select("*")
+      .not("city_id", "is", null).not("genre_id", "is", null)
+      .gte("lat", IWATE_PUBLIC_BOUNDS.minLat).lte("lat", IWATE_PUBLIC_BOUNDS.maxLat)
+      .gte("lng", IWATE_PUBLIC_BOUNDS.minLng).lte("lng", IWATE_PUBLIC_BOUNDS.maxLng)
+      .order("id").limit(500);
+    if (lastId !== undefined) query = query.gt("id", lastId);
+    const { data, error } = await query.abortSignal(signal);
+    if (error || !data || signal.aborted) return null;
+    if (!data.length) return spots;
+    const rows = data as Spot[];
+    const nextId = rows[rows.length - 1].id;
+    if (!Number.isSafeInteger(nextId) || (lastId !== undefined && nextId <= lastId)) return null;
+    spots.push(...rows);
+    lastId = nextId;
+    // サーバー側の件数上限が500未満でも、空ページを得るまで次のIDを取得する。
+  }
+  return null;
+}
+
+/**
  * 公開スタンプ対象を同じ取得結果の市町村と組にして読み込む。
  * @returns データの出所を含む対象。障害時は保存不可のサンプル
  * @example const catalog = await loadStampCatalog();
@@ -965,15 +997,11 @@ export async function loadStampCatalog(): Promise<StampCatalog> {
   const timer = setTimeout(() => controller.abort(), 10000);
   try {
     const [spots, cities] = await Promise.all([
-      client.from("spots").select("*")
-        .not("city_id", "is", null).not("genre_id", "is", null)
-        .gte("lat", IWATE_PUBLIC_BOUNDS.minLat).lte("lat", IWATE_PUBLIC_BOUNDS.maxLat)
-        .gte("lng", IWATE_PUBLIC_BOUNDS.minLng).lte("lng", IWATE_PUBLIC_BOUNDS.maxLng)
-        .order("id").limit(500).abortSignal(controller.signal),
+      loadAllStampSpots(client, controller.signal),
       client.from("cities").select("*").order("id").limit(100).abortSignal(controller.signal),
     ]);
-    if (spots.error || cities.error) return mockStampCatalog;
-    return { spots: (spots.data ?? []) as Spot[], cities: (cities.data ?? []) as City[], isSample: false };
+    if (!spots || cities.error || controller.signal.aborted) return mockStampCatalog;
+    return { spots, cities: (cities.data ?? []) as City[], isSample: false };
   } catch {
     return mockStampCatalog;
   } finally {

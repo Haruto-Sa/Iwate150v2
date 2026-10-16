@@ -89,6 +89,9 @@ describe("公開スタンプマップと本人収集", () => {
       }),
     ).toBeDisabled();
     expect(screen.queryByText("1 / 1スポット取得")).toBeNull();
+    await userEvent.click(screen.getByText("盛岡市"));
+    expect(screen.queryAllByRole("link", { name: spot.name })).toHaveLength(0);
+    expect(screen.getAllByText(spot.name)).toHaveLength(2);
     expect(api.createStamp).not.toHaveBeenCalled();
   });
 

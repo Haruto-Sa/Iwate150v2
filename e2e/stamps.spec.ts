@@ -37,7 +37,8 @@ test("未ログインで県内の対象を閲覧し、位置情報拒否後も�
   await page.getByText("盛岡市", { exact: true }).click();
   await expect(
     page.getByRole("link", { name: "盛岡城跡公園", exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(page.getByText("盛岡城跡公園", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "位置情報を取得" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
     "地図と対象一覧はそのまま閲覧できます",
@@ -221,5 +222,15 @@ test("ログイン後もサンプル対象は本人の進捗と混ぜず収集�
   await expect(
     page.getByTitle("盛岡城跡公園（対象スポット）", { exact: true }),
   ).toBeVisible();
+  // 県全体の縮尺で近隣マーカーと重ならない対象を開く。
+  const sampleMarker = page.getByTitle("龍泉洞（対象スポット）", { exact: true });
+  await expect(sampleMarker).toHaveClass(/stamp-map-marker/);
+  await sampleMarker.click();
+  const popup = page.locator(".leaflet-popup-content");
+  await expect(popup).toBeVisible();
+  await expect(popup.getByRole("link", { name: "詳細を見る" })).toHaveCount(0);
+  await expect(popup.locator("img")).toHaveCount(0);
+  await page.getByText("盛岡市", { exact: true }).click();
+  await expect(page.getByRole("link", { name: "盛岡城跡公園", exact: true })).toHaveCount(0);
   expect(writes).toEqual([]);
 });

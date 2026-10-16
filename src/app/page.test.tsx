@@ -87,6 +87,7 @@ describe("Home page", () => {
     expect(mockFetchEvents).toHaveBeenCalledWith();
     expect(screen.getByText("もうすぐ、岩手で。")).toBeInTheDocument();
     expect(screen.getByText("盛岡春まつり")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "イベントを探す" })).toHaveAttribute("href", "/search?tab=event");
     expect(screen.getByRole("link", { name: /詳細を見る/ })).toHaveAttribute("href", "/spots/1");
   });
 

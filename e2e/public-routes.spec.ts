@@ -20,6 +20,18 @@ test("guest can access search", async ({ page }) => {
   await expect(main.getByText("旅先のヒント", { exact: true })).toBeVisible();
 });
 
+test("イベントを探す導線と再読み込みでイベントタブを開く", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "イベントを探す" }).click();
+  await expect(page).toHaveURL(/\/search\?tab=event$/);
+  await expect(page.getByRole("button", { name: "イベント", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("もうすぐ開催", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "イベント", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.goto("/search?tab=unknown");
+  await expect(page.getByRole("button", { name: "スポット", exact: true })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("guest can access camera", async ({ page }) => {
   await page.goto("/camera");
   await expect(page.getByRole("main").getByText("はじめてでも大丈夫です。")).toBeVisible();

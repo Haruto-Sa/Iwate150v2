@@ -32,6 +32,7 @@ type Props = {
   genres: Genre[];
   defaultSpots: Spot[];
   defaultEvents: Event[];
+  initialTab?: SearchTab;
 };
 
 const PAGE_SIZE = 50;
@@ -68,12 +69,13 @@ function buildSearchQuery(params: {
  * DB 検索 API を利用し、市区町村・ジャンル・キーワードで安全に絞り込む。
  *
  * @param props - コンポーネントプロパティ
+ * @param props.initialTab - URLで指定された初期タブ。既定はスポット
  * @returns SearchSurface コンポーネント
  * @example
  * <SearchSurface cities={cities} genres={genres} />
  */
-export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: Props) {
-  const [tab, setTab] = useState<SearchTab>("spot");
+export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, initialTab = "spot" }: Props) {
+  const [tab, setTab] = useState<SearchTab>(initialTab);
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [selectedCityId, setSelectedCityId] = useState<string>("all");

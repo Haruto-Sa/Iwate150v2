@@ -79,6 +79,13 @@ function getLastRequestUrl(mockFetch: ReturnType<typeof vi.fn>): URL {
 }
 
 describe("SearchSurface", () => {
+  it("イベント指定で開くと初回からイベント候補を表示する", () => {
+    render(<SearchSurface cities={cities} genres={genres} defaultSpots={defaultSpots} defaultEvents={defaultEvents} initialTab="event" />);
+    expect(screen.getByRole("button", { name: "イベント" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("盛岡週末ナイトマーケット")).toBeVisible();
+    expect(screen.queryByText("旅先のヒント")).toBeNull();
+  });
+
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
   });

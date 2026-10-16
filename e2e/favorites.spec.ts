@@ -125,8 +125,10 @@ test("本人の空一覧には自動追加せず、確認した旧保存だけ�
     .click();
   await expect(page.getByText(/まだお気に入りはありません/)).toBeVisible();
   expect(writes[1]).toEqual({ method: "DELETE", body: { spotId: 1 } });
+  await expect(page.getByText("追加する内容を確認（1件）")).toHaveCount(0);
   await page.reload();
   await expect(page.getByText(/まだお気に入りはありません/)).toBeVisible();
+  await expect(page.getByText("追加する内容を確認（1件）")).toHaveCount(0);
   expect(writes).toHaveLength(2);
   expect(
     await page.evaluate(() => localStorage.getItem("voja_guest_favorites")),

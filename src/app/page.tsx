@@ -203,7 +203,7 @@ export default async function Home() {
             </p>
           )}
           <Link
-            href="/search"
+            href="/search?tab=event"
             className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"
           >
             イベントを探す

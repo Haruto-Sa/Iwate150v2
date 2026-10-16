@@ -13,10 +13,15 @@ export const metadata = buildPageMetadata({
 
 /**
  * エリア・ジャンルとキーワードから旅先を探す。
+ * @param props.searchParams - 初期タブを指定するURLクエリ
  * @returns 初期候補を含む検索ページ
  * @example <SearchPage />
  */
-export default async function SearchPage() {
+export default async function SearchPage({ searchParams }: {
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
+  const { tab } = await searchParams;
+  const initialTab = tab === "event" ? "event" : "spot";
   const [cities, genres, spots, events] = await Promise.all([
     fetchCities(),
     fetchGenres(),
@@ -28,6 +33,8 @@ export default async function SearchPage() {
     <div className="space-y-8">
       <PageHeading eyebrow="EXPLORE IWATE" title="次は、どこへ行こう。" description="気になるキーワード、エリア、ジャンルから、行きたい場所やイベントを見つけられます。" />
       <SearchSurface
+        key={initialTab}
+        initialTab={initialTab}
         cities={cities}
         genres={genres}
         defaultSpots={defaultSpots}

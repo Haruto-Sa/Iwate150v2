@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { 
-  Sticker, Undo2, Save, Type, Palette, 
-  Move, Maximize2, ChevronDown, ChevronUp, X,
-  Download, Share2, Image as ImageIcon
+  Sticker, Undo2, Type, Palette,
+  Move, Maximize2, ChevronDown, ChevronUp, X, ArrowLeft
 } from "lucide-react";
+import Link from "next/link";
+import { PhotoSharePanel } from "@/components/camera/PhotoSharePanel";
 import { Button } from "@/components/ui/Button";
 
 type StickerItem = { id: string; char: string; x: number; y: number; size: number };
@@ -21,7 +22,6 @@ type TextItem = {
 
 type EditMode = "move" | "resize";
 type ToolPanel = "sticker" | "text" | null;
-type SocialPlatform = "x" | "line" | "facebook" | "instagram";
 
 const stickerPalette = ["🌊", "🌲", "✨", "🏔️", "🥢", "🚌", "🧭", "🍜", "🐟", "🦌", "🍎", "🌸"];
 const fontOptions = [
@@ -31,6 +31,11 @@ const fontOptions = [
   { label: "Bebas Neue", value: "\"Bebas Neue\", 'Segoe UI', sans-serif" },
 ];
 
+/**
+ * 撮影画像に文字・スタンプを重ね、最新の写真を保存・共有する。
+ * @returns 写真編集画面
+ * @example <CameraEditPage />
+ */
 export default function CameraEditPage() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
@@ -51,26 +56,24 @@ export default function CameraEditPage() {
   const [editMode, setEditMode] = useState<EditMode>("move");
   const [activeToolPanel, setActiveToolPanel] = useState<ToolPanel>(null);
   const [detPos, setDetPos] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-  const [showSaveMenu, setShowSaveMenu] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const [photoAspect, setPhotoAspect] = useState(4 / 3);
   
+  const nextOverlayId = useRef(0);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef<{ type: "sticker" | "text"; id: string; startX: number; startY: number; startSize: number } | null>(null);
-  // 編集中の最新の合成画像（File）。タップ時に await を挟まず即 navigator.share に渡すため事前生成しておく
-  const composedFileRef = useRef<File | null>(null);
 
   // Load captured photo + detection
   useEffect(() => {
-    const stored = sessionStorage.getItem("capturedPhoto");
-    if (stored) setPhoto(stored);
-    const det = sessionStorage.getItem("capturedDetection");
-    if (det) {
-      try {
-        setDetPos(JSON.parse(det));
-      } catch {
-        setDetPos(null);
-      }
+    try {
+      const stored = sessionStorage.getItem("capturedPhoto");
+      // ブラウザの保存領域をマウント後に読み込む。SSRと初回描画を一致させる。
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (stored) setPhoto(stored);
+      const det = sessionStorage.getItem("capturedDetection");
+      if (det) setDetPos(JSON.parse(det));
+    } catch {
+      // 保存領域が使えない場合も空状態から撮影に戻れる。
+      setDetPos(null);
     }
   }, []);
 
@@ -86,20 +89,29 @@ export default function CameraEditPage() {
       base[0].y = safeTop;
       base[1].y = safeBottom;
     }
+    // 撮影時の顔位置が読み込まれたら初期装飾を一度配置する。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStickers(base);
   }, [detPos]);
 
-  // Track stage size for scaling fonts
+  // フォントサイズは画像と同じ領域を基準にする。
   useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    /**
+     * プレビュー幅の変化を文字・スタンプの表示サイズへ反映する。
+     * @returns なし
+     * @example updateSize();
+     */
     const updateSize = () => {
-      if (!stageRef.current) return;
-      const rect = stageRef.current.getBoundingClientRect();
+      const rect = stage.getBoundingClientRect();
       setStageSize({ w: rect.width, h: rect.height });
     };
     updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, []);
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [photo]);
 
   const activeText = useMemo(
     () => activeItemType === "text" && activeItemId ? texts.find((t) => t.id === activeItemId) : null,
@@ -111,6 +123,14 @@ export default function CameraEditPage() {
     [stickers, activeItemId, activeItemType]
   );
 
+  /**
+   * ドラッグ対象と開始座標を記録する。
+   * @param e - ポインター操作
+   * @param type - 文字またはスタンプ
+   * @param id - 対象ID
+   * @returns なし
+   * @example handlePointerDown(event, "text", "caption");
+   */
   const handlePointerDown = useCallback((e: React.PointerEvent, type: "sticker" | "text", id: string) => {
     e.stopPropagation();
     setActiveItemId(id);
@@ -132,13 +152,19 @@ export default function CameraEditPage() {
     };
   }, [stickers, texts]);
 
+  /**
+   * 選択要素の移動または拡大縮小を反映する。
+   * @param e - ポインター操作
+   * @returns なし
+   * @example onPointerMove={handlePointerMove}
+   */
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!draggingRef.current || !stageRef.current) return;
     const rect = stageRef.current.getBoundingClientRect();
     const currentX = (e.clientX - rect.left) / rect.width;
     const currentY = (e.clientY - rect.top) / rect.height;
     
-    const { type, id, startX, startY, startSize } = draggingRef.current;
+    const { type, id, startY, startSize } = draggingRef.current;
 
     if (editMode === "move") {
       // 移動モード
@@ -173,6 +199,11 @@ export default function CameraEditPage() {
     }
   }, [editMode]);
 
+  /**
+   * ドラッグ状態を解除する。
+   * @returns なし
+   * @example stopDrag();
+   */
   const stopDrag = useCallback(() => {
     draggingRef.current = null;
   }, []);
@@ -182,8 +213,14 @@ export default function CameraEditPage() {
     return () => window.removeEventListener("pointerup", stopDrag);
   }, [stopDrag]);
 
+  /**
+   * 編集画像にスタンプを追加する。
+   * @param char - スタンプの絵文字
+   * @returns なし
+   * @example addSticker("🌊");
+   */
   const addSticker = (char: string) => {
-    const newId = `s-${Date.now()}`;
+    const newId = `s-${++nextOverlayId.current}`;
     setStickers((prev) => [
       ...prev,
       { id: newId, char, x: 0.5, y: 0.5, size: 0.08 },
@@ -193,8 +230,13 @@ export default function CameraEditPage() {
     setActiveToolPanel(null);
   };
 
+  /**
+   * 編集可能な文字を追加する。
+   * @returns なし
+   * @example addText();
+   */
   const addText = () => {
-    const newId = `t-${Date.now()}`;
+    const newId = `t-${++nextOverlayId.current}`;
     setTexts((prev) => [
       ...prev,
       {
@@ -211,6 +253,11 @@ export default function CameraEditPage() {
     setActiveItemType("text");
   };
 
+  /**
+   * 選択中の装飾を削除する。
+   * @returns なし
+   * @example deleteActiveItem();
+   */
   const deleteActiveItem = () => {
     if (!activeItemId) return;
     if (activeItemType === "sticker") {
@@ -222,6 +269,11 @@ export default function CameraEditPage() {
     setActiveItemType(null);
   };
 
+  /**
+   * 装飾を初期状態へ戻す。
+   * @returns なし
+   * @example resetOverlays();
+   */
   const resetOverlays = () => {
     setStickers([]);
     setTexts([{
@@ -237,13 +289,18 @@ export default function CameraEditPage() {
     setActiveItemType("text");
   };
 
-  // 画像生成
+  /**
+   * プレビューと同じ座標・縦横比で編集内容をPNGへ合成する。
+   * @returns 合成済み画像。写真またはCanvasがない場合はnull
+   * @example const blob = await generateImage();
+   */
   const generateImage = useCallback(async (): Promise<Blob | null> => {
     if (!photo) return null;
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.src = photo;
     await img.decode();
+    await document.fonts.ready;
 
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth || 1280;
@@ -277,165 +334,15 @@ export default function CameraEditPage() {
     });
   }, [photo, stickers, texts]);
 
-  // 編集内容が変わるたびに合成画像を事前生成して ref に保持する（iOS の共有失敗対策）。
-  // これにより共有ハンドラはタップ時に await を挟まず即 navigator.share を呼べる。
-  useEffect(() => {
-    if (!photo) {
-      composedFileRef.current = null;
-      return;
-    }
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      const blob = await generateImage();
-      if (cancelled || !blob) return;
-      composedFileRef.current = new File([blob], "iwate-memory.png", { type: "image/png" });
-    }, 200);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [photo, stickers, texts, generateImage]);
-
-  const saveBlobAsFile = useCallback((blob: Blob, fileName = "iwate-memory.png") => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }, []);
-
-  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
-  const canShareFiles = canShare && typeof navigator.canShare === "function";
-
-  const shareUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const baseShareText = "岩手旅の思い出をシェア！ #岩手旅 #Iwate150 #VOJAIWATE";
-
-  // 共有失敗時に握りつぶしてよいエラーか（ユーザーがキャンセルした等）
-  const isIgnorableShareError = (err: unknown) => {
-    const name = (err as Error)?.name;
-    return name === "AbortError" || name === "InvalidStateError";
-  };
-
-  // 事前生成済み File を使い、await を挟まず即 navigator.share を呼ぶ（iOS の user activation 失効対策）。
-  // 共有シートが開けたら true を返す。
-  const shareFileImmediately = (text?: string): boolean => {
-    const file = composedFileRef.current;
-    if (!canShareFiles || !file || !navigator.canShare?.({ files: [file] })) {
-      return false;
-    }
-    navigator
-      .share({ files: [file], title: "岩手の思い出", ...(text ? { text } : {}) })
-      .catch((err) => {
-        if (!isIgnorableShareError(err)) console.error("Share failed:", err);
-      });
-    return true;
-  };
-
-  // Web Share API（汎用「共有...」ボタン）
-  const handleShare = async () => {
-    setShareMessage(null);
-    if (shareFileImmediately(baseShareText)) {
-      setShowSaveMenu(false);
-      return;
-    }
-    // file共有非対応端末
-    setShowSaveMenu(false);
-    const blob = await generateImage();
-    if (!blob) return;
-    if (canShare) {
-      try {
-        await navigator.share({ title: "岩手の思い出", text: baseShareText });
-      } catch (err) {
-        if (!isIgnorableShareError(err)) console.error("Share failed:", err);
-      }
-    } else {
-      saveBlobAsFile(blob);
-      setShareMessage("共有API非対応のため、画像を保存しました。");
-    }
-  };
-
-  // ファイルに保存（ダウンロード）。iOSでは保存先に「ファイルに保存」が選べる。
-  const handleDownload = async () => {
-    if (isSaving) return;
-    setIsSaving(true);
-    setShareMessage(null);
-    try {
-      const blob = await generateImage();
-      if (!blob) return;
-      saveBlobAsFile(blob);
-      setShareMessage("画像をファイルとして保存しました。");
-    } finally {
-      setIsSaving(false);
-      setShowSaveMenu(false);
-    }
-  };
-
-  // 写真（カメラロール）に保存。iOSは共有シートの「写真に保存」、非対応端末はダウンロードにフォールバック。
-  const handleSaveToPhotos = async () => {
-    setShareMessage(null);
-    // 共有シート経由（iOSで「写真に保存」が出る）。await無しで即起動。
-    if (shareFileImmediately()) {
-      setShowSaveMenu(false);
-      return;
-    }
-    setShowSaveMenu(false);
-    const blob = await generateImage();
-    if (!blob) return;
-    saveBlobAsFile(blob);
-    setShareMessage("写真共有に非対応のため、画像を保存しました。");
-  };
-
-  const openSocialIntent = (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
-
-  // SNSボタン: モバイルは写真添付の共有シートを即起動（→投稿画面に写真が乗る）。
-  // PC等のfile共有非対応端末は、画像を保存して各SNSの投稿画面（テキスト/URL）を開く。
-  const shareToSocial = async (platform: SocialPlatform) => {
-    setShareMessage(null);
-
-    // モバイル主経路: 写真添付の共有シートを即起動
-    if (shareFileImmediately(baseShareText)) {
-      setShareMessage("共有メニューから投稿先アプリを選ぶと、写真付きで投稿画面が開きます。");
-      return;
-    }
-
-    // file共有非対応（PC等）: 画像を保存＋Web Intent
-    if (isSaving) return;
-    setIsSaving(true);
-    try {
-      const blob = await generateImage();
-      if (!blob) return;
-      saveBlobAsFile(blob);
-
-      if (platform === "instagram") {
-        setShareMessage("画像を保存しました。Instagramアプリで画像を選択して投稿してください。");
-        return;
-      }
-      if (platform === "x") {
-        openSocialIntent(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(baseShareText)}&url=${encodeURIComponent(shareUrl)}`
-        );
-      } else if (platform === "line") {
-        openSocialIntent(
-          `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`
-        );
-      } else if (platform === "facebook") {
-        openSocialIntent(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(baseShareText)}`
-        );
-      }
-      setShareMessage("画像を保存しました。開いた投稿画面で画像を添付して投稿してください。");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
-    <div className="flex flex-col gap-3 pb-20">
+    <div className="mx-auto flex max-w-3xl flex-col gap-4 pb-8">
+      <header className="space-y-3">
+        <Link href="/camera" className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-900"><ArrowLeft aria-hidden="true" className="h-4 w-4" />カメラに戻る</Link>
+        <p className="text-[10px] font-semibold tracking-[0.22em] text-emerald-900/70">IWATE / PHOTO STUDIO</p>
+        <h1 className="text-2xl font-semibold text-[#173f35] sm:text-3xl">この旅を、一枚に。</h1>
+        <p className="text-sm text-emerald-900/75">文字やスタンプを添えて、岩手の思い出を残しましょう。</p>
+      </header>
       {/* ヘッダー説明 */}
       <div className="rounded-xl border border-emerald-900/10 bg-white px-3 py-2 text-xs text-emerald-900/80 shadow-sm">
         ドラッグで移動、モード切替でサイズ変更。タップで選択後、削除や編集ができます。
@@ -450,12 +357,15 @@ export default function CameraEditPage() {
           setActiveItemType(null);
         }}
         className="relative overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-lg"
-        style={{ minHeight: 300 }}
+
       >
-        <div className="relative flex aspect-[4/3] w-full items-center justify-center sm:aspect-[16/10]">
+        <div className="relative flex w-full items-center justify-center" style={{ aspectRatio: photoAspect }}>
           {photo ? (
             <div className="relative h-full w-full">
-              <img src={photo} alt="capture" className="h-full w-full object-cover" />
+              <img src={photo} alt="撮影した岩手旅の写真" className="h-full w-full object-contain" onLoad={(event) => {
+                const image = event.currentTarget;
+                if (image.naturalWidth && image.naturalHeight) setPhotoAspect(image.naturalWidth / image.naturalHeight);
+              }} />
               
               {/* Stickers */}
               {stickers.map((s) => (
@@ -470,6 +380,7 @@ export default function CameraEditPage() {
                     top: `${s.y * 100}%`,
                     transform: "translate(-50%, -50%)",
                     fontSize: `${s.size * (stageSize.w || 300)}px`,
+                    lineHeight: 1,
                   }}
                 >
                   {s.char}
@@ -493,7 +404,7 @@ export default function CameraEditPage() {
                     fontFamily: t.font,
                     fontSize: `${t.size * (stageSize.w || 300)}px`,
                     color: t.color,
-                    textShadow: "0 1px 2px rgba(255,255,255,0.8)",
+                    lineHeight: 1,
                   }}
                 >
                   {t.text}
@@ -501,120 +412,19 @@ export default function CameraEditPage() {
               ))}
             </div>
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-amber-50">
-              <p className="text-sm text-emerald-900/50">写真がありません</p>
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[#f6f5ee]">
+              <p className="text-sm text-emerald-900/70">写真がありません</p>
+              <Link href="/camera" className="inline-flex min-h-11 items-center rounded-full bg-[#173f35] px-5 text-sm text-white">写真を撮りに行く</Link>
             </div>
           )}
         </div>
       </div>
 
-      {/* 保存ボタン（プレビュー直下） */}
-      <div className="relative">
-        <Button
-          onClick={() => setShowSaveMenu(!showSaveMenu)}
-          className="w-full justify-center gap-2 py-3"
-          disabled={isSaving}
-        >
-          <Save className="h-5 w-5" />
-          {isSaving ? "保存中..." : "保存する"}
-          {showSaveMenu ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-        
-        {/* 保存メニュー */}
-        {showSaveMenu && (
-          <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-emerald-900/10 bg-white shadow-lg">
-            {canShare && (
-              <Button
-                variant="ghost"
-                onClick={handleSaveToPhotos}
-                className="flex w-full items-center gap-3 !rounded-none px-4 py-3 text-left !text-emerald-900"
-              >
-                <ImageIcon className="h-5 w-5 text-emerald-600" />
-                <div>
-                  <div className="font-medium">写真に保存</div>
-                  <div className="text-xs text-emerald-700/70">カメラロールに保存</div>
-                </div>
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              onClick={handleDownload}
-              className="flex w-full items-center gap-3 !rounded-none px-4 py-3 text-left !text-emerald-900"
-            >
-              <Download className="h-5 w-5 text-emerald-600" />
-              <div>
-                <div className="font-medium">ファイルに保存</div>
-                <div className="text-xs text-emerald-700/70">ファイルアプリ／ダウンロードに保存</div>
-              </div>
-            </Button>
-            {canShare && (
-              <Button
-                variant="ghost"
-                onClick={handleShare}
-                className="flex w-full items-center gap-3 !rounded-none px-4 py-3 text-left !text-emerald-900"
-              >
-                <Share2 className="h-5 w-5 text-emerald-600" />
-                <div>
-                  <div className="font-medium">共有...</div>
-                  <div className="text-xs text-emerald-700/70">他のアプリで開く・SNSシェア</div>
-                </div>
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
+      {photo && <PhotoSharePanel build={generateImage} hasPhoto={Boolean(photo)} />}
 
-      <div className="rounded-xl border border-emerald-900/10 bg-white p-3 shadow-sm">
-        <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-900">
-          <Share2 className="h-4 w-4 text-emerald-700" />
-          SNS連携
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => shareToSocial("x")}
-            disabled={isSaving}
-          >
-            Xに投稿
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => shareToSocial("line")}
-            disabled={isSaving}
-          >
-            LINEで送信
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => shareToSocial("facebook")}
-            disabled={isSaving}
-          >
-            Facebook
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => shareToSocial("instagram")}
-            disabled={isSaving}
-          >
-            Instagram
-          </Button>
-        </div>
-        <p className="mt-2 text-xs text-emerald-900/65">
-          スマホでは共有メニューが開くので投稿先アプリを選ぶと、写真付きで投稿画面に進めます。PCでは画像を保存後に各SNSの投稿画面を開きます（画像は手動で添付）。
-        </p>
-        {shareMessage && (
-          <p className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-            {shareMessage}
-          </p>
-        )}
-      </div>
-
+      {photo && <>
       {/* 編集モード切り替え */}
-      <div className="flex items-center gap-2 rounded-xl border border-emerald-900/10 bg-white p-2 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-900/10 bg-white p-2 shadow-sm">
         <span className="px-2 text-xs text-emerald-900/70">モード:</span>
         <Button
           variant={editMode === "move" ? "primary" : "ghost"}
@@ -724,12 +534,14 @@ export default function CameraEditPage() {
                     prev.map((t) => (t.id === activeText.id ? { ...t, text: e.target.value } : t))
                   )
                 }
+                aria-label="写真に添える文字"
                 placeholder="テキストを入力..."
               />
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Palette className="h-4 w-4 text-emerald-700" />
                   <input
+                    aria-label="文字の色"
                     type="color"
                     value={activeText.color}
                     onChange={(e) =>
@@ -744,6 +556,7 @@ export default function CameraEditPage() {
                 </div>
                 <select
                   className="flex-1 rounded-lg border border-emerald-900/15 bg-white px-2 py-1.5 text-xs text-emerald-900"
+                  aria-label="文字の書体"
                   value={activeText.font}
                   onChange={(e) =>
                     setTexts((prev) =>
@@ -772,6 +585,7 @@ export default function CameraEditPage() {
           )}
         </div>
       )}
+      </>}
     </div>
   );
 }

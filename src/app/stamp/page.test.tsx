@@ -111,7 +111,7 @@ describe("StampPage", () => {
 
     render(<StampPage />);
 
-    expect(await screen.findByText("Stamps start with login")).toBeInTheDocument();
+    expect(await screen.findByText("ログインして、旅を記録")).toBeInTheDocument();
     expect(screen.getByText("できること")).toBeInTheDocument();
   });
 

@@ -4,6 +4,8 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useIsMobileViewport } from "@/hooks/useIsMobileViewport";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useModalDialog } from "@/hooks/useModalDialog";
+import { useId } from "react";
 
 type Props = {
   open: boolean;
@@ -21,9 +23,17 @@ type Props = {
  * @example
  * <BottomSheet open title="Menu" onClose={() => {}}>...</BottomSheet>
  */
-export function BottomSheet({ open, title, onClose, children, className = "" }: Props) {
+export function BottomSheet({
+  open,
+  title,
+  onClose,
+  children,
+  className = "",
+}: Props) {
   const isMobileViewport = useIsMobileViewport();
   const shouldRender = open && isMobileViewport;
+  const dialogRef = useModalDialog(shouldRender);
+  const titleId = useId();
 
   // iOS Safari 対応のスクロールロック（解除後にスクロール不能になる不具合対策）
   useBodyScrollLock(shouldRender);
@@ -31,20 +41,26 @@ export function BottomSheet({ open, title, onClose, children, className = "" }: 
   if (!shouldRender) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/35 backdrop-blur-sm md:hidden">
-      <button
-        aria-label="閉じる"
-        className="absolute inset-0"
-        onClick={onClose}
-      />
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={titleId}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      className="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-[2rem] bg-[#f6f5ef] text-emerald-950 backdrop:bg-black/35"
+    >
       <section
-        aria-modal="true"
-        role="dialog"
-        className={`relative w-full rounded-t-[2rem] border border-white/40 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,250,246,0.98))] px-5 pb-8 pt-4 shadow-[0_-24px_60px_rgba(15,28,26,0.18)] ${className}`}
+        className={`px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4 ${className}`}
       >
         <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-emerald-900/15" />
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="font-display text-2xl text-[#0f1c1a]">{title}</h2>
+          <h2 id={titleId} className="font-display text-2xl text-[#0f1c1a]">
+            {title}
+          </h2>
           <Button
             aria-label={`${title} を閉じる`}
             variant="ghost"
@@ -57,6 +73,6 @@ export function BottomSheet({ open, title, onClose, children, className = "" }: 
         </div>
         {children}
       </section>
-    </div>
+    </dialog>
   );
 }

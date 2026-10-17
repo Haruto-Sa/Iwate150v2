@@ -933,7 +933,7 @@ export function CameraCapture() {
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white shadow-2xl sm:aspect-[16/10]">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white sm:aspect-[16/10]">
         <video
           ref={videoRef}
           className="h-full w-full object-cover"
@@ -992,7 +992,7 @@ export function CameraCapture() {
                 onClick={() => {
                   void startCamera();
                 }}
-                variant="glass"
+                variant="outline"
                 className="pointer-events-auto h-12 px-4 text-sm"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -1039,6 +1039,7 @@ export function CameraCapture() {
                 }
               }}
               disabled={isDisabled}
+              aria-pressed={active}
               className="gap-2"
             >
               {active ? <Check className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}

@@ -1,190 +1,216 @@
+import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, MapPin, Sparkles, LocateFixed } from "lucide-react";
+import { ArrowRight, Camera, MapPin, Search } from "lucide-react";
 import { fetchCities, fetchEvents, fetchSpots } from "@/lib/supabaseClient";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { HomeCalendarSwitcher } from "@/components/home/HomeCalendarSwitcher";
+import { SpotCard } from "@/components/ui/SpotCard";
+import { SectionTitle } from "@/components/ui/SectionTitle";
 import { getImageUrl, resolveServerStorageUrls } from "@/lib/storage";
 import { buildPageMetadata, buildHomeJsonLd } from "@/lib/seo";
-import { getSpotHref } from "@/lib/spotRoutes";
 
 export const revalidate = 60;
 export const metadata = buildPageMetadata({
-  title: "Home",
-  description: "今日のおすすめ、近くのスポット、イベント予定から岩手の旅をすぐに始められます。",
+  title: "岩手の旅を見つける",
+  description: "岩手の風景、観光スポット、イベントを探して、自分だけの旅へ。",
   path: "/",
 });
 
+/**
+ * 写真、目的別導線、旅先とイベントで岩手の旅を案内する。
+ * @returns データ取得済みのホーム画面
+ * @example <Home />
+ */
 export default async function Home() {
   const [events, spots, cities] = await Promise.all([
-    fetchEvents({ limit: 4 }),
+    fetchEvents(),
     fetchSpots(),
     fetchCities(),
   ]);
   const cityById = new Map(cities.map((city) => [city.id, city]));
   const featured = spots.slice(0, 3);
-  const nextEvents = events.slice(0, 4);
-  const eventImagePaths = nextEvents.map((event) => {
-    const city =
-      (event.city_id ? cityById.get(event.city_id) : undefined) ??
-      (event.location
-        ? cities.find((cityItem) =>
-            event.location?.includes(cityItem.name) || cityItem.name.includes(event.location ?? "")
-          )
-        : undefined);
-    return city?.image_thumb_path ?? city?.image_path ?? null;
-  });
-  const featuredImagePaths = featured.map((spot) => {
-    const city = cityById.get(spot.city_id);
-    return spot.image_thumb_path ?? spot.image_path ?? city?.image_thumb_path ?? city?.image_path ?? null;
-  });
-  const resolvedImageMap = await resolveServerStorageUrls(
-    [...eventImagePaths, ...featuredImagePaths],
-    "image"
+  const paths = featured.map(
+    (spot) => spot.image_thumb_path ?? spot.image_path ?? null,
   );
-  const homeJsonLd = buildHomeJsonLd(events);
-
+  const resolvedImages = await resolveServerStorageUrls(paths, "image");
   return (
-    <div className="space-y-8">
+    <div className="space-y-12 sm:space-y-16">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildHomeJsonLd(events)),
+        }}
       />
-      <section className="glass relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-[#0e1c21] via-[#0b1a1f] to-[#0f2b32] p-6 text-white shadow-2xl ring-1 ring-emerald-900/15 sm:p-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(79,255,206,0.35),transparent_38%),radial-gradient(circle_at_90%_20%,rgba(255,159,85,0.28),transparent_35%)]" />
-        <div className="relative space-y-3 drop-shadow">
-          <p className="text-xs uppercase tracking-[0.3em] text-emerald-100/90">Iwate Travel</p>
-          <h1 className="font-display text-3xl leading-tight sm:text-4xl">
-            今日の気分で、岩手の旅先を見つけよう。
-          </h1>
-          <p className="max-w-2xl text-sm text-emerald-50/90 sm:text-base">
-            今日のおすすめ、近くのスポット、イベント予定をひとつの画面に。気になる場所は地図やカメラ体験へすぐにつながります。
+      <section className="grid overflow-hidden rounded-[1.5rem] border border-emerald-900/15 bg-[#eeeee4] md:grid-cols-[.9fr_1.1fr]">
+        <div className="flex flex-col justify-center px-6 py-8 sm:p-10 lg:p-12">
+          <p className="flex items-center gap-3 text-[11px] font-medium tracking-[.22em] text-emerald-800">
+            <span aria-hidden="true" className="h-1.5 w-1.5 bg-[#a14432]" />
+            IWATE, JAPAN
           </p>
-          <div className="flex flex-wrap gap-3 pt-2">
-            <Link href="/map">
-              <span className="interactive-lift tap-feedback inline-flex min-w-32 items-center justify-center rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-emerald-950 shadow-[0_16px_36px_rgba(52,211,153,0.28)] transition duration-200 hover:bg-emerald-300">
-                Map で探す
-              </span>
-            </Link>
-            <Link href="/character">
-              <span className="interactive-lift tap-feedback inline-flex min-w-32 items-center justify-center rounded-full border border-white/35 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:bg-white/15">
-                Character を見る
-              </span>
+          <h1 className="mt-6 font-display text-4xl leading-[1.6] tracking-wider text-emerald-950 lg:text-5xl">
+            まだ知らない、
+            <br />
+            岩手に会いに。
+          </h1>
+          <p className="mt-5 max-w-sm text-sm leading-8 text-emerald-900/80">
+            海沿いの道も、山あいの町も。
+            <br />
+            心に留まる場所を見つけて、
+            <br className="sm:hidden" />
+            あなたらしい旅を。
+          </p>
+          <div className="mt-7">
+            <Link href="/search" className="action-link">
+              旅先を探す
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
+          <p className="mt-8 text-xs tracking-[.14em] text-emerald-700">
+            見つける。歩く。思い出にする。
+          </p>
         </div>
+        <figure className="relative min-h-64 md:min-h-[28rem]">
+          <Image
+            src="/images/cities/Miyako_icon.jpg"
+            alt="宮古の青い海と白い岩の風景"
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 55vw"
+            className="object-cover"
+          />
+          <figcaption className="absolute bottom-4 right-4 rounded-full bg-white/95 px-4 py-2 text-xs tracking-wider text-emerald-950">
+            宮古市 / 三陸の海
+          </figcaption>
+        </figure>
       </section>
 
-      <HomeCalendarSwitcher events={events} />
+      <nav
+        aria-label="旅の楽しみ方"
+        className="grid divide-y divide-emerald-900/15 border-y border-emerald-900/15 md:grid-cols-3 md:divide-x md:divide-y-0"
+      >
+        {[
+          {
+            title: "気になる場所を探す",
+            copy: "エリア・ジャンルから旅先選び",
+            icon: Search,
+            href: "/search",
+          },
+          {
+            title: "地図をひらく",
+            copy: "現在地のまわりを歩いてみよう",
+            icon: MapPin,
+            href: "/map",
+          },
+          {
+            title: "旅の一枚を撮る",
+            copy: "岩手のキャラクターと、いっしょに",
+            icon: Camera,
+            href: "/camera",
+          },
+        ].map((item, index) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="group flex items-center gap-4 px-3 py-6 transition-colors hover:bg-emerald-50 sm:px-6"
+          >
+            <span className="font-display text-lg text-[#a14432]">
+              0{index + 1}
+            </span>
+            <item.icon
+              className="h-5 w-5 shrink-0 text-emerald-800"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            <div className="flex-1">
+              <p className="text-sm font-medium">{item.title}</p>
+              <p className="mt-1 text-xs leading-6 text-emerald-900/75">
+                {item.copy}
+              </p>
+            </div>
+            <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+          </Link>
+        ))}
+      </nav>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <GlassCard title="Today's picks" icon={Sparkles} badge="Picks">
-          <div className="space-y-2 text-sm text-[#0f1c1a]">
-            {nextEvents.slice(0, 3).map((ev) => {
-              const city =
-                (ev.city_id ? cityById.get(ev.city_id) : undefined) ??
-                (ev.location
-                  ? cities.find(
-                      (c) => ev.location?.includes(c.name) || c.name.includes(ev.location ?? "")
-                    )
-                  : undefined);
-              const imagePath = city?.image_thumb_path ?? city?.image_path ?? null;
-              const imageUrl = imagePath
-                ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
-                : null;
-              return (
-                <div
-                  key={ev.id}
-                  className="relative overflow-hidden rounded-xl border border-white/10 bg-white/30 px-3 py-2"
-                >
-                  {imageUrl && (
-                    <>
-                      <div
-                        className="absolute inset-0 bg-cover bg-center opacity-20"
-                        style={{ backgroundImage: `url(${imageUrl})` }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/75 via-white/65 to-white/60" />
-                    </>
-                  )}
-                  <div className="relative">
-                    <p className="font-semibold text-[#0f1c1a]">{ev.title}</p>
-                    <p className="text-xs text-emerald-900/70">
-                      {ev.location ?? "未設定"} / {ev.start_date}
-                      {ev.end_date && ev.end_date !== ev.start_date ? ` – ${ev.end_date}` : ""}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-            {nextEvents.length === 0 && (
-              <p className="text-emerald-900/70">近日開催予定のイベントはありません</p>
-            )}
-          </div>
-        </GlassCard>
-        <GlassCard title="Near you" icon={LocateFixed} badge="Quick stops">
-          <div className="space-y-2 text-sm text-[#0f1c1a]">
-            {featured.map((spot) => {
-              const city = cityById.get(spot.city_id);
-              const imagePath =
-                spot.image_thumb_path ??
-                spot.image_path ??
-                city?.image_thumb_path ??
-                city?.image_path ??
-                null;
-              const imageUrl = imagePath
-                ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
-                : null;
-              return (
-                <div
-                  key={spot.id}
-                  className="relative flex items-center justify-between overflow-hidden rounded-xl border border-white/10 bg-white/30 px-3 py-2"
-                >
-                  {imageUrl && (
-                    <>
-                      <div
-                        className="absolute inset-0 bg-cover bg-center opacity-20"
-                        style={{ backgroundImage: `url(${imageUrl})` }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/75 via-white/65 to-white/60" />
-                    </>
-                  )}
-                  <div className="relative">
-                    <p className="font-semibold text-[#0f1c1a]">{spot.name}</p>
-                    <p className="text-xs text-emerald-900/70">#{spot.id}</p>
-                  </div>
-                  <Link
-                    href={getSpotHref(spot)}
-                    className="relative text-emerald-700 underline underline-offset-4"
-                  >
-                    詳細を見る
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        </GlassCard>
-      </div>
-
-      <GlassCard title="Start your trip" icon={MapPin} badge="Shortcuts">
-        <div className="grid gap-3 text-[#0f1c1a] sm:grid-cols-3">
-          {[
-            { title: "Calendar", copy: "日付から旅の予定を見つける", icon: CalendarDays, href: "/#home-calendar" },
-            { title: "Map", copy: "近くのスポットを地図で探す", icon: MapPin, href: "/map" },
-            { title: "Character", copy: "旅を彩るキャラクターを 3D で楽しむ", icon: Sparkles, href: "/character" },
-          ].map((item) => (
-            <Link
-              key={item.title}
-              href={item.href}
-              className="interactive-lift tap-feedback group flex items-center gap-3 rounded-xl border border-emerald-900/10 bg-white/70 px-3 py-3 text-sm text-emerald-900/85 transition duration-200 hover:border-emerald-300 hover:bg-emerald-50"
-            >
-              <item.icon className="h-5 w-5 text-emerald-700 transition group-hover:scale-105" />
-              <div>
-                <p className="font-semibold text-[#0f1c1a]">{item.title}</p>
-                <p className="text-emerald-900/75">{item.copy}</p>
-              </div>
-            </Link>
+      <section className="space-y-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <SectionTitle
+            label="旅先のヒント"
+            description="気になる場所から、次の旅を。"
+          />
+          <Link
+            href="/search"
+            className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"
+          >
+            もっと探す
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {featured.map((spot, index) => (
+            <SpotCard
+              key={spot.id}
+              spot={spot}
+              cityName={cityById.get(spot.city_id)?.name}
+              imageUrl={
+                paths[index]
+                  ? (resolvedImages.get(paths[index]!) ??
+                    getImageUrl(paths[index]!))
+                  : null
+              }
+            />
           ))}
         </div>
-      </GlassCard>
+        {featured.length === 0 && (
+          <p className="rounded-xl border border-emerald-900/15 p-6 text-sm">
+            旅先の情報を準備しています。
+          </p>
+        )}
+      </section>
+
+      <div className="grid items-start gap-8 lg:grid-cols-[1.3fr_1fr]">
+        <HomeCalendarSwitcher events={events} />
+        <section className="space-y-5">
+          <SectionTitle
+            label="もうすぐ、岩手で。"
+            description="開催予定のイベントを旅のきっかけに。"
+          />
+          <ul className="divide-y divide-emerald-900/15 border-y border-emerald-900/15">
+            {events.slice(0, 4).map((event) => (
+              <li key={event.id} className="flex items-start gap-5 py-5">
+                <time
+                  dateTime={event.start_date ?? undefined}
+                  className="shrink-0 border-l-2 border-[#a14432] pl-3 font-display text-xl tabular-nums text-emerald-800"
+                >
+                  {event.start_date?.slice(5).replace("-", "/") ?? "未定"}
+                </time>
+                <div>
+                  <h3 className="text-sm font-medium leading-6">
+                    {event.title}
+                  </h3>
+                  <p className="mt-1 text-xs leading-6 text-emerald-900/75">
+                    {event.location ?? "開催地は確認中"}
+                    {event.end_date && event.end_date !== event.start_date
+                      ? ` / ${event.end_date}まで`
+                      : ""}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {events.length === 0 && (
+            <p className="text-sm text-emerald-900/80">
+              近日開催予定のイベントはありません
+            </p>
+          )}
+          <Link
+            href="/search?tab=event"
+            className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"
+          >
+            イベントを探す
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </section>
+      </div>
     </div>
   );
 }

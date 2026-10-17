@@ -26,17 +26,17 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 describe("Headerのその他メニュー", () => {
   it("ヘッダー内から補助メニューを開きCharacterとFavoriteを表示しGuideを除外する", async () => {
     render(<Header />);
-    expect(within(screen.getByRole("navigation", { name: "主要ページ" })).getAllByRole("link").map(link => link.textContent)).toEqual(["Home", "Camera", "Search", "Map", "Stamp"]);
+    expect(within(screen.getByRole("navigation", { name: "主要ページ" })).getAllByRole("link").map(link => link.textContent)).toEqual(["ホーム", "カメラ", "検索", "地図", "スタンプ"]);
     const trigger = screen.getByRole("button", { name: "その他" });
     expect(trigger.closest("header")).not.toBeNull();
     await userEvent.click(trigger);
     const dialog = screen.getByRole("dialog", { name: "その他" });
-    expect(within(dialog).getByRole("link", { name: /Character/ })).toBeInTheDocument();
-    expect(within(dialog).getByRole("link", { name: /Favorite/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: /キャラクター/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: /お気に入り/ })).toBeInTheDocument();
     expect(within(dialog).getByRole("link", { name: "ログイン" })).toHaveAttribute("href", "/login");
     expect(within(dialog).queryByRole("link", { name: /Guide/ })).not.toBeInTheDocument();
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await userEvent.click(within(dialog).getByRole("link", { name: /Character/ }));
+    await userEvent.click(within(dialog).getByRole("link", { name: /キャラクター/ }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(trigger).toHaveFocus();

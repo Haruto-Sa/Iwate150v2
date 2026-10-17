@@ -1,7 +1,9 @@
 "use client";
 
+import { PageHeading } from "@/components/ui/PageHeading";
+
 import Link from "next/link";
-import Image from "next/image";
+import { TravelImage } from "@/components/ui/TravelImage";
 import { Heart, LogIn, Sparkles } from "lucide-react";
 import { useResolvedStorageUrls } from "@/lib/storageSignedClient";
 import { getImageUrl } from "@/lib/storage";
@@ -25,7 +27,7 @@ export function FavoritesScreen() {
 
   if (!favorites.isReady) {
     return (
-      <GlassCard title="Favorites" icon={Heart} badge="Loading">
+      <GlassCard title="保存したスポット" icon={Heart} badge="Loading">
         <p className="text-sm text-emerald-900/75">お気に入り一覧を準備しています。</p>
       </GlassCard>
     );
@@ -33,22 +35,18 @@ export function FavoritesScreen() {
 
   return (
     <div className="space-y-6">
+      <PageHeading eyebrow="YOUR TRAVEL NOTES" title="また会いたい、あの場所。" description="気になった旅先を保存して、次のお出かけに。" actions={<Link href="/search" className="action-link action-link-secondary">旅先を探す</Link>} />
       {favorites.error && <p role="alert" className="text-sm text-red-800">{favorites.error}</p>}
       {!favorites.isAuthenticated && (
-        <GlassCard title="ログインすると同期できます" icon={Sparkles} badge="Guest mode">
+        <GlassCard title="ログインすると同期できます" icon={Sparkles} badge="この端末に保存">
           <p className="text-sm leading-6 text-emerald-900/75">
             この端末のお気に入りは保存されています。ログインするとデバイス間で同期できます。
           </p>
-          <Link href={PUBLIC_LOGIN_PATH} className="mt-4 inline-block">
-            <Button className="gap-2">
-              <LogIn className="h-4 w-4" />
-              ログインする
-            </Button>
-          </Link>
+          <Link href={PUBLIC_LOGIN_PATH} className="action-link mt-4"><LogIn className="h-4 w-4" aria-hidden="true" />ログインする</Link>
         </GlassCard>
       )}
 
-      <GlassCard title="Favorites" icon={Heart} badge={`${favorites.favoriteIds.length}件`}>
+      <GlassCard title="保存したスポット" icon={Heart} badge={`${favorites.favoriteIds.length}件`}>
         {favorites.favoriteSpots.length === 0 ? (
           <p className="text-sm leading-6 text-emerald-900/75">
             まだお気に入りはありません。スポット詳細から気になる場所を保存できます。
@@ -66,19 +64,13 @@ export function FavoritesScreen() {
                   className="overflow-hidden rounded-[1.5rem] border border-emerald-900/10 bg-white/75"
                 >
                   <div className="relative h-40 bg-emerald-50">
-                    {imageUrl ? (
-                      <Image src={imageUrl} alt={spot.name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
-                    ) : (
-                      <div className="grid h-full place-items-center text-emerald-900/50">No image</div>
-                    )}
+                    <TravelImage src={imageUrl} alt={spot.name} />
                   </div>
                   <div className="space-y-3 p-4">
                     <h2 className="font-semibold text-[#0f1c1a]">{spot.name}</h2>
                     <p className="line-clamp-2 text-sm leading-6 text-emerald-900/75">{spot.description}</p>
                     <div className="flex gap-3">
-                      <Link href={getSpotHref(spot)} className="inline-flex">
-                        <Button className="justify-center">詳細を見る</Button>
-                      </Link>
+                      <Link href={getSpotHref(spot)} className="action-link">詳細を見る</Link>
                       <Button
                         variant="outline"
                         onClick={() => {

@@ -1,6 +1,6 @@
 export const APP_NAME = "VojaIwate";
 export const APP_TITLE = "VOJA IWATE";
-export const APP_TAGLINE = "Playful Iwate Travel Companion";
+export const APP_TAGLINE = "いわての旅帖";
 export const APP_DESCRIPTION =
   "VOJA IWATE は、岩手の旅先を地図、検索、カメラ体験で気軽に楽しめる観光アプリです。";
 export const APP_OG_DESCRIPTION =
@@ -36,11 +36,11 @@ export const IWATE_PUBLIC_BOUNDS = {
 } as const;
 
 export const PUBLIC_NAV_ITEMS = [
-  { href: "/", label: "Home" },
-  { href: "/camera", label: "Camera" },
-  { href: "/search", label: "Search" },
-  { href: MAP_PATH, label: "Map" },
-  { href: STAMPS_PATH, label: "Stamp" },
+  { href: "/", label: "ホーム" },
+  { href: "/camera", label: "カメラ" },
+  { href: "/search", label: "検索" },
+  { href: MAP_PATH, label: "地図" },
+  { href: STAMPS_PATH, label: "スタンプ" },
 ] as const;
 
 export const MOBILE_NAV_ITEMS = [
@@ -52,8 +52,8 @@ export const MOBILE_NAV_ITEMS = [
 ] as const;
 
 export const MORE_MENU_ITEMS = [
-  { href: CHARACTER_PATH, label: "Character", description: "3D キャラクターを見る", icon: "character" },
-  { href: FAVORITES_PATH, label: "Favorite", description: "気になるスポットを保存", icon: "favorite" },
+  { href: CHARACTER_PATH, label: "キャラクター", description: "3D キャラクターを見る", icon: "character" },
+  { href: FAVORITES_PATH, label: "お気に入り", description: "気になるスポットを保存", icon: "favorite" },
 ] as const;
 
 export const INSTALL_PROMPT_VISIT_KEY = "voja_install_prompt_visits";

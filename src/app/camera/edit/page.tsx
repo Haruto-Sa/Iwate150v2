@@ -5,6 +5,7 @@ import {
   Sticker, Undo2, Type, Palette,
   Move, Maximize2, ChevronDown, ChevronUp, X, ArrowLeft
 } from "lucide-react";
+import { PageHeading } from "@/components/ui/PageHeading";
 import Link from "next/link";
 import { PhotoSharePanel } from "@/components/camera/PhotoSharePanel";
 import { Button } from "@/components/ui/Button";
@@ -337,12 +338,8 @@ export default function CameraEditPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 pb-8">
-      <header className="space-y-3">
-        <Link href="/camera" className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-900"><ArrowLeft aria-hidden="true" className="h-4 w-4" />カメラに戻る</Link>
-        <p className="text-[10px] font-semibold tracking-[0.22em] text-emerald-900/70">IWATE / PHOTO STUDIO</p>
-        <h1 className="text-2xl font-semibold text-[#173f35] sm:text-3xl">この旅を、一枚に。</h1>
-        <p className="text-sm text-emerald-900/75">文字やスタンプを添えて、岩手の思い出を残しましょう。</p>
-      </header>
+      <Link href="/camera" className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-900"><ArrowLeft aria-hidden="true" className="h-4 w-4" />カメラに戻る</Link>
+      <PageHeading eyebrow="MAKE A MEMORY" title="一枚を、旅の思い出に。" description="文字やスタンプを添えて、岩手の思い出を残しましょう。" />
       {/* ヘッダー説明 */}
       <div className="rounded-xl border border-emerald-900/10 bg-white px-3 py-2 text-xs text-emerald-900/80 shadow-sm">
         ドラッグで移動、モード切替でサイズ変更。タップで選択後、削除や編集ができます。
@@ -424,13 +421,13 @@ export default function CameraEditPage() {
 
       {photo && <>
       {/* 編集モード切り替え */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-900/10 bg-white p-2 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-900/10 bg-white p-2">
         <span className="px-2 text-xs text-emerald-900/70">モード:</span>
         <Button
           variant={editMode === "move" ? "primary" : "ghost"}
           size="sm"
           onClick={() => setEditMode("move")}
-          className="gap-1.5"
+          className="shrink-0 gap-1.5"
         >
           <Move className="h-3.5 w-3.5" />
           移動
@@ -439,7 +436,7 @@ export default function CameraEditPage() {
           variant={editMode === "resize" ? "primary" : "ghost"}
           size="sm"
           onClick={() => setEditMode("resize")}
-          className="gap-1.5"
+          className="shrink-0 gap-1.5"
         >
           <Maximize2 className="h-3.5 w-3.5" />
           サイズ
@@ -460,7 +457,7 @@ export default function CameraEditPage() {
           variant="ghost"
           size="sm"
           onClick={resetOverlays}
-          className="gap-1.5"
+          className="shrink-0 gap-1.5"
         >
           <Undo2 className="h-3.5 w-3.5" />
           リセット

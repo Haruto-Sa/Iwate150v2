@@ -4,20 +4,32 @@ import { expect, test } from "./fixtures";
 // 同じcontextでの実遷移はnavigation.spec.tsとpwa.spec.tsで別途検証する。
 test("guest can access home", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("今日の気分で、岩手の旅先を見つけよう。");
+  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("まだ知らない、岩手に会いに。");
 });
 
 test("guest can access map without a configured database", async ({ page }) => {
   await page.goto("/map");
   await expect(page.getByRole("main").getByRole("heading", { name: "公開スポットはまだありません" })).toBeVisible();
-  await expect(page.getByRole("main").getByText("Map", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("heading", { name: "地図を片手に、岩手を歩く。" })).toBeVisible();
 });
 
 test("guest can access search", async ({ page }) => {
   await page.goto("/search");
   const main = page.getByRole("main");
   await expect(main.getByPlaceholder("スポット名、キーワードで検索...")).toBeVisible();
-  await expect(main.getByText("人気のスポット", { exact: true })).toBeVisible();
+  await expect(main.getByText("旅先のヒント", { exact: true })).toBeVisible();
+});
+
+test("イベントを探す導線と再読み込みでイベントタブを開く", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "イベントを探す" }).click();
+  await expect(page).toHaveURL(/\/search\?tab=event$/);
+  await expect(page.getByRole("button", { name: "イベント", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("もうすぐ開催", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "イベント", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.goto("/search?tab=unknown");
+  await expect(page.getByRole("button", { name: "スポット", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("guest can access camera", async ({ page }) => {
@@ -27,13 +39,13 @@ test("guest can access camera", async ({ page }) => {
 
 test("guest can access stamps", async ({ page }) => {
   await page.goto("/stamps");
-  await expect(page.getByRole("main").getByRole("heading", { name: "Stamps start with login" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("heading", { name: "ログインして、旅を記録" })).toBeVisible();
 });
 
 test("legacy routes redirect to new public routes", async ({ page }) => {
   await page.goto("/spot?focus=1");
   await expect(page).toHaveURL(/\/map\?focus=1$/);
-  await expect(page.getByRole("main").getByText("Map", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("heading", { name: "地図を片手に、岩手を歩く。" })).toBeVisible();
 });
 
 test("secret workspace rejects unauthenticated users", async ({ page }) => {

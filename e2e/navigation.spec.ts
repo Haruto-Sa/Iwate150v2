@@ -4,11 +4,11 @@ test("主要メニューの順序とその他の補助ページ", async ({ page 
   await page.setViewportSize({ width: 1280, height: 844 });
   await page.goto("/login");
   const primary = page.getByRole("navigation", { name: "主要ページ" });
-  await expect(primary.getByRole("link")).toHaveText(["Home", "Camera", "Search", "Map", "Stamp"]);
+  await expect(primary.getByRole("link")).toHaveText(["ホーム", "カメラ", "検索", "地図", "スタンプ"]);
   await page.getByRole("button", { name: "その他", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "その他", exact: true });
-  await expect(dialog.getByRole("link", { name: /Character/ })).toHaveAttribute("href", "/character");
-  await expect(dialog.getByRole("link", { name: /Favorite/ })).toHaveAttribute("href", "/favorites");
+  await expect(dialog.getByRole("link", { name: /キャラクター/ })).toHaveAttribute("href", "/character");
+  await expect(dialog.getByRole("link", { name: /お気に入り/ })).toHaveAttribute("href", "/favorites");
   await expect(dialog.getByRole("link", { name: /Guide|Stamp/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 390, height: 844 });

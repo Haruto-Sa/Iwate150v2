@@ -30,7 +30,7 @@ for (const [source, label, destination] of [
     await shortcut.click();
     await expect(page).toHaveURL(new RegExp(`${destination}$`));
     if (destination === "/favorites") {
-      await expect(page.getByRole("main").getByRole("heading", { name: "ログインすると同期できます" })).toBeVisible();
+      await expect(page.getByRole("main").getByRole("heading", { name: "あなただけの旅先リストを" })).toBeVisible();
     } else {
       await expect(page.getByRole("main").getByText("キャラクターを選ぶ", { exact: true })).toBeVisible();
     }

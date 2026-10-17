@@ -11,6 +11,6 @@ test("production service worker keeps navigation working", async ({ page }) => {
   await expect(page).toHaveURL(/\/favorites$/);
   await page.reload();
   await expect(page).toHaveURL(/\/favorites$/);
-  await expect(page.getByRole("main").getByRole("heading", { name: "ログインすると同期できます" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("heading", { name: "あなただけの旅先リストを" })).toBeVisible();
   expect(await page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
 });

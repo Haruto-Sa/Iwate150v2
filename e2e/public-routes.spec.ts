@@ -39,7 +39,7 @@ test("guest can access camera", async ({ page }) => {
 
 test("guest can access stamps", async ({ page }) => {
   await page.goto("/stamps");
-  await expect(page.getByRole("main").getByRole("heading", { name: "ログインして、旅を記録" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("heading", { name: "次に訪れたい場所を、地図から。" })).toBeVisible();
 });
 
 test("legacy routes redirect to new public routes", async ({ page }) => {

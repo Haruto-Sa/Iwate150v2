@@ -1,4 +1,4 @@
-import { City, Event, Favorite, Genre, Spot } from "./types";
+import { City, Event, Favorite, Genre, Spot, StampCatalog } from "./types";
 
 /**
  * 今日からの相対日付を `YYYY-MM-DD` で返す。
@@ -127,3 +127,6 @@ export const mockEvents: Event[] = [
 ];
 
 export const mockFavorites: Favorite[] = [];
+
+/** 接続障害時の閲覧専用スタンプ対象。実データのIDと一致しても保存しない。 */
+export const mockStampCatalog: StampCatalog = { spots: mockSpots, cities: mockCities, isSample: true };

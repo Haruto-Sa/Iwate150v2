@@ -40,12 +40,12 @@ export default defineConfig({
   projects: [
     {
       name: "iphone",
-      testMatch: ["**/color-theme.spec.ts", "**/page-guides.spec.ts", "**/menu-language.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts", "**/character-assets.spec.ts", "**/camera-capture.spec.ts", "**/official-spots.spec.ts", "**/spot-statistics.spec.ts", "**/delete-own-data.spec.ts", "**/private-api.spec.ts"],
+      testMatch: ["**/color-theme.spec.ts", "**/page-guides.spec.ts", "**/menu-language.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts", "**/character-assets.spec.ts", "**/camera-capture.spec.ts", "**/official-spots.spec.ts", "**/spot-statistics.spec.ts", "**/delete-own-data.spec.ts", "**/private-api.spec.ts", "**/app-icons.spec.ts"],
       use: { ...devices["iPhone 13"] },
     },
     {
       name: "android",
-      testMatch: ["**/color-theme.spec.ts", "**/page-guides.spec.ts", "**/menu-language.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts", "**/character-assets.spec.ts", "**/camera-capture.spec.ts", "**/official-spots.spec.ts", "**/spot-statistics.spec.ts", "**/delete-own-data.spec.ts", "**/private-api.spec.ts"],
+      testMatch: ["**/color-theme.spec.ts", "**/page-guides.spec.ts", "**/menu-language.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts", "**/character-assets.spec.ts", "**/camera-capture.spec.ts", "**/official-spots.spec.ts", "**/spot-statistics.spec.ts", "**/delete-own-data.spec.ts", "**/private-api.spec.ts", "**/app-icons.spec.ts"],
       use: { ...devices["Pixel 5"] },
     },
     {
@@ -60,7 +60,7 @@ export default defineConfig({
     },
     {
       name: "webkit-ui",
-      testMatch: ["**/color-theme.spec.ts", "**/page-guides.spec.ts", "**/menu-language.spec.ts", "**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/spot-detail.spec.ts", "**/character-assets.spec.ts", "**/camera-capture.spec.ts", "**/official-spots.spec.ts", "**/spot-statistics.spec.ts", "**/delete-own-data.spec.ts", "**/private-api.spec.ts"],
+      testMatch: ["**/color-theme.spec.ts", "**/page-guides.spec.ts", "**/menu-language.spec.ts", "**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/spot-detail.spec.ts", "**/character-assets.spec.ts", "**/camera-capture.spec.ts", "**/official-spots.spec.ts", "**/spot-statistics.spec.ts", "**/delete-own-data.spec.ts", "**/private-api.spec.ts", "**/app-icons.spec.ts"],
       use: { ...devices["Desktop Safari"] },
     },
   ],

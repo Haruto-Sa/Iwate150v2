@@ -39,6 +39,7 @@ test("初回案内で英語を選び、操作とインストール案内を英�
   await expect(page.getByRole("navigation", { name: "Mobile main pages" }).getByRole("link", { name: "Search", exact: true })).toHaveAttribute("aria-current", "page");
   await page.evaluate(() => localStorage.setItem("voja_install_prompt_visits", "2"));
   await page.reload();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("voja_install_prompt_visits"))).toBe("3");
   await page.evaluate(() => {
     const event = new Event("beforeinstallprompt");
     Object.assign(event, { prompt: async () => {}, userChoice: Promise.resolve({ outcome: "accepted", platform: "web" }) });

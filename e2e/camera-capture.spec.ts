@@ -136,7 +136,7 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
 test.describe("モデルの通信障害", () => {
   // 通常の撮影/PWAはSW有効。HTTP障害注入のみSW非対応環境で検証する。
   test.use({ serviceWorkers: "block" });
-  test("モデルの読込失敗中は撮影せず、選択解除で復帰できる", async ({ page }) => {
+  test("モデルの読込失敗を再試行し、選択解除で撮影できる", async ({ page }) => {
     await page.addInitScript(() => { Reflect.deleteProperty(Navigator.prototype, "serviceWorker"); });
     await page.route("**/models/wanko1.obj", (route) => route.fulfill({ status: 503, body: "Model unavailable" }));
     await page.goto("/camera");
@@ -144,11 +144,33 @@ test.describe("モデルの通信障害", () => {
     await expect(shutter).toBeEnabled({ timeout: 15000 });
     const character = page.getByRole("button", { name: "そばっち", exact: true });
     await character.click();
-    await expect(page.getByText(/一部のガイドを表示できませんでした/)).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "そばっちを読み込めませんでした" })).toBeVisible({ timeout: 15000 });
     await expect(shutter).toBeDisabled();
-    await character.click();
+    await page.unroute("**/models/wanko1.obj");
+    const retry = page.getByRole("button", { name: "読み込み直す", exact: true });
+    expect((await retry.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await retry.click();
+    await expect(page.getByRole("status").filter({ hasText: "顔をカメラに向ける" })).toBeVisible({ timeout: 15000 });
+    await expect(shutter).toBeDisabled();
+    await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();
     await expect(shutter).toBeEnabled({ timeout: 15000 });
     await shutter.click();
     await expect(page).toHaveURL(/\/camera\/edit$/);
   });
+});
+
+test("顔が映らない間はキャラクターなしの誤撮影を防ぎ、選択解除で撮影できる", async ({ page }, testInfo) => {
+  await page.goto("/camera");
+  const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
+  await expect(shutter).toBeEnabled({ timeout: 15000 });
+  await page.getByRole("button", { name: "そばっち", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "顔をカメラに向ける" })).toBeVisible({ timeout: 15000 });
+  await expect(shutter).toBeDisabled();
+  expect(await page.evaluate(() => sessionStorage.getItem("capturedPhoto"))).toBeNull();
+  expect((await page.getByRole("button", { name: "キャラクターを外す", exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.screenshot({ path: testInfo.outputPath("camera-face-required.png"), fullPage: true });
+  await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();
+  await expect(shutter).toBeEnabled();
+  await shutter.click();
+  await expect(page).toHaveURL(/\/camera\/edit$/);
 });

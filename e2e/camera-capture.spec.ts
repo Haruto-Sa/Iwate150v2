@@ -188,8 +188,8 @@ test.describe("モデルの通信障害", () => {
     await page.goto("/camera");
     const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
     await expect(shutter).toBeEnabled({ timeout: 15000 });
-    await page.waitForFunction(() => performance.getEntriesByName("iwate-camera:face:first-send").length > 0);
     await page.getByRole("button", { name: "そばっち", exact: true }).click();
+    await page.waitForFunction(() => performance.getEntriesByName("iwate-camera:face:first-send").length > 0);
     await expect(shutter).toBeDisabled();
     await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();
     await expect(shutter).toBeEnabled();
@@ -280,5 +280,82 @@ test("顔が映らない間はキャラクターなしの誤撮影を防ぎ、�
   await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();
   await expect(shutter).toBeEnabled();
   await shutter.click();
+  await expect(page).toHaveURL(/\/camera\/edit$/);
+});
+
+
+test("動画を録画・再生・保存し、写真撮影に戻れる", async ({ page }, testInfo) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "canShare", { configurable: true, value: () => true });
+    Object.defineProperty(navigator, "share", { configurable: true, value: async (data: ShareData) => {
+      const file = data.files![0];
+      sessionStorage.setItem("sharedVideo", JSON.stringify({name:file.name, type:file.type, size:file.size}));
+    } });
+  });
+  await page.goto("/camera");
+  await expect(page.getByRole("button", { name: "写真を撮る", exact: true })).toBeEnabled({ timeout: 15000 });
+  await page.getByRole("button", { name: "動画", exact: true }).click();
+  await expect(page.getByRole("group", { name: "撮影タイマー" })).toHaveCount(0);
+  await page.getByRole("button", { name: "録画を開始", exact: true }).click();
+  await expect(page.getByRole("button", { name: "写真", exact: true })).toBeDisabled();
+  await expect(page.getByRole("status").filter({ hasText: "1秒 / 10秒" })).toBeVisible();
+  await page.getByRole("button", { name: "録画を停止", exact: true }).click();
+  const preview = page.getByLabel("撮影した動画", { exact: true });
+  await expect(preview).toBeVisible();
+  await expect.poll(() => preview.evaluate((element) => (element as HTMLVideoElement).readyState)).toBeGreaterThanOrEqual(2);
+  const info = await preview.evaluate(async (element) => {
+    const video = element as HTMLVideoElement;
+    video.muted = true;
+    const done = new Promise<void>((resolve, reject) => { video.onended = () => resolve(); video.onerror = () => reject(new Error("Playback failed")); });
+    await video.play(); await done;
+    return { width: video.videoWidth, height: video.videoHeight, duration: video.duration };
+  });
+  expect(Math.max(info.width, info.height)).toBeLessThanOrEqual(720);
+  expect(info.duration).toBeGreaterThan(0.5);
+  expect(info.duration).toBeLessThanOrEqual(11);
+  expect(await page.evaluate(() => performance.getEntriesByName("iwate-camera:face:first-send").length)).toBe(0);
+  await page.screenshot({ path: testInfo.outputPath("video-preview.png"), fullPage: true });
+  await page.getByRole("button", { name: "動画を共有", exact: true }).click();
+  const shared = await page.evaluate(() => JSON.parse(sessionStorage.getItem("sharedVideo")!));
+  expect(shared.name).toMatch(/iwate-trip\.(mp4|webm)$/);
+  expect(shared.type).toMatch(/^video\//);
+  expect(shared.size).toBeGreaterThan(0);
+  const download = page.waitForEvent("download");
+  await page.getByRole("link", { name: "動画を保存" }).click();
+  expect((await download).suggestedFilename()).toMatch(/iwate-trip\.(mp4|webm)$/);
+  await page.getByRole("button", { name: "撮影に戻る" }).click();
+  await expect(preview).toHaveCount(0);
+  await page.getByRole("button", { name: "写真", exact: true }).click();
+  await expect(page.getByRole("button", { name: "写真を撮る", exact: true })).toBeEnabled({ timeout: 15000 });
+  await page.getByRole("button", { name: "写真を撮る", exact: true }).click();
+  await expect(page).toHaveURL(/\/camera\/edit$/);
+});
+
+test("バックグラウンド移行で未完成の動画を破棄し、再録画できる", async ({ page }) => {
+  await page.goto("/camera");
+  await expect(page.getByRole("button", { name: "写真を撮る", exact: true })).toBeEnabled({ timeout: 15000 });
+  await page.getByRole("button", { name: "動画", exact: true }).click();
+  await page.getByRole("button", { name: "録画を開始", exact: true }).click();
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+    document.dispatchEvent(new Event("visibilitychange"));
+    Reflect.deleteProperty(document, "hidden");
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("録画を中断しました");
+  await expect(page.getByLabel("撮影した動画", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "録画を開始", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "録画を開始", exact: true }).click();
+  await expect(page.getByRole("button", { name: "録画を停止", exact: true })).toBeEnabled();
+  await page.getByRole("link", { name: "ホーム", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("録画非対応でも写真撮影を利用できる", async ({ page }) => {
+  await page.addInitScript(() => { Reflect.deleteProperty(window, "MediaRecorder"); });
+  await page.goto("/camera");
+  await expect(page.getByRole("button", { name: "写真を撮る", exact: true })).toBeEnabled({ timeout: 15000 });
+  await expect(page.getByRole("button", { name: "動画", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "写真を撮る", exact: true }).click();
   await expect(page).toHaveURL(/\/camera\/edit$/);
 });

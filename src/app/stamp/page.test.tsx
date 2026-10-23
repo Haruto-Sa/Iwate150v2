@@ -78,7 +78,7 @@ describe("公開スタンプマップと本人収集", () => {
     });
     api.fetchUserStamps.mockResolvedValue([stamp]);
     render(<StampPage />);
-    expect(await screen.findByText(/現在はサンプルの対象/)).toBeVisible();
+    expect(await screen.findByText(/サンプル表示中/)).toBeVisible();
     expect(screen.queryByRole("progressbar")).toBeNull();
     await userEvent.click(
       screen.getByRole("button", { name: "位置情報を取得" }),

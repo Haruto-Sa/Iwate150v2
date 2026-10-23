@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { MapPin, Stamp as StampIcon } from "lucide-react";
+import { CheckCircle2, Circle, MapPin, Stamp as StampIcon } from "lucide-react";
 import { PageHeading } from "@/components/ui/PageHeading";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
@@ -65,7 +65,7 @@ export default function StampPage() {
               role="status"
               className="rounded-2xl border border-app-warning/30 bg-app-warning-surface p-5 text-sm leading-7"
             >
-              現在はサンプルの対象を表示しています。収集・保存・詳細表示はできません。
+              <p>サンプル表示中。収集・保存・詳細表示はできません。</p>
               <Button
                 variant="outline"
                 className="mt-3"
@@ -77,7 +77,7 @@ export default function StampPage() {
           )}
           {personalReady && !collection.publicError && (
             <GlassCard
-              title="あなたの旅の足あと"
+              title="取得したスポット"
               icon={StampIcon}
               badge={`${progress.earned} / ${progress.total}スポット`}
             >
@@ -100,45 +100,14 @@ export default function StampPage() {
               </p>
               {progress.unavailableCount > 0 && (
                 <p className="mt-2 text-sm">
-                  現在の対象一覧にない記録が{progress.unavailableCount}
-                  件あります。保存済みの記録は保持し、この達成率には含めていません。
+                  対象外の記録 {progress.unavailableCount}件（保存済み・達成率には含みません）
                 </p>
               )}
             </GlassCard>
           )}
-          <section aria-labelledby="stamp-map-title" className="space-y-3">
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <h2 id="stamp-map-title" className="font-display text-2xl">
-                岩手のスタンプマップ
-              </h2>
-              <p className="text-sm">表示中の対象 {progress.total}スポット</p>
-            </div>
-            <p className="text-sm leading-7">
-              印は対象スポットの場所です。市町村の中心点に近づくだけでは取得できません。掲載している対象の範囲を表示しており、県内すべての観光地を網羅するものではありません。
-            </p>
-            {progress.targets.length ? (
-              <LeafletMap
-                center={IWATE_CENTER}
-                spots={progress.targets}
-                showUser={false}
-                showImages={false}
-                showDetailLinks={!collection.isSample}
-                visitedSpotIds={personalReady ? [...progress.earnedIds] : []}
-                stampProgressKnown={personalReady}
-              />
-            ) : (
-              <p className="rounded-2xl bg-app-surface-soft p-5">
-                表示できる対象スポットがありません。時間をおいて再読み込みしてください。
-              </p>
-            )}
-            <p className="text-sm">
-              ○ 対象スポット {personalReady && "／ ✓ 取得済み"}
-              。地図を使わず、下の市町村一覧からも対象を確認できます。
-            </p>
-          </section>
-          <GlassCard title="現在地の近くで集める" icon={MapPin}>
+          <GlassCard title="近くのスタンプ" icon={MapPin}>
             <p>
-              対象スポットから200m以内で収集できます。収集ボタンを押すと現在地を再確認します。市町村全体の訪問を証明するものではありません。
+              対象スポットから200m以内で取得できます。
             </p>
             <Button
               className="mt-4"
@@ -154,13 +123,12 @@ export default function StampPage() {
             )}
             {collection.location && (
               <p className="mt-3 text-sm">
-                現在地の推定誤差: 約{Math.ceil(collection.location.accuracy)}
-                m。位置のずれがあるときは取得し直してください。
+                現在地の推定誤差 約{Math.ceil(collection.location.accuracy)}m
               </p>
             )}
             {collection.location && collection.nearby.length === 0 && (
               <p className="mt-3">
-                200m以内に対象スポットが見つかりませんでした。地図で次の旅先を探せます。
+                200m以内に対象スポットがありません。
               </p>
             )}
             <ul className="mt-4 space-y-3">
@@ -192,7 +160,7 @@ export default function StampPage() {
                       ログインして収集
                     </Link>
                   ) : progress.earnedIds.has(spot.id) ? (
-                    <span className="text-sm">✓ 取得済み</span>
+                    <span className="flex items-center gap-2 text-sm"><CheckCircle2 aria-hidden="true" className="h-4 w-4" />取得済み</span>
                   ) : (
                     <Button
                       disabled={
@@ -218,17 +186,45 @@ export default function StampPage() {
               </p>
             )}
           </GlassCard>
+          <section aria-labelledby="stamp-map-title" className="space-y-3">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <h2 id="stamp-map-title" className="font-display text-2xl">
+                岩手のスタンプマップ
+              </h2>
+              <p className="text-sm">対象 {progress.total}スポット</p>
+            </div>
+            {progress.targets.length ? (
+              <LeafletMap
+                center={IWATE_CENTER}
+                spots={progress.targets}
+                showUser={false}
+                showImages={false}
+                showDetailLinks={!collection.isSample}
+                visitedSpotIds={personalReady ? [...progress.earnedIds] : []}
+                stampProgressKnown={personalReady}
+              />
+            ) : (
+              <div className="space-y-3 rounded-2xl bg-app-surface-soft p-5">
+                <p>表示できる対象がありません。</p>
+                <Button variant="outline" onClick={collection.reload}>対象を再読み込み</Button>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+              <ul aria-label="地図の凡例" className="flex flex-wrap gap-4">
+                <li className="flex items-center gap-2"><Circle aria-hidden="true" className="h-4 w-4" />対象スポット</li>
+                {personalReady && <li className="flex items-center gap-2"><CheckCircle2 aria-hidden="true" className="h-4 w-4" />取得済み</li>}
+              </ul>
+              <a href="#stamp-cities-title" className="inline-flex min-h-11 items-center underline underline-offset-4">市町村から探す</a>
+            </div>
+          </section>
           <section aria-labelledby="stamp-cities-title" className="space-y-4">
-            <h2 id="stamp-cities-title" className="font-display text-2xl">
-              市町村ごとの対象と進捗
+            <h2 id="stamp-cities-title" tabIndex={-1} className="scroll-mt-24 font-display text-2xl">
+              市町村から探す
             </h2>
             <p className="text-sm leading-7">
-              進捗は「その市町村で取得した対象スポット数 ／
-              掲載対象数」です。対象未登録は未訪問を意味しません。
-              {!personalReady &&
-                "本人の進捗はログイン後に読み込んで表示します。"}
+              対象スポットの取得数です。市町村全体の訪問記録ではありません。
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid items-start gap-3 sm:grid-cols-2">
               {progress.groups.map(({ city, spots, total, earned }) => (
                 <details
                   key={city.id}
@@ -263,18 +259,13 @@ export default function StampPage() {
                         {personalReady && (
                           <span className="text-xs">
                             {progress.earnedIds.has(spot.id)
-                              ? "✓ 取得済み"
+                              ? "取得済み"
                               : "未取得"}
                           </span>
                         )}
                       </li>
                     ))}
                   </ul>
-                  {!total && (
-                    <p className="py-2 text-sm">
-                      現在表示できる対象がありません。
-                    </p>
-                  )}
                 </details>
               ))}
             </div>

@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Camera as CameraIcon, RefreshCw, Check, SwitchCamera } from "lucide-react";
+import { Sparkles, Camera as CameraIcon, RefreshCw, Check, SwitchCamera, Timer, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { characterModelCatalog, characters } from "@/lib/characters";
+import { useCaptureTimer, type CaptureDelay } from "@/hooks/useCaptureTimer";
 import { createCameraStream } from "@/lib/cameraStream";
 import { getModelUrl } from "@/lib/storage";
 import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
@@ -310,7 +311,7 @@ export function CameraCapture() {
 
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [detection, setDetection] = useState<Detection>(null);
-  const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied">("idle");
+  const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied" | "captured">("idle");
   // status を ref でも保持する。reactCompiler 有効下では useCallback のクロージャが
   // 古い status を掴んだままになり得るため、ガード判定は常に最新値を見る ref で行う。
   const statusRef = useRef(status);
@@ -350,6 +351,10 @@ export function CameraCapture() {
     }),
     [modelStatusMap, selectedModels]
   );
+
+  const [captureDelay, setCaptureDelay] = useState<CaptureDelay>(0);
+  const canCapture = status === "ready" && (selectedModels.length === 0 || selectedModelsReady);
+  const { remaining, busy, start: startCapture, cancel: cancelCapture } = useCaptureTimer(canCapture, handleCapture);
 
   // Initialize Three.js scene
   const initThreeScene = useCallback(() => {
@@ -691,6 +696,7 @@ export function CameraCapture() {
    * switchCamera();
    */
   const switchCamera = useCallback(() => {
+    cancelCapture();
     startAttemptRef.current += 1;
     startInProgressRef.current = false;
     const newMode = facingModeRef.current === "user" ? "environment" : "user";
@@ -698,7 +704,34 @@ export function CameraCapture() {
     setErrorMessage(null);
     stopStream();
     setStatus("idle");
-  }, [stopStream]);
+  }, [stopStream, cancelCapture]);
+
+  // 権限喪失・他アプリによる映像中断では予約を破棄し、再試行を表示する。
+  useEffect(() => {
+    if (status !== "ready") return;
+    const stream = videoRef.current?.srcObject;
+    if (!(stream instanceof MediaStream)) return;
+    const tracks = stream.getVideoTracks();
+    /**
+     * 映像の終了・中断時に予約とストリームを停止する。
+     * @returns なし
+     * @example track.addEventListener("ended", onUnavailable);
+     */
+    function onUnavailable() {
+      cancelCapture();
+      stopStream();
+      setErrorMessage("カメラが停止しました。もう一度お試しください。");
+      setStatus("denied");
+    }
+    tracks.forEach((track) => {
+      track.addEventListener("ended", onUnavailable);
+      track.addEventListener("mute", onUnavailable);
+    });
+    return () => tracks.forEach((track) => {
+      track.removeEventListener("ended", onUnavailable);
+      track.removeEventListener("mute", onUnavailable);
+    });
+  }, [status, stopStream, cancelCapture]);
 
   // Auto start camera on mount
   useEffect(() => {
@@ -864,11 +897,14 @@ export function CameraCapture() {
 
   /**
    * 表示中のカメラとキャラクターを合成し編集画面へ渡す。
-   * @returns 保存できた場合は編集画面へ遷移。失敗時は撮影画面で案内する
-   * @example onClick={handleCapture}
+   * @returns 保存と編集画面への遷移を開始できた場合true、再試行可能な失敗はfalse
+   * @example handleCapture();
    */
-  const handleCapture = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+  function handleCapture(): boolean {
+    if (!canCapture || !videoRef.current || !canvasRef.current) return false;
+    const stream = videoRef.current.srcObject;
+    if (!(stream instanceof MediaStream) || !stream.getVideoTracks().some((track) => track.readyState === "live" && !track.muted)) return false;
+    if (videoRef.current.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return false;
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const previewWidth = video.clientWidth || 720;
@@ -893,7 +929,7 @@ export function CameraCapture() {
     canvas.width = sw;
     canvas.height = sh;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) return false;
 
     if (activeFacingMode === "user") {
       ctx.save();
@@ -920,20 +956,21 @@ export function CameraCapture() {
       sessionStorage.setItem("capturedPhoto", dataUrl);
     } catch {
       setErrorMessage("撮影した写真を一時保存できませんでした。ブラウザの空き容量や保存設定を確認して、もう一度撮影してください。");
-      return;
+      return false;
     }
 
     // ページ遷移前にカメラ・FaceMeshを明示的に停止（許可状態はブラウザが保持）
     stopStream();
     faceMeshRef.current = null;
-    setStatus("idle");
+    setStatus("captured");
 
     router.push("/camera/edit");
-  };
+    return true;
+  }
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white sm:aspect-[16/10]">
+      <div className="relative aspect-[4/3] w-full max-h-[calc(100dvh-8rem)] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white sm:aspect-[16/10]">
         <video
           ref={videoRef}
           className="h-full w-full object-cover"
@@ -972,6 +1009,12 @@ export function CameraCapture() {
           )}
         </div>
 
+        {remaining !== null && (
+          <div role="status" aria-live="assertive" aria-label={`${remaining}秒後に撮影`} className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="rounded-2xl bg-black/60 px-6 py-3 text-5xl font-semibold tabular-nums text-white">{remaining}</span>
+          </div>
+        )}
+
         {status === "ready" && detection && selectedModelsReady && selectedModels.length > 0 && (
           <div
             className="absolute rounded-full bg-gradient-to-br from-emerald-300 to-amber-200 px-3 py-1 text-xs font-semibold text-[#0f1c1a] shadow-lg transition"
@@ -1000,12 +1043,13 @@ export function CameraCapture() {
               </Button>
             )}
             <button
-              onClick={handleCapture}
-              aria-label="写真を撮る"
-              disabled={status !== "ready"}
+              type="button"
+              onClick={() => remaining !== null ? cancelCapture() : startCapture(captureDelay)}
+              aria-label={remaining !== null ? "タイマーを取り消す" : "写真を撮る"}
+              disabled={remaining === null && (!canCapture || busy)}
               className="pointer-events-auto grid h-16 w-16 place-items-center rounded-full border-4 border-emerald-200/80 bg-white/90 text-[#0f1c1a] shadow-xl shadow-emerald-200/50 transition active:scale-95 disabled:opacity-60"
             >
-              <CameraIcon className="h-7 w-7" />
+              {remaining !== null ? <X className="h-7 w-7" aria-hidden="true" /> : <CameraIcon className="h-7 w-7" aria-hidden="true" />}
             </button>
             {/* 内カメ/外カメ切替ボタン（モバイルのみ表示） */}
             {status === "ready" && (
@@ -1031,6 +1075,7 @@ export function CameraCapture() {
               variant={active ? "primary" : "ghost"}
               size="sm"
               onClick={() => {
+                cancelCapture();
                 setSelectedModels((prev) =>
                   active ? prev.filter((id) => id !== c.id) : [...prev, c.id]
                 );
@@ -1050,16 +1095,17 @@ export function CameraCapture() {
         <span className="text-xs text-emerald-900/70">最大5体</span>
       </div>
 
-      <div className="flex items-center justify-between">
-        <Button
-          onClick={handleCapture}
-          className="h-11 px-5 text-base"
-          disabled={status !== "ready"}
-        >
-          <CameraIcon className="h-5 w-5" />
-          シャッター
-        </Button>
-      </div>
+      <fieldset className="flex flex-wrap items-center gap-2" disabled={busy && remaining === null}>
+        <legend className="sr-only">撮影タイマー</legend>
+        <Timer aria-hidden="true" className="mr-1 h-5 w-5 text-emerald-900" />
+        {([0, 3, 10] as const).map((delay) => (
+          <Button key={delay} type="button" variant={captureDelay === delay ? "primary" : "outline"}
+            aria-pressed={captureDelay === delay} className="min-h-11 min-w-14"
+            onClick={() => { cancelCapture(); setCaptureDelay(delay); }}>
+            {delay === 0 ? "オフ" : `${delay}秒`}
+          </Button>
+        ))}
+      </fieldset>
 
       {errorMessage && (
         <div role="alert" className="rounded-xl border border-amber-200/60 bg-amber-50 px-3 py-2 text-xs text-amber-900">

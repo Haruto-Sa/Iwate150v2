@@ -311,11 +311,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
         ))}
       </div>
 
-      {isIdleState ? (
-        <div className="rounded-2xl border border-emerald-900/10 bg-white/70 px-4 py-3 text-xs text-emerald-900/70">
-          キーワードやエリアを選んで、気になる旅先を絞り込めます。
-        </div>
-      ) : (
+      {!isIdleState && (
         <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-emerald-900/70">
           <p>
             {tab === "spot" ? "スポット" : "イベント"}: {total} 件
@@ -338,7 +334,6 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
           {tab === "spot" && <section className="space-y-3">
             <div className="px-1">
               <h2 className="text-lg font-semibold text-[#0f1c1a]">旅先のヒント</h2>
-              <p className="text-sm text-emerald-900/70">岩手の風景や文化を楽しむ、旅先の候補です。</p>
             </div>
             <div className="card-grid">
               {defaultSpots.map((spot) => {
@@ -356,7 +351,6 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
           {tab === "event" && <section className="space-y-3">
             <div className="px-1">
               <h2 className="text-lg font-semibold text-[#0f1c1a]">もうすぐ開催</h2>
-              <p className="text-sm text-emerald-900/70">直近で開催予定のイベントをまとめています。</p>
             </div>
             <div className="card-grid">
               {defaultEvents.map((event) => {

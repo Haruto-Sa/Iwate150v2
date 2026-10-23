@@ -339,12 +339,7 @@ export default function CameraEditPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 pb-8">
       <Link href="/camera" className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-900"><ArrowLeft aria-hidden="true" className="h-4 w-4" />カメラに戻る</Link>
-      <PageHeading eyebrow="MAKE A MEMORY" title="一枚を、旅の思い出に。" description="文字やスタンプを添えて、岩手の思い出を残しましょう。" />
-      {/* ヘッダー説明 */}
-      <div className="rounded-xl border border-emerald-900/10 bg-white px-3 py-2 text-xs text-emerald-900/80 shadow-sm">
-        ドラッグで移動、モード切替でサイズ変更。タップで選択後、削除や編集ができます。
-      </div>
-
+      <PageHeading title="写真を編集" />
       {/* プレビューエリア */}
       <div
         ref={stageRef}
@@ -422,9 +417,9 @@ export default function CameraEditPage() {
       {photo && <>
       {/* 編集モード切り替え */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-900/10 bg-white p-2">
-        <span className="px-2 text-xs text-emerald-900/70">モード:</span>
         <Button
           variant={editMode === "move" ? "primary" : "ghost"}
+          aria-pressed={editMode === "move"}
           size="sm"
           onClick={() => setEditMode("move")}
           className="shrink-0 gap-1.5"
@@ -434,6 +429,7 @@ export default function CameraEditPage() {
         </Button>
         <Button
           variant={editMode === "resize" ? "primary" : "ghost"}
+          aria-pressed={editMode === "resize"}
           size="sm"
           onClick={() => setEditMode("resize")}
           className="shrink-0 gap-1.5"
@@ -469,6 +465,7 @@ export default function CameraEditPage() {
         {/* スタンプボタン */}
         <Button
           variant={activeToolPanel === "sticker" ? "primary" : "outline"}
+          aria-expanded={activeToolPanel === "sticker"}
           size="sm"
           onClick={() => setActiveToolPanel(activeToolPanel === "sticker" ? null : "sticker")}
           className="flex-1 justify-center gap-2"
@@ -481,6 +478,7 @@ export default function CameraEditPage() {
         {/* テキストボタン */}
         <Button
           variant={activeToolPanel === "text" ? "primary" : "outline"}
+          aria-expanded={activeToolPanel === "text"}
           size="sm"
           onClick={() => setActiveToolPanel(activeToolPanel === "text" ? null : "text")}
           className="flex-1 justify-center gap-2"

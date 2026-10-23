@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  APP_DESCRIPTION,
-  APP_TAGLINE,
   APP_TITLE,
   FAVORITES_PATH,
   PUBLIC_LOGIN_PATH,
@@ -30,8 +28,6 @@ export function Footer() {
       <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 text-sm text-emerald-900/80 sm:grid-cols-[1.4fr_1fr] sm:px-6">
         <div className="space-y-2">
           <p className="font-display text-lg text-[#0f1c1a]">{APP_TITLE}</p>
-          <p className="text-xs uppercase tracking-[0.18em] text-emerald-900/70">{APP_TAGLINE}</p>
-          <p className="max-w-xl text-sm leading-6 text-emerald-900/70">{APP_DESCRIPTION}</p>
         </div>
         <div className="grid grid-cols-2 gap-x-4 text-sm">
           {PUBLIC_NAV_ITEMS.map((item) => (

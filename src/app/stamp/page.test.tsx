@@ -102,7 +102,7 @@ describe("公開スタンプマップと本人収集", () => {
       await screen.findByRole("heading", { name: "岩手のスタンプマップ" }),
     ).toBeVisible();
     expect(
-      screen.getByRole("link", { name: "ログインして旅を記録" }),
+      screen.getByRole("link", { name: "ログインしてスタンプを集める" }),
     ).toHaveAttribute("href", "/login?next=%2Fstamps");
     expect(geo).not.toHaveBeenCalled();
     await user.click(screen.getByText("盛岡市"));

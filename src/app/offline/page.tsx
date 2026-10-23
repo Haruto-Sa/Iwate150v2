@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { PageHeading } from "@/components/ui/PageHeading";
-import { WifiOff } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { buildPageMetadata } from "@/lib/seo";
 
 export const metadata = buildPageMetadata({
@@ -21,12 +19,12 @@ export const metadata = buildPageMetadata({
 export default function OfflinePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-8">
-      <PageHeading eyebrow="TAKE A LITTLE BREAK" title="接続を、ひと休み。" />
-      <GlassCard title="オフラインです" icon={WifiOff} badge="Offline">
+      <PageHeading title="オフライン" />
+      <div>
         <p className="text-sm leading-7 text-emerald-900/75">
           インターネット接続を確認してから、もう一度ページを開いてください。
         </p>
-      </GlassCard>
+      </div>
       <Link href="/" className="action-link">ホームを開く</Link>
     </div>
   );

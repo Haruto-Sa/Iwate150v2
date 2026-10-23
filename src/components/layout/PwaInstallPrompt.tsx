@@ -5,6 +5,8 @@ import { Download, Share2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Button } from "@/components/ui/Button";
+import { useIsMobileViewport } from "@/hooks/useIsMobileViewport";
+import { useOnboardingCompleted } from "@/hooks/useOnboardingCompleted";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 /**
@@ -16,6 +18,8 @@ import { useInstallPrompt } from "@/hooks/useInstallPrompt";
  */
 export function PwaInstallPrompt() {
   const pathname = usePathname();
+  const isMobileViewport = useIsMobileViewport();
+  const onboardingCompleted = useOnboardingCompleted();
   const { dismissForDays, isIosSafari, promptInstall, shouldShow } = useInstallPrompt();
   const [isOpen, setIsOpen] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
@@ -25,22 +29,15 @@ export function PwaInstallPrompt() {
     [pathname]
   );
 
-  if (!shouldShow || !isOpen || hiddenRoute) {
+  if (!shouldShow || !isOpen || hiddenRoute || (isMobileViewport && !onboardingCompleted)) {
     return null;
   }
 
   return (
     <BottomSheet open={isOpen} title="ホーム画面に追加" onClose={() => setIsOpen(false)}>
       <div className="space-y-5">
-        <div className="rounded-[1.5rem] border border-emerald-900/10 bg-white/80 p-4">
-          <p className="text-sm leading-7 text-emerald-900/80">
-            VOJA IWATE をホーム画面に追加すると、すぐにアクセスできます。
-          </p>
-        </div>
-
         {isIosSafari ? (
           <div className="rounded-[1.5rem] border border-emerald-900/10 bg-emerald-50/80 p-4 text-sm text-emerald-900/80">
-            <p className="font-semibold text-[#0f1c1a]">iPhone / iPad では手動追加です</p>
             <p className="mt-2 inline-flex items-center gap-2">
               <Share2 className="h-4 w-4" />
               Safari の共有メニューから「ホーム画面に追加」を選んでください。

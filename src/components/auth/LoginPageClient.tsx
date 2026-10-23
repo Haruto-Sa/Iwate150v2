@@ -82,14 +82,11 @@ export function LoginPageClient() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <PageHeading eyebrow="YOUR IWATE" title="旅の続きを、ここに。" description="お気に入りとスタンプを、あなたの旅の記録に。地図・検索・カメラはログインなしでも楽しめます。" actions={<Link href="/map" className="action-link action-link-secondary">ログインせずに旅先を探す</Link>} />
+      <PageHeading title="ログイン" actions={<Link href="/map" className="action-link action-link-secondary">ログインせずに旅先を探す</Link>} />
 
       <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-[28px] border border-emerald-900/10 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-[#0f1c1a]">アカウントでログイン</h2>
-          <p className="mt-2 text-sm leading-6 text-emerald-900/75">
-            お使いのアカウントで、旅の記録を保存できます。
-          </p>
 
           <div className="mt-5 space-y-3">
             {providers === null ? (
@@ -122,9 +119,6 @@ export function LoginPageClient() {
 
         <div className="rounded-[28px] border border-emerald-900/10 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-[#0f1c1a]">メールでログイン</h2>
-          <p className="mt-2 text-sm leading-6 text-emerald-900/75">
-            パスワードを作らずに、メールのリンクから安全にログインできます。
-          </p>
 
           {providers === null ? (
             <p className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -150,7 +144,7 @@ export function LoginPageClient() {
               >
                 <span className="inline-flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  メールでログインリンクを受け取る
+                  ログインリンクを受け取る
                 </span>
                 <MoveRight className="h-4 w-4" />
               </Button>

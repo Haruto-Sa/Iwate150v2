@@ -31,7 +31,7 @@ export default async function SearchPage({ searchParams }: {
   const defaultSpots = pickFeaturedSpots(spots, 8);
   return (
     <div className="space-y-8">
-      <PageHeading eyebrow="EXPLORE IWATE" title="次は、どこへ行こう。" description="気になるキーワード、エリア、ジャンルから、行きたい場所やイベントを見つけられます。" />
+      <PageHeading title="検索" />
       <SearchSurface
         key={initialTab}
         initialTab={initialTab}

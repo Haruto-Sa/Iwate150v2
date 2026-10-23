@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Compass } from "lucide-react";
 import {
-  APP_TAGLINE,
   APP_TITLE,
   PUBLIC_NAV_ITEMS,
   SECRET_WORKSPACE_PATH,
@@ -65,9 +64,6 @@ export function Header() {
           </span>
           <div className="min-w-0 leading-tight">
             <p className="truncate font-display text-xl tracking-wide sm:text-2xl">{APP_TITLE}</p>
-            <p className="truncate text-[10px] tracking-[0.16em] text-emerald-900/70">
-              {APP_TAGLINE}
-            </p>
           </div>
         </Link>
 

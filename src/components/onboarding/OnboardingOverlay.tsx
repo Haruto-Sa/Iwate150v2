@@ -1,90 +1,19 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
-import { Camera, ChevronRight, Map, Sparkles, Stamp, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Camera, ArrowRight, Search, Stamp, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/Button";
+import Link from "next/link";
 import { useIsMobileViewport } from "@/hooks/useIsMobileViewport";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
-import { ONBOARDING_COMPLETED_KEY } from "@/lib/config";
+import { completeOnboarding, useOnboardingCompleted } from "@/hooks/useOnboardingCompleted";
 import { useModalDialog } from "@/hooks/useModalDialog";
 
-const steps = [
-  {
-    title: "岩手の旅先を見つけよう",
-    copy: "地図とスポット検索から、今いる場所や気分に合う旅先をすばやく探せます。",
-    icon: Map,
-  },
-  {
-    title: "キャラクターと旅の思い出を",
-    copy: "カメラ機能で、岩手の旅先にキャラクターを重ねた記念ショットを残せます。",
-    icon: Camera,
-  },
-  {
-    title: "スタンプを集めて岩手マスターに",
-    copy: "各地のスポットを巡りながらスタンプを集め、旅の進捗を残しましょう。",
-    icon: Stamp,
-  },
+const destinations = [
+  { label: "旅先を探す", href: "/search", icon: Search },
+  { label: "写真を撮る", href: "/camera", icon: Camera },
+  { label: "スタンプを見る", href: "/stamps", icon: Stamp },
 ] as const;
-
-const ONBOARDING_STATUS_EVENT = "iwate150:onboarding-status";
-
-/**
- * オンボーディング完了状態の変更を購読する。
- *
- * @param onStoreChange - 状態変更時に呼ぶコールバック
- * @returns 購読解除関数
- * @example
- * const unsubscribe = subscribeOnboardingStatus(() => {});
- * unsubscribe();
- */
-function subscribeOnboardingStatus(onStoreChange: () => void): () => void {
-  if (typeof window === "undefined") {
-    return () => {};
-  }
-
-  /**
-   * storage/custom event の変化を購読側へ通知する。
-   *
-   * @returns なし
-   * @example
-   * notifyStoreChange();
-   */
-  function notifyStoreChange(): void {
-    onStoreChange();
-  }
-
-  window.addEventListener("storage", notifyStoreChange);
-  window.addEventListener(ONBOARDING_STATUS_EVENT, notifyStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", notifyStoreChange);
-    window.removeEventListener(ONBOARDING_STATUS_EVENT, notifyStoreChange);
-  };
-}
-
-/**
- * クライアントでオンボーディング完了状態を返す。
- *
- * @returns 完了済みなら true
- * @example
- * getOnboardingCompletedSnapshot();
- */
-function getOnboardingCompletedSnapshot(): boolean {
-  if (typeof window === "undefined") return true;
-  return window.localStorage.getItem(ONBOARDING_COMPLETED_KEY) === "true";
-}
-
-/**
- * サーバー描画用のオンボーディング状態を返す。
- *
- * @returns サーバーでは常に完了扱い
- * @example
- * getOnboardingCompletedServerSnapshot();
- */
-function getOnboardingCompletedServerSnapshot(): boolean {
-  return true;
-}
 
 /**
  * 初回訪問ユーザー向けオンボーディング。
@@ -96,13 +25,8 @@ function getOnboardingCompletedServerSnapshot(): boolean {
 export function OnboardingOverlay() {
   const pathname = usePathname();
   const isMobileViewport = useIsMobileViewport();
-  const hasCompleted = useSyncExternalStore(
-    subscribeOnboardingStatus,
-    getOnboardingCompletedSnapshot,
-    getOnboardingCompletedServerSnapshot
-  );
+  const hasCompleted = useOnboardingCompleted();
   const [isDismissed, setIsDismissed] = useState(false);
-  const [stepIndex, setStepIndex] = useState(0);
   const visible = !hasCompleted && !isDismissed;
   const hiddenRoute = useMemo(
     () => pathname.startsWith("/studio") || pathname.startsWith("/admin"),
@@ -122,109 +46,40 @@ export function OnboardingOverlay() {
    * closeOnboarding();
    */
   function closeOnboarding(): void {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
-      window.dispatchEvent(new Event(ONBOARDING_STATUS_EVENT));
-    }
+    completeOnboarding();
     setIsDismissed(true);
-  }
-
-  /**
-   * 指定されたオンボーディング手順へ移動する。
-   *
-   * @param index - 移動先の手順インデックス
-   * @returns なし
-   * @example
-   * moveToStep(1);
-   */
-  function moveToStep(index: number): void {
-    setStepIndex(index);
   }
 
   if (!shouldRender) return null;
 
-  const step = steps[stepIndex];
-
   return (
-    <dialog ref={dialogRef} aria-label="岩手の旅のはじめ方" onCancel={(event) => { event.preventDefault(); closeOnboarding(); }} className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none overflow-y-auto bg-[#f6f5ef] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] text-emerald-950">
-      <div className="mx-auto flex min-h-[calc(100dvh-3rem-env(safe-area-inset-bottom))] max-w-sm flex-col justify-center sm:max-w-md">
-        <div className="flex items-center justify-between">
-          <button
-            className="min-h-11 rounded-full px-3 py-2 text-sm text-emerald-900/80"
-            onClick={closeOnboarding}
-          >
-            スキップ
-          </button>
-          <button
-            aria-label="閉じる"
-            className="grid h-11 w-11 place-items-center rounded-full border border-emerald-900/15 bg-white text-emerald-900"
-            onClick={closeOnboarding}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="flex flex-1 items-center py-4">
-          <section className="w-full rounded-[1.75rem] border border-white/60 bg-white p-5 sm:rounded-[2rem] sm:p-6">
-            <div aria-label="オンボーディングの進捗" className="mb-5 flex gap-2 sm:mb-6">
-              {steps.map((item, index) => (
-                <button
-                  key={item.title}
-                  type="button"
-                  aria-current={index === stepIndex ? "step" : undefined}
-                  aria-label={`${index + 1}ページ目へ移動: ${item.title}`}
-                  className={`group flex h-6 flex-1 items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 ${
-                    index === stepIndex ? "cursor-default" : "cursor-pointer"
-                  }`}
-                  onClick={() => moveToStep(index)}
-                >
-                  <span
-                    className={`h-1.5 w-full rounded-full transition group-hover:h-2 ${
-                      index === stepIndex ? "bg-emerald-700" : "bg-emerald-900/10"
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-
-            <div className="relative min-h-48 rounded-[1.35rem] bg-emerald-800 p-5 text-white sm:min-h-56 sm:rounded-[1.5rem] sm:p-6">
-              <step.icon
-                className="relative h-14 w-14 animate-[float_3.8s_ease-in-out_infinite] sm:h-[4.5rem] sm:w-[4.5rem]"
-                strokeWidth={1.3}
-              />
-              <Sparkles className="absolute right-5 top-5 h-5 w-5 animate-pulse text-amber-200 sm:right-6 sm:top-6 sm:h-6 sm:w-6" />
-              <div className="relative mt-7 sm:mt-9">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-emerald-100/80 sm:text-xs sm:tracking-[0.28em]">
-                  Step {stepIndex + 1}
-                </p>
-                <h2 className="mt-2 text-pretty font-display text-[1.55rem] leading-relaxed sm:text-3xl sm:leading-tight">
-                  {step.title}
-                </h2>
-              </div>
-            </div>
-
-            <p className="mt-5 text-sm leading-6 text-emerald-900/75 sm:mt-6 sm:leading-7">
-              {step.copy}
-            </p>
-
-            <div className="mt-6 flex gap-3 sm:mt-8">
-              {stepIndex < steps.length - 1 ? (
-                <Button
-                  className="flex-1 justify-center gap-2"
-                  onClick={() => setStepIndex((current) => current + 1)}
-                >
-                  次へ
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button className="flex-1 justify-center" onClick={closeOnboarding}>
-                  はじめる
-                </Button>
-              )}
-            </div>
-          </section>
-        </div>
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="first-visit-title"
+      onCancel={(event) => { event.preventDefault(); closeOnboarding(); }}
+      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-3xl border border-emerald-900/15 bg-[#f6f5ef] p-5 text-emerald-950 backdrop:bg-emerald-950/40"
+    >
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 id="first-visit-title" className="font-display text-2xl">旅のメニュー</h2>
+        <button
+          autoFocus
+          type="button"
+          aria-label="閉じる"
+          className="grid h-11 w-11 place-items-center rounded-full border border-emerald-900/15 bg-white"
+          onClick={closeOnboarding}
+        >
+          <X aria-hidden="true" className="h-5 w-5" />
+        </button>
       </div>
+      <nav aria-label="旅を始める" className="space-y-3">
+        {destinations.map(({ label, href, icon: Icon }) => (
+          <Link key={href} href={href} onClick={closeOnboarding} className="flex min-h-16 items-center gap-4 rounded-2xl border border-emerald-900/15 bg-white px-4 py-4 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">
+            <Icon aria-hidden="true" className="h-6 w-6 text-emerald-700" />
+            <span className="flex-1 font-medium">{label}</span>
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </Link>
+        ))}
+      </nav>
     </dialog>
   );
 }

@@ -22,7 +22,7 @@ export function HomeCalendarSwitcher({ events }: Props) {
 
   return (
     <section id="home-calendar" className="scroll-mt-28 space-y-5">
-      <SectionTitle label="日付から、旅を決める。" />
+      <SectionTitle label="カレンダー" />
       <div className="inline-flex gap-1 rounded-full border border-emerald-900/10 bg-white p-1 shadow-sm">
         <Button
           variant={view === "modern" ? "primary" : "ghost"}

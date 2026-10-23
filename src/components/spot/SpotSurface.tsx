@@ -204,7 +204,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
   return (
     <div className="space-y-8">
       {confirmation}
-      <PageHeading eyebrow="WALK & DISCOVER" title="地図を片手に、岩手を歩く。" description="現在地や気になるエリアから、岩手のスポットを地図で見つけられます。" actions={<PageShortcut target="favorites" />} />
+      <PageHeading title="地図" actions={<PageShortcut target="favorites" />} />
 
       <div className="rounded-2xl border border-emerald-900/15 bg-white p-4">
         {hasSpots ? (
@@ -251,10 +251,6 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
               >
                 現在地を更新
               </Button>
-              <div className="flex items-center gap-2 text-sm text-emerald-900/80">
-                <Navigation className="h-4 w-4 text-emerald-700" />
-                <span>ルート検索はGoogle Mapsで開きます</span>
-              </div>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <label className="flex items-center justify-between gap-3 rounded-lg border border-emerald-900/10 bg-white/75 px-3 py-2 text-sm text-emerald-900/90">
@@ -287,25 +283,6 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
               </label>
             </div>
 
-            {!showAllSpots && (
-              <div className="mt-2 rounded-lg border border-emerald-300/50 bg-emerald-50 px-3 py-2 text-xs text-emerald-900/90">
-                近傍探索中: 採用半径{" "}
-                <span className="font-semibold">
-                  {nearbyResult.adoptedRadius ? `${nearbyResult.adoptedRadius} m` : "未計測"}
-                </span>
-                {" / "}表示件数 <span className="font-semibold">{nearbyDisplaySpots.length} 件</span>
-                {" / "}設定上限 <span className="font-semibold">{nearbyTargetCount} 件</span>
-                {" / "}最大半径{" "}
-                <span className="font-semibold">
-                  {maxSearchRadius >= 1000 ? `${maxSearchRadius / 1000} km` : `${maxSearchRadius} m`}
-                </span>
-              </div>
-            )}
-            {showAllSpots && (
-              <div className="mt-2 rounded-lg border border-sky-300/50 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-                全件表示モード: {spotsWithDistance.length} 件
-              </div>
-            )}
             {locError && (
               <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                 {locError}
@@ -336,14 +313,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
       </div>
 
       <SectionTitle
-        label={hasSpots ? (showAllSpots ? "すべての観光地" : "近傍の観光地") : "スポット一覧"}
-        description={
-          hasSpots
-            ? showAllSpots
-              ? "全件表示中"
-              : `盛岡駅/現在地を中心に近い順で最大${nearbyTargetCount}件表示します`
-            : "旅先の情報を準備しています"
-        }
+        label={hasSpots ? `${showAllSpots ? "すべてのスポット" : userPos ? "現在地から近い順" : "盛岡駅から近い順"}（${displaySpots.length}件）` : "スポット一覧"}
         icon={SlidersHorizontal}
       />
       <div className="card-grid">

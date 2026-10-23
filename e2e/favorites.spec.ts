@@ -20,7 +20,7 @@ test("ゲストはサンプルを閲覧し、旧保存を残したままログ�
     page.getByRole("heading", { name: "お気に入りのサンプル" }),
   ).toBeVisible();
   await expect(
-    page.getByText(/あなたが保存した内容ではありません/),
+    page.getByRole("region", { name: "お気に入りのサンプル" }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: /削除/ })).toHaveCount(0);
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -30,7 +30,7 @@ test("ゲストはサンプルを閲覧し、旧保存を残したままログ�
     animations: "disabled",
   });
   await expect(
-    page.getByRole("link", { name: "ログインして自分の一覧を作る" }),
+    page.getByRole("link", { name: "ログインして保存" }),
   ).toHaveAttribute("href", "/login?next=%2Ffavorites");
   await page.goto("/spots/1");
   await expect(
@@ -89,7 +89,7 @@ test("本人の空一覧には自動追加せず、確認した旧保存だけ�
     });
   });
   await page.goto("/favorites");
-  await expect(page.getByText(/まだお気に入りはありません/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "最初の旅先を探す" })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "お気に入りのサンプル" }),
   ).toHaveCount(0);
@@ -123,11 +123,11 @@ test("本人の空一覧には自動追加せず、確認した旧保存だけ�
   await page
     .getByRole("button", { name: "盛岡城跡公園をお気に入りから削除" })
     .click();
-  await expect(page.getByText(/まだお気に入りはありません/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "最初の旅先を探す" })).toBeVisible();
   expect(writes[1]).toEqual({ method: "DELETE", body: { spotId: 1 } });
   await expect(page.getByText("追加する内容を確認（1件）")).toHaveCount(0);
   await page.reload();
-  await expect(page.getByText(/まだお気に入りはありません/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "最初の旅先を探す" })).toBeVisible();
   await expect(page.getByText("追加する内容を確認（1件）")).toHaveCount(0);
   expect(writes).toHaveLength(2);
   expect(
@@ -168,11 +168,11 @@ test("本人APIが失敗したらサンプルや空表示にせず再取得で�
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
     "お気に入りを読み込めませんでした",
   );
-  await expect(page.getByText(/まだお気に入りはありません/)).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "最初の旅先を探す" })).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "お気に入りのサンプル" }),
   ).toHaveCount(0);
   failing = false;
   await page.getByRole("button", { name: "もう一度読み込む" }).click();
-  await expect(page.getByText(/まだお気に入りはありません/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "最初の旅先を探す" })).toBeVisible();
 });

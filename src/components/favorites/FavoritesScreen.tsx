@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, LogIn } from "lucide-react";
+import { Heart } from "lucide-react";
 import { PageHeading } from "@/components/ui/PageHeading";
 import { TravelImage } from "@/components/ui/TravelImage";
 import { SpotCard } from "@/components/ui/SpotCard";
@@ -30,19 +30,18 @@ export function FavoritesScreen() {
   return (
     <div className="space-y-6">
       <PageHeading
-        eyebrow="YOUR TRAVEL NOTES"
-        title="また会いたい、あの場所。"
-        description="気になった旅先を保存して、次のお出かけに。"
+        title="お気に入り"
         actions={
-          <Link href="/search" className="action-link action-link-secondary">
-            旅先を探す
-          </Link>
+          <>
+            {favorites.isReady && !favorites.isAuthenticated && (
+              <Link href={`${PUBLIC_LOGIN_PATH}?next=${encodeURIComponent("/favorites")}`} className="action-link">ログインして保存</Link>
+            )}
+            <Link href="/search" className="action-link action-link-secondary">旅先を探す</Link>
+          </>
         }
       />
       {!favorites.isReady ? (
-        <GlassCard title="お気に入りを準備しています" icon={Heart}>
-          <p role="status">保存した旅先を確認しています。</p>
-        </GlassCard>
+        <p role="status">お気に入りを読み込んでいます。</p>
       ) : (
         <>
           {favorites.error && (
@@ -67,24 +66,6 @@ export function FavoritesScreen() {
             <>
               {!favorites.isAuthenticated ? (
                 <>
-                  <GlassCard
-                    title="あなただけの旅先リストを"
-                    icon={LogIn}
-                    badge="保存例を表示中"
-                  >
-                    <p>
-                      下の一覧はお気に入りのサンプルです。あなたが保存した内容ではありません。ログインすると、自分だけの旅先リストを作れます。
-                    </p>
-                    <p className="mt-2">
-                      サンプルがアカウントに追加されることはありません。
-                    </p>
-                    <Link
-                      href={`${PUBLIC_LOGIN_PATH}?next=${encodeURIComponent("/favorites")}`}
-                      className="action-link mt-4"
-                    >
-                      ログインして自分の一覧を作る
-                    </Link>
-                  </GlassCard>
                   <section
                     aria-labelledby="favorite-samples-title"
                     className="space-y-4"
@@ -96,9 +77,6 @@ export function FavoritesScreen() {
                       >
                         お気に入りのサンプル
                       </h2>
-                      <p className="mt-2 text-sm text-emerald-900/80">
-                        こんなふうに、気になる場所をまとめられます。
-                      </p>
                     </div>
                     <div className="card-grid">
                       {favorites.sampleSpots.map((spot) => {
@@ -123,9 +101,6 @@ export function FavoritesScreen() {
                       </p>
                     )}
                   </section>
-                  <p className="text-xs leading-6 text-emerald-900/75">
-                    以前この端末で保存した内容は、そのまま保持しています。ログイン後に確認して、自分の一覧へ追加できます。
-                  </p>
                 </>
               ) : (
                 <>
@@ -136,9 +111,6 @@ export function FavoritesScreen() {
                   >
                     {favorites.favoriteIds.length === 0 ? (
                       <div className="space-y-4">
-                        <p>
-                          まだお気に入りはありません。スポット詳細から気になる場所を保存できます。
-                        </p>
                         <Link href="/search" className="action-link">
                           最初の旅先を探す
                         </Link>

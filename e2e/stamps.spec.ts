@@ -31,7 +31,7 @@ test("未ログインで県内の対象を閲覧し、位置情報拒否後も�
     page.getByTitle("盛岡城跡公園（対象スポット）", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "ログインして旅を記録" }),
+    page.getByRole("link", { name: "ログインしてスタンプを集める" }),
   ).toHaveAttribute("href", "/login?next=%2Fstamps");
   await expect(page.getByRole("progressbar")).toHaveCount(0);
   await page.getByText("盛岡市", { exact: true }).click();

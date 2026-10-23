@@ -57,23 +57,21 @@ describe("FavoritesScreen", () => {
       screen.getByRole("heading", { name: "お気に入りのサンプル" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/あなたが保存した内容ではありません/),
+      screen.getByRole("region", { name: "お気に入りのサンプル" }),
     ).toBeInTheDocument();
     expect(screen.getByText(spot.name)).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /削除/ }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "ログインして自分の一覧を作る" }),
+      screen.getByRole("link", { name: "ログインして保存" }),
     ).toHaveAttribute("href", "/login?next=%2Ffavorites");
   });
 
   it("本人の空一覧にはサンプルを混ぜず旅先への導線を表示する", () => {
     render(<FavoritesScreen />);
     expect(
-      screen.getByText(
-        "まだお気に入りはありません。スポット詳細から気になる場所を保存できます。",
-      ),
+      screen.getByText("0件"),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "お気に入りのサンプル" }),
@@ -120,7 +118,7 @@ describe("FavoritesScreen", () => {
     render(<FavoritesScreen />);
     expect(screen.getByRole("alert")).toHaveTextContent("読込失敗");
     expect(
-      screen.queryByText(/まだお気に入りはありません/),
+      screen.queryByRole("link", { name: "最初の旅先を探す" }),
     ).not.toBeInTheDocument();
     await userEvent.click(
       screen.getByRole("button", { name: "もう一度読み込む" }),
@@ -132,7 +130,7 @@ describe("FavoritesScreen", () => {
     mockUseFavorites.mockReturnValue({ ...base, favoriteIds: [999] });
     render(<FavoritesScreen />);
     expect(
-      screen.queryByText(/まだお気に入りはありません/),
+      screen.queryByRole("link", { name: "最初の旅先を探す" }),
     ).not.toBeInTheDocument();
     expect(screen.getByText(/保存した記録はそのまま保持/)).toBeInTheDocument();
   });

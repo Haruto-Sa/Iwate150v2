@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { MapPin, Stamp as StampIcon, LogIn } from "lucide-react";
+import { MapPin, Stamp as StampIcon } from "lucide-react";
 import { PageHeading } from "@/components/ui/PageHeading";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
@@ -32,24 +32,11 @@ export default function StampPage() {
   return (
     <div className="space-y-6">
       <PageHeading
-        eyebrow="TRAVEL STAMPS"
-        title="旅の足あとを、集めよう。"
-        description="岩手を歩いて、訪れた場所をひとつずつ思い出に。"
+        title="スタンプ"
+        actions={!collection.authenticated && !collection.authLoading && (
+          <Link href="/login?next=%2Fstamps" className="action-link">ログインしてスタンプを集める</Link>
+        )}
       />
-      {!collection.authenticated && !collection.authLoading && (
-        <GlassCard
-          title="次に訪れたい場所を、地図から。"
-          icon={LogIn}
-          badge="公開プレビュー"
-        >
-          <p>
-            対象スポットはログインなしで見られます。スタンプを収集・保存するにはログインしてください。このプレビューはあなたの訪問記録ではなく、サンプルが保存されることもありません。
-          </p>
-          <Link href="/login?next=%2Fstamps" className="action-link mt-4">
-            ログインして旅を記録
-          </Link>
-        </GlassCard>
-      )}
       {collection.privateError && (
         <div className="space-y-3 rounded-2xl border border-red-200 bg-red-50 p-5">
           <p role="alert">{collection.privateError}</p>
@@ -78,8 +65,7 @@ export default function StampPage() {
               role="status"
               className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-7"
             >
-              現在はサンプルの対象を表示しています。本人の進捗には結び付けず、収集・保存もできません。
-              サンプルから詳細ページには移動できません。
+              現在はサンプルの対象を表示しています。収集・保存・詳細表示はできません。
               <Button
                 variant="outline"
                 className="mt-3"
@@ -112,11 +98,6 @@ export default function StampPage() {
                 {progress.visitedCities}市町村で取得済み ／ 対象のある
                 {progress.targetCities}市町村
               </p>
-              {progress.earned === 0 && (
-                <p className="mt-2 text-sm">
-                  まだ対象スポットのスタンプはありません。最初の旅先で集めてみましょう。
-                </p>
-              )}
               {progress.unavailableCount > 0 && (
                 <p className="mt-2 text-sm">
                   現在の対象一覧にない記録が{progress.unavailableCount}

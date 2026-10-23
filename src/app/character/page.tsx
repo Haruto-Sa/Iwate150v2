@@ -251,9 +251,7 @@ export default function CharacterPage() {
   if (!selected) {
     return (
       <div className="space-y-6">
-        <PageHeading
-          eyebrow="MEET IWATE" title="旅の仲間に、会いに行こう。"
-          description="旅をいっしょに楽しむキャラクター情報を準備中です。"
+        <PageHeading title="キャラクター"
         />
       </div>
     );
@@ -261,9 +259,7 @@ export default function CharacterPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        eyebrow="MEET IWATE" title="旅の仲間に、会いに行こう。"
-        description="旅をもっと楽しくしてくれるキャラクターを選んで、3D でじっくり眺められます。"
+      <PageHeading title="キャラクター"
       />
 
       <section className="rounded-3xl border border-emerald-900/10 bg-white p-4 sm:p-5">
@@ -282,9 +278,6 @@ export default function CharacterPage() {
                 className="h-full min-h-0"
               />
             </div>
-            <p className="text-center text-xs leading-relaxed text-emerald-900/65 lg:text-left">
-              画面下のボタンで拡大・縮小・回転・リセットを操作できます。気になるキャラクターは気軽に切り替えて見比べられます。
-            </p>
           </div>
 
           <div className="min-w-0 space-y-4">

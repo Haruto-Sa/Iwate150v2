@@ -40,12 +40,12 @@ export default defineConfig({
   projects: [
     {
       name: "iphone",
-      testMatch: ["**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts"],
+      testMatch: ["**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts"],
       use: { ...devices["iPhone 13"] },
     },
     {
       name: "android",
-      testMatch: ["**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts"],
+      testMatch: ["**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts"],
       use: { ...devices["Pixel 5"] },
     },
     {

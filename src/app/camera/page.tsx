@@ -17,7 +17,7 @@ export const metadata = buildPageMetadata({
 export default function CameraPage() {
   return (
     <div className="space-y-8">
-      <PageHeading eyebrow="TRAVEL MOMENTS" title="旅の一枚を、いっしょに。" description="はじめてでも大丈夫です。カメラを許可すると、旅のガイドキャラクターと一緒に写真を撮れます。" actions={<PageShortcut target="character" />} />
+      <PageHeading title="カメラ" actions={<PageShortcut target="character" />} />
 
       <CameraCapture />
     </div>

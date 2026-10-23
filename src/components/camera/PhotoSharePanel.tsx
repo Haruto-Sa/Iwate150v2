@@ -87,10 +87,10 @@ export function PhotoSharePanel({ build, hasPhoto }: { build: () => Promise<Blob
   }
 
   return (
-    <section aria-labelledby="photo-share-title" className="rounded-2xl border border-[#285449]/20 bg-[#f6f5ee] p-4 sm:p-6">
-      <p className="text-[10px] font-semibold tracking-[0.22em] text-[#53665c]">IWATE / TRAVEL MEMORIES</p>
-      <h2 id="photo-share-title" className="mt-2 text-xl font-semibold text-[#173f35]">旅の一枚を、届けよう。</h2>
-      <p className="mt-2 text-sm leading-relaxed text-[#53665c]">Instagram・X・LINE・Facebook など、写真を受け取れるアプリへ。</p>
+    <section aria-labelledby="photo-share-title" className="rounded-2xl border border-app-line/20 bg-app-canvas p-4 sm:p-6">
+      <p className="text-[10px] font-semibold tracking-[0.22em] text-app-ink-muted">IWATE / TRAVEL MEMORIES</p>
+      <h2 id="photo-share-title" className="mt-2 text-xl font-semibold text-app-ink-strong">旅の一枚を、届けよう。</h2>
+      <p className="mt-2 text-sm leading-relaxed text-app-ink-muted">Instagram・X・LINE・Facebook など、写真を受け取れるアプリへ。</p>
 
       <div className="mt-4 flex flex-wrap gap-3">
         <Button onClick={sharePhoto} disabled={!canShare || busy || preparing} className="min-h-12 gap-2 !bg-[#173f35] !text-white">
@@ -98,28 +98,28 @@ export function PhotoSharePanel({ build, hasPhoto }: { build: () => Promise<Blob
           {preparing ? "写真を準備中…" : busy ? "共有メニューを開いています…" : "写真を添付して共有"}
         </Button>
         {href && !busy && (
-          <a href={href} download="iwate-memory.png" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#285449]/30 bg-white px-4 text-sm font-medium text-[#173f35]">
+          <a href={href} download="iwate-memory.png" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-app-line/30 bg-app-surface px-4 text-sm font-medium text-app-ink-strong">
             <Download aria-hidden="true" className="h-4 w-4" />写真を保存
           </a>
         )}
       </div>
-      <p className="mt-3 text-xs leading-relaxed text-[#53665c]">
+      <p className="mt-3 text-xs leading-relaxed text-app-ink-muted">
         {canShare
           ? "共有メニューで投稿先を選ぶと、写真が渡されます。表示されるアプリや投稿先は端末・SNSによって異なります。"
           : file ? "このブラウザでは写真付きの共有メニューを使えません。写真を保存し、SNSの投稿画面で添付してください。"
           : "編集を終えると、共有する写真を準備します。"}
       </p>
-      {error && <div role="alert" className="mt-3 text-sm text-red-800">{error} <button type="button" onClick={retry} className="min-h-11 underline underline-offset-4">もう一度準備する</button></div>}
-      <p role="status" aria-live="polite" className="mt-2 text-sm text-[#173f35]">{message}</p>
+      {error && <div role="alert" className="mt-3 text-sm text-app-danger">{error} <button type="button" onClick={retry} className="min-h-11 underline underline-offset-4">もう一度準備する</button></div>}
+      <p role="status" aria-live="polite" className="mt-2 text-sm text-app-ink-strong">{message}</p>
 
-      <div className="mt-4 border-t border-[#285449]/15 pt-4">
+      <div className="mt-4 border-t border-app-line/15 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <label htmlFor="photo-caption" className="text-xs font-semibold text-[#53665c]">一緒に添える投稿文</label>
-          <button type="button" onClick={copyCaption} className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-[#173f35]"><Copy aria-hidden="true" className="h-3.5 w-3.5" />投稿文をコピー</button>
+          <label htmlFor="photo-caption" className="text-xs font-semibold text-app-ink-muted">一緒に添える投稿文</label>
+          <button type="button" onClick={copyCaption} className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-app-ink-strong"><Copy aria-hidden="true" className="h-3.5 w-3.5" />投稿文をコピー</button>
         </div>
-        <textarea id="photo-caption" readOnly value={caption} rows={2} className="w-full resize-none rounded-lg border border-[#285449]/20 bg-white p-3 text-sm text-[#173f35]" />
+        <textarea id="photo-caption" readOnly value={caption} rows={2} className="w-full resize-none rounded-lg border border-app-line/20 bg-app-surface p-3 text-sm text-app-ink-strong" />
       </div>
-      <details className="mt-3 text-xs leading-relaxed text-[#53665c]">
+      <details className="mt-3 text-xs leading-relaxed text-app-ink-muted">
         <summary className="min-h-11 cursor-pointer py-3 font-semibold">投稿先が見つからないとき</summary>
         <p>「写真を保存」でダウンロードし、各アプリで写真を選んでください。保存先は端末によって「ファイル」や「ダウンロード」になります。</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">

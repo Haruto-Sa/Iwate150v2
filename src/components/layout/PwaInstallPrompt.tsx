@@ -43,7 +43,7 @@ export function PwaInstallPrompt() {
     <BottomSheet open={isOpen} lang={language} title={messages.install} closeLabel={messages.closeInstall} onClose={() => setIsOpen(false)}>
       <div className="space-y-5">
         {isIosSafari ? (
-          <div className="rounded-[1.5rem] border border-emerald-900/10 bg-emerald-50/80 p-4 text-sm text-emerald-900/80">
+          <div className="rounded-[1.5rem] border border-app-line/10 bg-app-surface-soft/80 p-4 text-sm text-app-ink/80">
             <p className="mt-2 inline-flex items-center gap-2">
               <Share2 className="h-4 w-4" />
               {messages.safariInstall}
@@ -82,7 +82,7 @@ export function PwaInstallPrompt() {
           </div>
         )}
 
-        {installFailed && <p role="alert" className="text-xs text-emerald-900/70">{messages.installFailed}</p>}
+        {installFailed && <p role="alert" className="text-xs text-app-ink-muted">{messages.installFailed}</p>}
       </div>
     </BottomSheet>
   );

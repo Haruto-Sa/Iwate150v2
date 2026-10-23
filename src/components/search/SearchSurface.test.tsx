@@ -1,5 +1,5 @@
 import type { ImgHTMLAttributes } from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SearchSurface } from "@/components/search/SearchSurface";
@@ -91,6 +91,7 @@ describe("SearchSurface", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -116,6 +117,7 @@ describe("SearchSurface", () => {
   });
 
   it("debounces keyword search for 300ms and updates spot filters in the request", async () => {
+    vi.useFakeTimers();
     const mockFetch = vi.fn().mockImplementation(() =>
       Promise.resolve(
         createJsonResponse({
@@ -148,18 +150,18 @@ describe("SearchSurface", () => {
       />
     );
 
-    const user = userEvent.setup();
-    await user.type(screen.getByPlaceholderText("スポット名、キーワードで検索..."), "城");
+    fireEvent.change(screen.getByPlaceholderText("スポット名、キーワードで検索..."), { target: { value: "城" } });
 
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      await vi.advanceTimersByTimeAsync(299);
     });
     expect(mockFetch).not.toHaveBeenCalled();
 
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 80));
+      await vi.advanceTimersByTimeAsync(1);
     });
 
+    vi.useRealTimers();
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
@@ -170,8 +172,8 @@ describe("SearchSurface", () => {
     expect(url.searchParams.get("keyword")).toBe("城");
     expect(await screen.findByText("中尊寺")).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText("市区町村"), "2");
-    await user.selectOptions(screen.getByLabelText("ジャンル"), "1");
+    await userEvent.selectOptions(screen.getByLabelText("市区町村"), "2");
+    await userEvent.selectOptions(screen.getByLabelText("ジャンル"), "1");
 
     await waitFor(() => {
       expect(mockFetch.mock.calls.length).toBeGreaterThanOrEqual(3);

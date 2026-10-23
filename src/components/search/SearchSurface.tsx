@@ -240,31 +240,31 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
   return (
     <div className="space-y-6">
       <div className="flex justify-end"><PageShortcut target="favorites" /></div>
-      <div className="flex items-center gap-3 rounded-2xl border border-emerald-900/15 bg-white px-4 py-3 shadow-sm">
-        <Search className="h-5 w-5 text-emerald-700" strokeWidth={1.8} />
+      <div className="flex items-center gap-3 rounded-2xl border border-app-line/15 bg-app-surface px-4 py-3 shadow-sm">
+        <Search className="h-5 w-5 text-app-accent-ink" strokeWidth={1.8} />
         <input
           aria-label="スポット・イベントのキーワード"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
           placeholder="スポット名、キーワードで検索..."
-          className="w-full bg-transparent text-sm text-emerald-950 placeholder:text-emerald-900/60"
+          className="w-full bg-transparent text-sm text-app-ink-strong placeholder:text-app-ink-muted"
         />
         <Button
           variant="ghost"
-          className="shrink-0 border border-emerald-900/10 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+          className="shrink-0 border border-app-line/10 bg-app-surface-soft text-app-ink hover:bg-app-surface-tint"
           onClick={() => setKeyword("")}
         >
           クリア
         </Button>
       </div>
 
-      <div className="grid gap-2 rounded-2xl border border-emerald-900/10 bg-white/70 p-2 sm:grid-cols-2">
-        <label className="flex items-center gap-2 px-2 py-1 text-xs text-emerald-900/75">
+      <div className="grid gap-2 rounded-2xl border border-app-line/10 bg-app-surface/70 p-2 sm:grid-cols-2">
+        <label className="flex items-center gap-2 px-2 py-1 text-xs text-app-ink/75">
           市区町村
           <select
             value={selectedCityId}
             onChange={(event) => setSelectedCityId(event.target.value)}
-            className="min-w-0 flex-1 rounded-md border border-emerald-900/15 bg-white px-2 py-2.5 text-sm text-emerald-900"
+            className="min-w-0 flex-1 rounded-md border border-app-line/15 bg-app-surface px-2 py-2.5 text-sm text-app-ink"
           >
             <option value="all">すべて</option>
             {cities.map((city) => (
@@ -274,13 +274,13 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-2 px-2 py-1 text-xs text-emerald-900/75">
+        <label className="flex items-center gap-2 px-2 py-1 text-xs text-app-ink/75">
           ジャンル
           <select
             value={selectedGenreId}
             onChange={(event) => setSelectedGenreId(event.target.value)}
             disabled={tab !== "spot"}
-            className="min-w-0 flex-1 rounded-md border border-emerald-900/15 bg-white px-2 py-2.5 text-sm text-emerald-900 disabled:opacity-50"
+            className="min-w-0 flex-1 rounded-md border border-app-line/15 bg-app-surface px-2 py-2.5 text-sm text-app-ink disabled:opacity-50"
           >
             <option value="all">すべて</option>
             {genres.map((genre) => (
@@ -292,7 +292,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
         </label>
       </div>
 
-      <div className="flex gap-2 rounded-2xl border border-emerald-900/10 bg-white/70 p-1.5">
+      <div className="flex gap-2 rounded-2xl border border-app-line/10 bg-app-surface/70 p-1.5">
         {[
           { key: "spot", label: "スポット", icon: LocateFixed },
           { key: "event", label: "イベント", icon: Navigation },
@@ -312,7 +312,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
       </div>
 
       {!isIdleState && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-emerald-900/70">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-app-ink-muted">
           <p>
             {tab === "spot" ? "スポット" : "イベント"}: {total} 件
             {tab === "event" && "（ジャンル条件はスポットのみ対応）"}
@@ -324,7 +324,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
       )}
 
       {errorMessage && (
-        <div className="rounded-xl border border-rose-300/60 bg-rose-50 px-3 py-2 text-xs text-rose-800">
+        <div className="rounded-xl border border-app-danger/30 bg-app-danger-surface px-3 py-2 text-xs text-app-danger">
           {errorMessage}
         </div>
       )}
@@ -333,7 +333,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
         <div className="space-y-6">
           {tab === "spot" && <section className="space-y-3">
             <div className="px-1">
-              <h2 className="text-lg font-semibold text-[#0f1c1a]">旅先のヒント</h2>
+              <h2 className="text-lg font-semibold text-app-ink-strong">旅先のヒント</h2>
             </div>
             <div className="card-grid">
               {defaultSpots.map((spot) => {
@@ -350,7 +350,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
 
           {tab === "event" && <section className="space-y-3">
             <div className="px-1">
-              <h2 className="text-lg font-semibold text-[#0f1c1a]">もうすぐ開催</h2>
+              <h2 className="text-lg font-semibold text-app-ink-strong">もうすぐ開催</h2>
             </div>
             <div className="card-grid">
               {defaultEvents.map((event) => {
@@ -362,9 +362,9 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
                   <GlassCard key={event.id} title={event.title} icon={Navigation} badge={event.start_date ?? ""}>
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-emerald-900/80">{event.location ?? "未設定"}</p>
+                        <p className="text-sm text-app-ink/80">{event.location ?? "未設定"}</p>
                       </div>
-                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
+                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-app-line/10 bg-app-surface-soft">
                         {imageUrl ? (
                           <Image
                             src={imageUrl}
@@ -374,7 +374,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
                             className="object-cover"
                           />
                         ) : (
-                          <div className="grid h-full w-full place-items-center text-emerald-700/70">
+                          <div className="grid h-full w-full place-items-center text-app-accent-ink/70">
                             <ImageIcon className="h-4 w-4" />
                           </div>
                         )}
@@ -402,7 +402,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
           {tab === "event" && groupedEvents.upcoming.length > 0 && (
             <>
               <div className="col-span-full px-1">
-                <h2 className="text-lg font-semibold text-[#0f1c1a]">開催予定</h2>
+                <h2 className="text-lg font-semibold text-app-ink-strong">開催予定</h2>
               </div>
               {groupedEvents.upcoming.map((event) => {
                 const imagePath = getEventImagePathValue(event);
@@ -413,9 +413,9 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
                   <GlassCard key={event.id} title={event.title} icon={Navigation} badge={event.start_date ?? ""}>
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-emerald-900/80">{event.location ?? "未設定"}</p>
+                        <p className="text-sm text-app-ink/80">{event.location ?? "未設定"}</p>
                       </div>
-                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
+                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-app-line/10 bg-app-surface-soft">
                         {imageUrl ? (
                           <Image
                             src={imageUrl}
@@ -425,7 +425,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
                             className="object-cover"
                           />
                         ) : (
-                          <div className="grid h-full w-full place-items-center text-emerald-700/70">
+                          <div className="grid h-full w-full place-items-center text-app-accent-ink/70">
                             <ImageIcon className="h-4 w-4" />
                           </div>
                         )}
@@ -440,7 +440,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
           {tab === "event" && groupedEvents.past.length > 0 && (
             <>
               <div className="col-span-full px-1">
-                <h2 className="text-lg font-semibold text-[#0f1c1a]">過去のイベント</h2>
+                <h2 className="text-lg font-semibold text-app-ink-strong">過去のイベント</h2>
               </div>
               {groupedEvents.past.map((event) => {
                 const imagePath = getEventImagePathValue(event);
@@ -451,9 +451,9 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
                   <GlassCard key={event.id} title={event.title} icon={Navigation} badge={event.start_date ?? ""}>
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-emerald-900/80">{event.location ?? "未設定"}</p>
+                        <p className="text-sm text-app-ink/80">{event.location ?? "未設定"}</p>
                       </div>
-                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
+                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-app-line/10 bg-app-surface-soft">
                         {imageUrl ? (
                           <Image
                             src={imageUrl}
@@ -463,7 +463,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
                             className="object-cover"
                           />
                         ) : (
-                          <div className="grid h-full w-full place-items-center text-emerald-700/70">
+                          <div className="grid h-full w-full place-items-center text-app-accent-ink/70">
                             <ImageIcon className="h-4 w-4" />
                           </div>
                         )}
@@ -499,7 +499,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
             <ChevronLeft className="h-4 w-4" />
             前へ
           </Button>
-          <span className="text-xs text-emerald-900/75">
+          <span className="text-xs text-app-ink/75">
             page {page}
             {isLoading ? " / 読み込み中..." : ""}
           </span>

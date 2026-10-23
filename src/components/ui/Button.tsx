@@ -77,10 +77,10 @@ export function Button({
         "!bg-white/10 !text-emerald-50 ring-1 ring-white/15 hover:!bg-white/15";
       break;
     case "ghost":
-      colorClass = "!bg-transparent !text-[#0f1c1a]";
+      colorClass = "!bg-transparent !text-app-ink-strong";
       break;
     case "outline":
-      colorClass = "!bg-transparent !text-emerald-900";
+      colorClass = "!bg-transparent !text-app-ink";
       break;
     case "primary":
     default:

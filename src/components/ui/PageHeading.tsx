@@ -13,9 +13,9 @@ type Props = {
  */
 export function PageHeading({ title, actions }: Props) {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-900/15 pb-4">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-app-line/15 pb-4">
       <div className="min-w-0">
-        <h1 className="text-balance font-display text-[1.65rem] leading-relaxed tracking-wide text-emerald-950 sm:text-4xl">
+        <h1 className="text-balance font-display text-[1.65rem] leading-relaxed tracking-wide text-app-ink-strong sm:text-4xl">
           {title}
         </h1>
       </div>

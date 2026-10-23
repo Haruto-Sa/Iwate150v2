@@ -933,7 +933,7 @@ export function CameraCapture() {
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white sm:aspect-[16/10]">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-app-line/10 bg-app-surface sm:aspect-[16/10]">
         <video
           ref={videoRef}
           className="h-full w-full object-cover"
@@ -963,9 +963,9 @@ export function CameraCapture() {
 
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           {status === "starting" && (
-            <div className="flex flex-col items-center gap-2 rounded-2xl bg-white/80 px-4 py-3 text-center shadow-lg">
-              <Sparkles className="h-6 w-6 text-[#0f3a3a]" />
-              <p className="text-sm text-[#0f1c1a]">
+            <div className="flex flex-col items-center gap-2 rounded-2xl bg-app-surface/80 px-4 py-3 text-center shadow-lg">
+              <Sparkles className="h-6 w-6 text-app-accent-ink" />
+              <p className="text-sm text-app-ink-strong">
                 カメラを準備中…
               </p>
             </div>
@@ -974,7 +974,7 @@ export function CameraCapture() {
 
         {status === "ready" && detection && selectedModelsReady && selectedModels.length > 0 && (
           <div
-            className="absolute rounded-full bg-gradient-to-br from-emerald-300 to-amber-200 px-3 py-1 text-xs font-semibold text-[#0f1c1a] shadow-lg transition"
+            className="absolute rounded-full bg-gradient-to-br from-emerald-300 to-amber-200 px-3 py-1 text-xs font-semibold text-app-ink-strong shadow-lg transition"
             style={{
               left: `${(detection.x + detection.width / 2) * 100}%`,
               top: `${detection.y * 100 - 4}%`,
@@ -1003,7 +1003,7 @@ export function CameraCapture() {
               onClick={handleCapture}
               aria-label="写真を撮る"
               disabled={status !== "ready"}
-              className="pointer-events-auto grid h-16 w-16 place-items-center rounded-full border-4 border-emerald-200/80 bg-white/90 text-[#0f1c1a] shadow-xl shadow-emerald-200/50 transition active:scale-95 disabled:opacity-60"
+              className="pointer-events-auto grid h-16 w-16 place-items-center rounded-full border-4 border-app-line-soft/80 bg-app-surface/90 text-app-ink-strong shadow-xl shadow-emerald-200/50 transition active:scale-95 disabled:opacity-60"
             >
               <CameraIcon className="h-7 w-7" />
             </button>
@@ -1011,7 +1011,7 @@ export function CameraCapture() {
             {status === "ready" && (
               <button
                 onClick={switchCamera}
-                className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-white/80 text-[#0f1c1a] shadow-lg backdrop-blur transition active:scale-95 sm:hidden"
+                className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-app-surface/80 text-app-ink-strong shadow-lg backdrop-blur transition active:scale-95 sm:hidden"
                 aria-label="カメラ切替"
               >
                 <SwitchCamera className="h-5 w-5" />
@@ -1021,7 +1021,7 @@ export function CameraCapture() {
         </div>
       </div>
 
-      <div className="glass flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-900/10 p-3 ring-1 ring-emerald-900/10">
+      <div className="glass flex flex-wrap items-center gap-2 rounded-2xl border border-app-line/10 p-3 ring-1 ring-app-line/10">
         {characters.map((c) => {
           const active = selectedModels.includes(c.id);
           const isDisabled = !active && selectedModels.length >= 5;
@@ -1047,7 +1047,7 @@ export function CameraCapture() {
             </Button>
           );
         })}
-        <span className="text-xs text-emerald-900/70">最大5体</span>
+        <span className="text-xs text-app-ink-muted">最大5体</span>
       </div>
 
       <div className="flex items-center justify-between">
@@ -1062,17 +1062,17 @@ export function CameraCapture() {
       </div>
 
       {errorMessage && (
-        <div role="alert" className="rounded-xl border border-amber-200/60 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <div role="alert" className="rounded-xl border border-app-warning/30 bg-app-warning-surface px-3 py-2 text-xs text-app-warning">
           {errorMessage}
         </div>
       )}
       {selectedModels.length > 0 && selectedModelsLoading && (
-        <div className="rounded-xl border border-sky-200/60 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+        <div className="rounded-xl border border-app-info/30 bg-app-info-surface px-3 py-2 text-xs text-app-info">
           キャラクターを読み込み中…
         </div>
       )}
       {selectedModelErrors.length > 0 && (
-        <div className="rounded-xl border border-rose-200/60 bg-rose-50 px-3 py-2 text-xs text-rose-900">
+        <div className="rounded-xl border border-app-danger/30 bg-app-danger-surface px-3 py-2 text-xs text-app-danger">
           一部のガイドを表示できませんでした: {selectedModelErrors.map((id) => getCharacterNameById(id)).join(" / ")}
           。いったん外してから、もう一度選び直してください。
         </div>

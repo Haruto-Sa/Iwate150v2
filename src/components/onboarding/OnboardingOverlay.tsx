@@ -67,7 +67,7 @@ function PageGuide({ path }: { path: GuidePath }) {
     <>
     <button ref={triggerRef} type="button" lang={language} aria-label={messages.help}
       aria-haspopup="dialog" aria-expanded={shouldRender} onClick={() => setReopened(true)}
-      className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-emerald-900/15 text-emerald-900">
+      className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-app-line/15 text-app-ink">
       <CircleHelp aria-hidden="true" className="h-5 w-5" />
     </button>
     {shouldRender && <dialog
@@ -75,7 +75,7 @@ function PageGuide({ path }: { path: GuidePath }) {
       ref={dialogRef}
       aria-labelledby="first-visit-title"
       onCancel={(event) => { event.preventDefault(); closeOnboarding(); }}
-      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-3xl border border-emerald-900/15 bg-[#f6f5ef] p-5 text-emerald-950 backdrop:bg-emerald-950/40"
+      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-3xl border border-app-line/15 bg-app-canvas p-5 text-app-ink-strong backdrop:bg-emerald-950/40"
     >
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 id="first-visit-title" className="font-display text-2xl">{guide.title}</h2>
@@ -83,7 +83,7 @@ function PageGuide({ path }: { path: GuidePath }) {
           autoFocus
           type="button"
           aria-label={messages.close}
-          className="grid h-11 w-11 place-items-center rounded-full border border-emerald-900/15 bg-white"
+          className="grid h-11 w-11 place-items-center rounded-full border border-app-line/15 bg-app-surface"
           onClick={closeOnboarding}
         >
           <X aria-hidden="true" className="h-5 w-5" />
@@ -91,8 +91,8 @@ function PageGuide({ path }: { path: GuidePath }) {
       </div>
       {path === "/" ? <nav aria-label={messages.startTrip} className="space-y-3">
         {destinations.map(({ label, href, icon: Icon }) => (
-          <Link key={href} href={href} onClick={closeOnboarding} className="flex min-h-16 items-center gap-4 rounded-2xl border border-emerald-900/15 bg-white px-4 py-4 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">
-            <Icon aria-hidden="true" className="h-6 w-6 text-emerald-700" />
+          <Link key={href} href={href} onClick={closeOnboarding} className="flex min-h-16 items-center gap-4 rounded-2xl border border-app-line/15 bg-app-surface px-4 py-4 hover:bg-app-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">
+            <Icon aria-hidden="true" className="h-6 w-6 text-app-accent-ink" />
             <span className="flex-1 font-medium">{messages[label]}</span>
             <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </Link>
@@ -101,7 +101,7 @@ function PageGuide({ path }: { path: GuidePath }) {
         <p className="text-sm leading-relaxed">{guide.hint}</p>
         <button type="button" onClick={closeOnboarding} className="action-link w-full">{guide.action}</button>
       </div>}
-      <div className="mt-5 border-t border-emerald-900/15 pt-4"><MenuLanguageSelect /></div>
+      <div className="mt-5 border-t border-app-line/15 pt-4"><MenuLanguageSelect /></div>
     </dialog>}
     </>
   );

@@ -262,10 +262,10 @@ export default function CharacterPage() {
       <PageHeading title="キャラクター"
       />
 
-      <section className="rounded-3xl border border-emerald-900/10 bg-white p-4 sm:p-5">
+      <section className="rounded-3xl border border-app-line/10 bg-app-surface p-4 sm:p-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,24rem)_1fr] lg:items-start">
           <div className="mx-auto w-full max-w-sm space-y-3 lg:mx-0">
-            <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-emerald-900/10 bg-gradient-to-b from-[#eef3f1] to-emerald-50">
+            <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-app-line/10 bg-gradient-to-b from-app-surface-soft to-app-surface-soft">
               <CharacterViewer
                 characterId={selected.id}
                 modelCandidates={modelCandidates}
@@ -283,27 +283,27 @@ export default function CharacterPage() {
           <div className="min-w-0 space-y-4">
             <div className="flex items-start gap-3">
               {thumbnailUrl ? (
-                <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-emerald-900/10 bg-white">
+                <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-app-line/10 bg-app-surface">
                   <Image src={thumbnailUrl} alt={selected.name} fill className="object-cover" />
                 </div>
               ) : (
-                <div className="grid h-16 w-16 place-items-center rounded-lg border border-emerald-900/10 bg-emerald-50 text-emerald-700">
+                <div className="grid h-16 w-16 place-items-center rounded-lg border border-app-line/10 bg-app-surface-soft text-app-accent-ink">
                   <ImageIcon className="h-4 w-4" />
                 </div>
               )}
 
               <div className="space-y-1">
-                <p className="break-words text-base font-semibold leading-tight text-emerald-950">
+                <p className="break-words text-base font-semibold leading-tight text-app-ink-strong">
                   {selected.name}
                 </p>
-                <p className="inline-flex items-center gap-1 text-xs text-emerald-900/70">
+                <p className="inline-flex items-center gap-1 text-xs text-app-ink-muted">
                   <MapPin className="h-3.5 w-3.5" />
                   <span className="break-words">{selected.region}</span>
                 </p>
               </div>
             </div>
 
-            <p className="break-words text-sm leading-relaxed text-emerald-900/85">
+            <p className="break-words text-sm leading-relaxed text-app-ink/85">
               {selected.description}
             </p>
 
@@ -311,7 +311,7 @@ export default function CharacterPage() {
               {(selected.tags ?? []).map((tag) => (
                 <span
                   key={`${selected.id}-${tag}`}
-                  className="break-words rounded-full bg-emerald-50 px-2 py-1 text-[11px] uppercase tracking-wide text-emerald-900 ring-1 ring-emerald-200/60"
+                  className="break-words rounded-full bg-app-surface-soft px-2 py-1 text-[11px] uppercase tracking-wide text-app-ink ring-1 ring-app-line-soft/60"
                 >
                   {tag}
                 </span>
@@ -321,8 +321,8 @@ export default function CharacterPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-emerald-900/10 bg-white p-3 ring-1 ring-emerald-900/10">
-        <p className="mb-2 text-sm text-emerald-900/80">キャラクターを選ぶ</p>
+      <section className="rounded-2xl border border-app-line/10 bg-app-surface p-3 ring-1 ring-app-line/10">
+        <p className="mb-2 text-sm text-app-ink/80">キャラクターを選ぶ</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {characters.map((character) => {
             const active = character.id === selected.id;

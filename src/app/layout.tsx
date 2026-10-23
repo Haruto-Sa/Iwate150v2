@@ -4,6 +4,9 @@ UI Concept: 「いわての旅帖」
 ナビゲーションだけに透過を使い、本文はコントラストと読みやすさを優先する。
 */
 
+import { ColorThemeSync } from "@/components/preferences/ColorThemeSync";
+import { COLOR_THEME_SCRIPT } from "@/lib/colorThemeScript";
+
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
@@ -57,10 +60,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning>
+      <head><script id="voja-color-theme" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: COLOR_THEME_SCRIPT }} /></head>
       <body suppressHydrationWarning className={`${display.variable} ${body.variable} antialiased`}>
+        <ColorThemeSync />
         <SessionProvider>
           <DevelopmentServiceWorkerReset />
-          <div className="flex min-h-screen flex-col bg-transparent text-[#0f1c1a]">
+          <div className="flex min-h-screen flex-col bg-transparent text-app-ink-strong">
             <Header />
             <main id="main-content" className="page-shell mx-auto w-full max-w-6xl flex-1 px-4 pb-12 pt-6 sm:px-6 sm:pt-10 md:pb-16">
               {children}

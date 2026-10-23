@@ -35,7 +35,7 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-col items-center justify-center rounded-xl px-1 py-2 text-[10px] font-medium transition-colors ${active ? "bg-emerald-800 text-white" : "text-emerald-900/80 hover:bg-emerald-100"}`}
+              className={`flex min-h-14 flex-col items-center justify-center rounded-xl px-1 py-2 text-[10px] font-medium transition-colors ${active ? "bg-emerald-800 text-white" : "text-app-ink/80 hover:bg-app-surface-tint"}`}
             >
               <Icon className="h-5 w-5" strokeWidth={1.8} />
               <span className="mt-1">{messages[item.messageKey]}</span>

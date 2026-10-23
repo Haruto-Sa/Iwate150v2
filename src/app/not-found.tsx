@@ -27,8 +27,8 @@ export default function NotFoundPage() {
         <p className="font-display mb-2 text-8xl font-bold text-emerald-200 select-none">404</p>
 
         {/* タイトル */}
-        <h1 className="text-balance font-display mb-2 text-2xl leading-relaxed text-[#0f1c1a]">ページが見つかりません</h1>
-        <p className="mb-8 text-sm leading-7 text-emerald-900/70">
+        <h1 className="text-balance font-display mb-2 text-2xl leading-relaxed text-app-ink-strong">ページが見つかりません</h1>
+        <p className="mb-8 text-sm leading-7 text-app-ink-muted">
           お探しのページは存在しないか、移動した可能性があります。
           <br />
           以下から目的のページへお進みください。
@@ -45,14 +45,14 @@ export default function NotFoundPage() {
           </Link>
           <Link
             href="/map"
-            className="interactive-lift inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-900/20 bg-white/80 px-5 py-3 text-sm font-medium text-emerald-900 transition duration-200 hover:bg-white"
+            className="interactive-lift inline-flex items-center justify-center gap-2 rounded-2xl border border-app-line/20 bg-app-surface/80 px-5 py-3 text-sm font-medium text-app-ink transition duration-200 hover:bg-app-surface"
           >
             <MapPin className="h-4 w-4" />
             地図で探す
           </Link>
           <Link
             href="/search"
-            className="interactive-lift inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-900/20 bg-white/80 px-5 py-3 text-sm font-medium text-emerald-900 transition duration-200 hover:bg-white"
+            className="interactive-lift inline-flex items-center justify-center gap-2 rounded-2xl border border-app-line/20 bg-app-surface/80 px-5 py-3 text-sm font-medium text-app-ink transition duration-200 hover:bg-app-surface"
           >
             <Search className="h-4 w-4" />
             スポットを検索

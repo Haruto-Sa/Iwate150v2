@@ -40,12 +40,12 @@ export default defineConfig({
   projects: [
     {
       name: "iphone",
-      testMatch: ["**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts", "**/camera-capture.spec.ts"],
+      testMatch: ["**/character-assets.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts", "**/camera-capture.spec.ts"],
       use: { ...devices["iPhone 13"] },
     },
     {
       name: "android",
-      testMatch: ["**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts", "**/camera-capture.spec.ts"],
+      testMatch: ["**/character-assets.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts", "**/camera-capture.spec.ts"],
       use: { ...devices["Pixel 5"] },
     },
     {
@@ -60,7 +60,7 @@ export default defineConfig({
     },
     {
       name: "webkit-ui",
-      testMatch: ["**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/spot-detail.spec.ts", "**/camera-capture.spec.ts"],
+      testMatch: ["**/character-assets.spec.ts", "**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/spot-detail.spec.ts", "**/camera-capture.spec.ts"],
       use: { ...devices["Desktop Safari"] },
     },
   ],

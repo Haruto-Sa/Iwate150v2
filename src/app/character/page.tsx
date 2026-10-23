@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmedExternalLink } from "@/components/ui/ExternalNavigation";
 import { PageHeading } from "@/components/ui/PageHeading";
 
 import { useEffect, useMemo, useState } from "react";
@@ -9,18 +10,12 @@ import { Image as ImageIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { CharacterViewer } from "@/components/character/CharacterViewer";
 import { getImageUrl } from "@/lib/storage";
-import { resolveClientSignedStorageUrl, resolveClientStorageUrl } from "@/lib/storageSignedClient";
+import { resolveClientSignedStorageUrl } from "@/lib/storageSignedClient";
 
-/** サムネイル Storage URL 解決のタイムアウト（ミリ秒） */
-const STORAGE_RESOLVE_TIMEOUT_MS = 20_000;
 /** Character の signed URL 解決タイムアウト（ミリ秒） */
 const CHARACTER_SIGNED_RESOLVE_TIMEOUT_MS = 5_000;
-/** 個別モデル読み込み失敗時に使う既定ローカルOBJ */
-const DEFAULT_FALLBACK_MODEL_PATH = "models/wanko1.obj";
-/** 個別モデル読み込み失敗時に使う既定ローカルMTL */
-const DEFAULT_FALLBACK_MTL_PATH = "models/wanko1.mtl";
-
 type SignedCharacterAssets = {
+  characterId: string | null;
   modelUrl: string | null;
   mtlUrl: string | null;
 };
@@ -67,29 +62,6 @@ function toLocalAssetUrl(path: string | null | undefined): string | null {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   return path.startsWith("/") ? path : `/${path}`;
-}
-
-/**
- * サムネイル画像のみタイムアウト付きで Storage URL を解決する。
- *
- * @param path - Storage path
- * @returns 解決済みURL。失敗/タイムアウト時は null
- * @example
- * const url = await resolveThumbnailWithTimeout("images/other/wanko.png");
- */
-function resolveThumbnailWithTimeout(
-  path: string | null | undefined,
-): Promise<string | null> {
-  if (!path) return Promise.resolve(null);
-  return Promise.race([
-    resolveClientStorageUrl(path, "image"),
-    new Promise<null>((resolve) =>
-      setTimeout(() => {
-        console.warn(`[character] thumbnail resolve timeout for ${path}`);
-        resolve(null);
-      }, STORAGE_RESOLVE_TIMEOUT_MS),
-    ),
-  ]);
 }
 
 /**
@@ -148,8 +120,8 @@ async function resolveCharacterSignedAssetWithTimeout(
  */
 export default function CharacterPage() {
   const [selectedId, setSelectedId] = useState<string | null>(characters[0]?.id ?? null);
-  const [resolvedThumbnailUrl, setResolvedThumbnailUrl] = useState<string | null>(null);
   const [signedAssets, setSignedAssets] = useState<SignedCharacterAssets>({
+    characterId: null,
     modelUrl: null,
     mtlUrl: null,
   });
@@ -163,31 +135,13 @@ export default function CharacterPage() {
     let cancelled = false;
     if (!selected) return;
 
-    resolveThumbnailWithTimeout(selected.thumbnail)
-      .then((url) => {
-        if (cancelled) return;
-        setResolvedThumbnailUrl(url);
-      })
-      .catch((error) => {
-        console.warn("[character] thumbnail resolve failed", error);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selected]);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!selected) return;
-
     Promise.all([
       resolveCharacterSignedAssetWithTimeout(selected.id, selected.model_path, "model"),
       resolveCharacterSignedAssetWithTimeout(selected.id, selected.mtl_path, "mtl"),
     ])
       .then(([modelUrl, mtlUrl]) => {
         if (cancelled) return;
-        setSignedAssets({ modelUrl, mtlUrl });
+        setSignedAssets({ characterId: selected.id, modelUrl, mtlUrl });
       })
       .catch((error) => {
         console.warn("[character] signed asset resolve failed", { characterId: selected.id, error });
@@ -202,26 +156,24 @@ export default function CharacterPage() {
     () => {
       if (!selected) return [];
       return buildUniqueCandidates([
-        signedAssets.modelUrl,
+        signedAssets.characterId === selected.id ? signedAssets.modelUrl : null,
         toLocalAssetUrl(selected.model_path),
-        toLocalAssetUrl(DEFAULT_FALLBACK_MODEL_PATH),
       ]);
     },
-    [selected, signedAssets.modelUrl],
+    [selected, signedAssets],
   );
   const mtlCandidates = useMemo(
     () => {
       if (!selected) return [];
       return buildUniqueCandidates([
-        signedAssets.mtlUrl,
+        signedAssets.characterId === selected.id ? signedAssets.mtlUrl : null,
         toLocalAssetUrl(selected.mtl_path),
-        toLocalAssetUrl(DEFAULT_FALLBACK_MTL_PATH),
       ]);
     },
-    [selected, signedAssets.mtlUrl],
+    [selected, signedAssets],
   );
   const thumbnailUrl = selected
-    ? resolvedThumbnailUrl ?? getImageUrl(selected.thumbnail)
+    ? getImageUrl(selected.thumbnail)
     : null;
 
   useEffect(() => {
@@ -284,7 +236,7 @@ export default function CharacterPage() {
             <div className="flex items-start gap-3">
               {thumbnailUrl ? (
                 <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-emerald-900/10 bg-white">
-                  <Image src={thumbnailUrl} alt={selected.name} fill className="object-cover" />
+                  <Image src={thumbnailUrl} alt={selected.name} fill className="object-contain" />
                 </div>
               ) : (
                 <div className="grid h-16 w-16 place-items-center rounded-lg border border-emerald-900/10 bg-emerald-50 text-emerald-700">
@@ -306,6 +258,12 @@ export default function CharacterPage() {
             <p className="break-words text-sm leading-relaxed text-emerald-900/85">
               {selected.description}
             </p>
+
+            {selected.source_url && (
+              <ConfirmedExternalLink href={selected.source_url} className="action-link action-link-secondary">
+                紹介元を見る
+              </ConfirmedExternalLink>
+            )}
 
             <div className="flex flex-wrap gap-2">
               {(selected.tags ?? []).map((tag) => (

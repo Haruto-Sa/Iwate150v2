@@ -1,5 +1,7 @@
 "use client";
 
+import { useMenuLanguage } from "@/lib/menuLanguage";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -16,6 +18,7 @@ import {
  * @example <Footer />
  */
 export function Footer() {
+  const { language, messages } = useMenuLanguage();
   const pathname = usePathname();
   const secretWorkspaceRoute =
     pathname === SECRET_WORKSPACE_PATH || pathname.startsWith(`${SECRET_WORKSPACE_PATH}/`);
@@ -24,7 +27,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t border-emerald-900/15 bg-[#eeeee4] pb-[calc(6rem+env(safe-area-inset-bottom))] pt-10 md:pb-10">
+    <footer lang={language} className="border-t border-emerald-900/15 bg-[#eeeee4] pb-[calc(6rem+env(safe-area-inset-bottom))] pt-10 md:pb-10">
       <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 text-sm text-emerald-900/80 sm:grid-cols-[1.4fr_1fr] sm:px-6">
         <div className="space-y-2">
           <p className="font-display text-lg text-[#0f1c1a]">{APP_TITLE}</p>
@@ -32,14 +35,14 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-x-4 text-sm">
           {PUBLIC_NAV_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} className="flex min-h-11 items-center transition hover:text-[#0f3a3a] hover:underline">
-              {item.label}
+              {messages[item.messageKey]}
             </Link>
           ))}
           <Link href={FAVORITES_PATH} className="flex min-h-11 items-center transition hover:text-[#0f3a3a] hover:underline">
-            お気に入り
+            {messages.favorites}
           </Link>
           <Link href={PUBLIC_LOGIN_PATH} className="flex min-h-11 items-center transition hover:text-[#0f3a3a] hover:underline">
-            ログイン
+            {messages.login}
           </Link>
         </div>
       </div>

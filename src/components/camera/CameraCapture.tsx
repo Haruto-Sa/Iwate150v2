@@ -1107,7 +1107,7 @@ export function CameraCapture() {
         <div className="space-y-3">
           <video src={recordedClip.url} controls playsInline aria-label="撮影した動画" className="max-h-[65dvh] w-full rounded-3xl bg-black" />
           <div className="flex flex-wrap gap-2">
-            <a href={recordedClip.url} download={recordedClip.file.name} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-app-primary px-4 text-app-primary-text"><Download className="h-4 w-4" />動画を保存</a>
+            <a href={recordedClip.url} download={recordedClip.file.name} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-900 px-4 text-white"><Download className="h-4 w-4" />動画を保存</a>
             {canShareVideo && <Button onClick={() => void shareRecordedVideo()} disabled={sharingVideo}><Share2 className="h-4 w-4" />動画を共有</Button>}
             <Button variant="outline" disabled={sharingVideo} onClick={() => {
               URL.revokeObjectURL(recordedClip.url);

@@ -88,6 +88,7 @@ export default async function SpotDetailPage({ params }: PageProps) {
   const relatedSpots = spots.filter((item) => item.city_id === spot.city_id && item.id !== spot.id).slice(0, 3);
   const imageUrl = getImageUrl(spot.image_thumb_path ?? spot.image_path ?? null);
   const jsonLd = buildSpotJsonLd(spot);
+  const shareUrl = spot.isSample ? spot.reference_url : `${SITE_URL}${getSpotHref(spot)}`;
 
   return (
     <div className="space-y-8">
@@ -97,7 +98,7 @@ export default async function SpotDetailPage({ params }: PageProps) {
       />
 
       <section className="overflow-hidden rounded-[32px] border border-app-line/10 bg-app-surface shadow-sm">
-        <div className="relative aspect-[3/2] max-h-[32rem] w-full bg-app-surface-tint"><TravelImage src={imageUrl} alt={spot.name} sizes="(max-width: 1152px) 100vw, 1152px" /></div>
+        {imageUrl && <div className="relative aspect-[3/2] max-h-[32rem] w-full bg-app-surface-tint"><TravelImage src={imageUrl} alt={spot.name} sizes="(max-width: 1152px) 100vw, 1152px" /></div>}
         <div className="space-y-5 p-5 sm:p-8">
           <div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-app-accent-ink">
@@ -108,8 +109,8 @@ export default async function SpotDetailPage({ params }: PageProps) {
           </div>
           <p className="max-w-3xl text-sm leading-8 text-app-ink/85">{spot.description}</p>
           <div className="flex flex-wrap items-center gap-3 [&>a]:mt-0 [&>button]:mt-0">
-            <FavoriteToggleButton spotId={spot.id} />
-            <ShareButton title={spot.name} text={`${spot.name}を発見！`} url={`${SITE_URL}${getSpotHref(spot)}`} />
+            <FavoriteToggleButton spotId={spot.id} isSample={spot.isSample} />
+            {shareUrl && <ShareButton title={spot.name} text={spot.name} url={shareUrl} />}
             <Link href="/camera" className="action-link action-link-secondary"><Camera className="h-4 w-4 shrink-0" aria-hidden="true" />写真を撮る</Link>
           </div>
           <SpotLocation spot={spot} />

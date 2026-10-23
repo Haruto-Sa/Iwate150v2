@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import type { SpotVisitorStatistic } from "@/lib/spotVisitorStatistics";
 import type { Spot } from "@/lib/types";
 import { getSpotHref } from "@/lib/spotRoutes";
 import { TravelImage } from "./TravelImage";
 
 /**
  * 写真と地域から旅先を選べるスポットカード。
- * @param props - スポット、地域名、スポット自身の写真URL
+ * @param props - スポット、地域名、スポット自身の写真URL、確認済みの任意の来訪統計
  * @returns 詳細へのリンクを備えたカード
  * @example <SpotCard spot={spot} cityName="盛岡市" imageUrl={url} />
  */
@@ -14,16 +15,20 @@ export function SpotCard({
   spot,
   cityName,
   imageUrl,
+  visitorStatistic,
 }: {
   spot: Spot;
   cityName?: string;
   imageUrl?: string | null;
+  visitorStatistic?: SpotVisitorStatistic | null;
 }) {
   return (
     <article className="group min-w-0 overflow-hidden rounded-2xl border border-app-line/15 bg-app-surface">
-      <div className="relative aspect-[3/2] overflow-hidden">
-        <TravelImage src={imageUrl} alt={spot.name} />
-      </div>
+      {imageUrl && (
+        <div className="relative aspect-[3/2] overflow-hidden">
+          <TravelImage src={imageUrl} alt={spot.name} />
+        </div>
+      )}
       <div className="p-5">
         <p className="mb-2 text-xs tracking-wider text-app-accent-ink">
           {cityName ?? "岩手県"}
@@ -34,6 +39,15 @@ export function SpotCard({
         <p className="mt-2 line-clamp-2 text-sm leading-7 text-app-ink/80">
           {spot.description}
         </p>
+        {visitorStatistic && (
+          <div className="mt-3 border-t border-app-line/10 pt-3 text-sm text-app-ink" aria-label={`${visitorStatistic.spotName}の観光統計`}>
+            <p>{visitorStatistic.period} {visitorStatistic.metric}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{visitorStatistic.count.toLocaleString("ja-JP")}{visitorStatistic.unit}</p>
+            <a href={visitorStatistic.sourceUrl} className="mt-1 inline-flex min-h-11 items-center text-xs underline underline-offset-4">
+              出典 {visitorStatistic.sourceTitle} p.{visitorStatistic.sourcePage}
+            </a>
+          </div>
+        )}
         <Link
           href={getSpotHref(spot)}
           aria-label={`${spot.name}の詳細を見る`}

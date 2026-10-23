@@ -119,7 +119,7 @@ test("本人の訪問スポットが地図と市町村進捗に反映され、�
   await page.goto("/stamps");
   await expect(page.getByRole("progressbar")).toHaveAttribute(
     "aria-valuenow",
-    "25",
+    String(Math.round(100 / mockStampCatalog.spots.length)),
   );
   await expect(
     page.getByTitle("龍泉洞（取得済み）", { exact: true }),
@@ -135,18 +135,18 @@ test("本人の訪問スポットが地図と市町村進捗に反映され、�
   expect(writes).toEqual([{ spotId: 1 }]);
   await expect(page.getByRole("progressbar")).toHaveAttribute(
     "aria-valuenow",
-    "50",
+    String(Math.round(200 / mockStampCatalog.spots.length)),
   );
   await expect(
     page.getByTitle("盛岡城跡公園（取得済み）", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("1 / 2スポット取得", { exact: true }),
+    page.getByText("1 / 3スポット取得", { exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(page.getByRole("progressbar")).toHaveAttribute(
     "aria-valuenow",
-    "50",
+    String(Math.round(200 / mockStampCatalog.spots.length)),
   );
   expect(writes).toHaveLength(1);
   await expect(

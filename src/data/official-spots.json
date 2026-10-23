@@ -1,0 +1,62 @@
+[
+  {
+    "name": "御所野遺跡",
+    "description": "縄文時代の集落跡を歩き、復元住居や博物館で当時の暮らしをたどる。",
+    "city": "一戸町", "cityKana": "いちのへまち", "region": "県北", "genre": "歴史・文化",
+    "lat": 40.1972781, "lng": 141.3092904,
+    "address": "岩手県二戸郡一戸町岩舘字御所野2",
+    "referenceUrl": "https://goshono-iseki.com/",
+    "sourceUrl": "https://iwatetabi.jp/spots/5277/",
+    "coordinateSource": "https://goshono-iseki.com/",
+    "coordinateNote": "公式ページの埋め込み地図の御所野縄文公園ピン。地図の表示中心ではない。",
+    "verifiedOn": "2026-10-24", "mockId": 5, "mockCityId": 4, "mockGenreId": 1
+  },
+  {
+    "name": "鉄の歴史館",
+    "description": "高炉の模型や映像から釜石の鉄づくりを学ぶ。展望テラスからは釜石湾を望める。",
+    "city": "釜石市", "cityKana": "かまいしし", "region": "沿岸", "genre": "歴史・文化",
+    "lat": 39.255518, "lng": 141.894147,
+    "address": "岩手県釜石市大平町3丁目12番7号",
+    "referenceUrl": "https://www.city.kamaishi.iwate.jp/docs/2016101700037/",
+    "sourceUrl": "https://iwatetabi.jp/spots/4872/",
+    "coordinateSource": "https://iwatetabi.jp/spots/4872/",
+    "coordinateNote": "公式観光ページの埋め込み地図のq座標。",
+    "verifiedOn": "2026-10-24", "mockId": 6, "mockCityId": 5, "mockGenreId": 1
+  },
+  {
+    "name": "もりおか歴史文化館",
+    "description": "盛岡城跡公園の一角で、盛岡の祭りや南部家、城下町の歴史に触れる。",
+    "city": "盛岡市", "cityKana": "もりおかし", "region": "県央", "genre": "歴史・文化",
+    "lat": 39.70102, "lng": 141.152592,
+    "address": "岩手県盛岡市内丸1番50号",
+    "referenceUrl": "https://www.morireki.jp/",
+    "sourceUrl": "https://iwatetabi.jp/spots/5869/",
+    "coordinateSource": "https://iwatetabi.jp/spots/5869/",
+    "coordinateNote": "公式観光ページの埋め込み地図のq座標。",
+    "verifiedOn": "2026-10-24", "mockId": 7, "mockCityId": 1, "mockGenreId": 1
+  },
+  {
+    "name": "奥州宇宙遊学館",
+    "description": "旧緯度観測所の建物で、天文観測の歴史や立体映像の宇宙シアターを楽しむ。",
+    "city": "奥州市", "cityKana": "おうしゅうし", "region": "県南", "genre": "アクティビティ",
+    "lat": 39.1351398, "lng": 141.1324196,
+    "address": "岩手県奥州市水沢星ガ丘町2番12号",
+    "referenceUrl": "https://uchuyugakukan.com/facilities/",
+    "sourceUrl": "https://iwatetabi.jp/spots/5741/",
+    "coordinateSource": "https://iwatetabi.jp/spots/5741/",
+    "coordinateNote": "公式観光ページの埋め込み地図のq座標。ジャンルは既存分類の体験に対応。",
+    "verifiedOn": "2026-10-24", "mockId": 8, "mockCityId": 6, "mockGenreId": 4
+  },
+  {
+    "name": "久慈地下水族科学館 もぐらんぴあ",
+    "description": "地下の水族館で海の生きものに出会い、防災学習の展示や久慈湾の眺めを楽しむ。",
+    "city": "久慈市", "cityKana": "くじし", "region": "県北", "genre": "アクティビティ",
+    "lat": 40.2212805, "lng": 141.8158238,
+    "address": "岩手県久慈市侍浜町麦生1番地43-7",
+    "referenceUrl": "https://www.moguranpia.com/",
+    "sourceUrl": "https://iwatetabi.jp/spots/66570/",
+    "coordinateSource": "https://iwatetabi.jp/spots/66570/",
+    "coordinateNote": "公式観光ページの埋め込み地図のq座標。ジャンルは既存分類の体験に対応。",
+    "verifiedOn": "2026-10-24", "mockId": 9, "mockCityId": 7, "mockGenreId": 4
+  }
+]

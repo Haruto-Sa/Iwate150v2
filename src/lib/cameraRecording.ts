@@ -121,7 +121,9 @@ export function startCameraRecording(
       if (now - lastFrame >= 1000 / FRAME_RATE) {
         drawFrame();
         onElapsed(now - started);
-        lastFrame = now;
+        // RAF時刻の端数は次回へ持ち越す。遅れたフレームをまとめて描画しない。
+        const interval = 1000 / FRAME_RATE;
+        lastFrame += Math.floor((now - lastFrame) / interval) * interval;
       }
       frame = requestAnimationFrame(paint);
     } catch (error) { fail(error instanceof Error ? error : new Error(String(error))); }

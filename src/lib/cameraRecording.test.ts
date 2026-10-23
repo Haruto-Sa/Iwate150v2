@@ -33,6 +33,32 @@ afterEach(() => {
 });
 
 describe("bounded camera recording", () => {
+  it("preserves the requested cadence across animation-frame rounding", async () => {
+    const draw = vi.fn();
+    const recording = startCameraRecording(canvas, draw, vi.fn());
+    const cancelled = expect(recording.result).rejects.toMatchObject({ name: "AbortError" });
+    await vi.advanceTimersByTimeAsync(1000);
+    const count = draw.mock.calls.length;
+    recording.cancel();
+    await cancelled;
+    expect(count).toBe(15);
+  });
+
+  it("skips missed frames after a stall instead of drawing a burst", async () => {
+    let nextFrame!: FrameRequestCallback;
+    vi.stubGlobal("requestAnimationFrame", vi.fn((callback: FrameRequestCallback) => { nextFrame = callback; return 1; }));
+    const draw = vi.fn();
+    const now = performance.now();
+    const recording = startCameraRecording(canvas, draw, vi.fn());
+    const cancelled = expect(recording.result).rejects.toMatchObject({ name: "AbortError" });
+    nextFrame(now + 5000);
+    expect(draw).toHaveBeenCalledTimes(2);
+    nextFrame(now + 5016);
+    expect(draw).toHaveBeenCalledTimes(2);
+    recording.cancel();
+    await cancelled;
+  });
+
   it("selects a supported format and returns the final chunk with earlier chunks", async () => {
     expect(getCameraRecordingMime()).toBe("video/webm");
     const recording = startCameraRecording(canvas, vi.fn(), vi.fn());

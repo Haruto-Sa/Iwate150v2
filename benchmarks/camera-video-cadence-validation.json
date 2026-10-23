@@ -1,0 +1,72 @@
+{
+  "scope": "macOS Playwright profiles, public portrait moving during actual UI recording; one sample each; Chromium software GPU; not physical device performance",
+  "sourceSha256": {
+    "src/components/camera/CameraCapture.tsx": "a9943ccba764f1af19486d46e2b49b47f29514b8d45821bdeeda700f2f126bab",
+    "src/lib/cameraRecording.ts": "07fba642f0f51ddd49701ec378e6a68ed9ed22b6cdf5a5614266225906c14308"
+  },
+  "results": [
+    {
+      "profile": "iphone",
+      "facing": "user",
+      "decoded": {
+        "width": 634,
+        "height": 480,
+        "duration": "2.436667",
+        "nb_read_frames": "36"
+      },
+      "fps": 14.77427978464025,
+      "faceResults": 68,
+      "noFaceTimesMs": []
+    },
+    {
+      "profile": "iphone",
+      "facing": "environment",
+      "decoded": {
+        "width": 634,
+        "height": 480,
+        "duration": "2.425000",
+        "nb_read_frames": "35"
+      },
+      "fps": 14.43298969072165,
+      "faceResults": 72,
+      "noFaceTimesMs": [
+        199
+      ]
+    },
+    {
+      "profile": "android",
+      "facing": "user",
+      "decoded": {
+        "width": 640,
+        "height": 480,
+        "duration": "2.706900",
+        "nb_read_frames": "18"
+      },
+      "fps": 6.649673057741327,
+      "faceResults": 16,
+      "noFaceTimesMs": [
+        1061,
+        2368
+      ]
+    },
+    {
+      "profile": "android",
+      "facing": "environment",
+      "decoded": {
+        "width": 640,
+        "height": 480,
+        "duration": "3.116433",
+        "nb_read_frames": "17"
+      },
+      "fps": 5.454954430273329,
+      "faceResults": 19,
+      "noFaceTimesMs": [
+        784,
+        1995,
+        2325,
+        3336
+      ]
+    }
+  ],
+  "limits": "WebKit improved from approximately 13.6fps to 14.4-14.8fps in these samples. Android profile remains approximately 5-7fps; no-face results can hide models. No continuous-tracking or physical-device claim."
+}

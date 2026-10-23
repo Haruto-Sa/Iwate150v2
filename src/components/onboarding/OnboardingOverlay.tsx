@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { useIsMobileViewport } from "@/hooks/useIsMobileViewport";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { ONBOARDING_COMPLETED_KEY } from "@/lib/config";
+import { useModalDialog } from "@/hooks/useModalDialog";
 
 const steps = [
   {
@@ -108,6 +109,7 @@ export function OnboardingOverlay() {
     [pathname]
   );
   const shouldRender = visible && !hiddenRoute && isMobileViewport;
+  const dialogRef = useModalDialog(shouldRender);
 
   // iOS Safari でも確実に効くスクロールロック（解除後にスクロール不能になる不具合対策）
   useBodyScrollLock(shouldRender);
@@ -144,18 +146,18 @@ export function OnboardingOverlay() {
   const step = steps[stepIndex];
 
   return (
-    <div className="fixed inset-0 z-[1300] overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_36%),linear-gradient(180deg,#f8fbfa_0%,#edf7f3_54%,#f8fbfa_100%)] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] md:hidden">
-      <div className="mx-auto flex min-h-[100dvh] max-w-sm flex-col justify-center sm:max-w-md">
+    <dialog ref={dialogRef} aria-label="岩手の旅のはじめ方" onCancel={(event) => { event.preventDefault(); closeOnboarding(); }} className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none overflow-y-auto bg-[#f6f5ef] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] text-emerald-950">
+      <div className="mx-auto flex min-h-[calc(100dvh-3rem-env(safe-area-inset-bottom))] max-w-sm flex-col justify-center sm:max-w-md">
         <div className="flex items-center justify-between">
           <button
-            className="rounded-full px-3 py-2 text-sm text-emerald-900/70"
+            className="min-h-11 rounded-full px-3 py-2 text-sm text-emerald-900/80"
             onClick={closeOnboarding}
           >
             スキップ
           </button>
           <button
             aria-label="閉じる"
-            className="rounded-full border border-emerald-900/10 bg-white/80 p-2 text-emerald-900/70"
+            className="grid h-11 w-11 place-items-center rounded-full border border-emerald-900/15 bg-white text-emerald-900"
             onClick={closeOnboarding}
           >
             <X className="h-4 w-4" />
@@ -163,7 +165,7 @@ export function OnboardingOverlay() {
         </div>
 
         <div className="flex flex-1 items-center py-4">
-          <section className="w-full rounded-[1.75rem] border border-white/60 bg-white/80 p-5 shadow-[0_24px_80px_rgba(15,28,26,0.12)] backdrop-blur-xl sm:rounded-[2rem] sm:p-6">
+          <section className="w-full rounded-[1.75rem] border border-white/60 bg-white p-5 sm:rounded-[2rem] sm:p-6">
             <div aria-label="オンボーディングの進捗" className="mb-5 flex gap-2 sm:mb-6">
               {steps.map((item, index) => (
                 <button
@@ -185,8 +187,7 @@ export function OnboardingOverlay() {
               ))}
             </div>
 
-            <div className="relative min-h-48 rounded-[1.35rem] bg-[linear-gradient(160deg,rgba(15,58,58,0.94),rgba(15,110,89,0.74))] p-5 text-white sm:min-h-56 sm:rounded-[1.5rem] sm:p-6">
-              <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.25),transparent_30%),radial-gradient(circle_at_80%_10%,rgba(255,180,120,0.2),transparent_28%)]" />
+            <div className="relative min-h-48 rounded-[1.35rem] bg-emerald-800 p-5 text-white sm:min-h-56 sm:rounded-[1.5rem] sm:p-6">
               <step.icon
                 className="relative h-14 w-14 animate-[float_3.8s_ease-in-out_infinite] sm:h-[4.5rem] sm:w-[4.5rem]"
                 strokeWidth={1.3}
@@ -196,7 +197,7 @@ export function OnboardingOverlay() {
                 <p className="text-[11px] uppercase tracking-[0.24em] text-emerald-100/80 sm:text-xs sm:tracking-[0.28em]">
                   Step {stepIndex + 1}
                 </p>
-                <h2 className="mt-2 text-pretty font-display text-[1.55rem] leading-[1.12] sm:text-3xl sm:leading-tight">
+                <h2 className="mt-2 text-pretty font-display text-[1.55rem] leading-relaxed sm:text-3xl sm:leading-tight">
                   {step.title}
                 </h2>
               </div>
@@ -224,6 +225,6 @@ export function OnboardingOverlay() {
           </section>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

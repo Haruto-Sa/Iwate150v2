@@ -1,364 +1,305 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import {
-  MapPin,
-  Navigation,
-  Stamp as StampIcon,
-  Trophy,
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { MapPin, Stamp as StampIcon, LogIn } from "lucide-react";
+import { PageHeading } from "@/components/ui/PageHeading";
 import { GlassCard } from "@/components/ui/GlassCard";
-import {
-  fetchSpots,
-  fetchUserStamps,
-  createStamp,
-} from "@/lib/supabaseClient";
-import { filterNearby, formatDistance } from "@/lib/geo";
-import type { Spot, Stamp } from "@/lib/types";
-import { useAuthSession } from "@/components/auth/SessionProvider";
+import { Button } from "@/components/ui/Button";
+import { useStampCollection } from "@/hooks/useStampCollection";
+import { IWATE_CENTER } from "@/lib/config";
+import { formatDistance } from "@/lib/geo";
+import { getSpotHref } from "@/lib/spotRoutes";
 
-const STAMP_RADIUS = 200; // meters
-
-type NearbySpot = Spot & { distance: number };
+const LeafletMap = dynamic(
+  () =>
+    import("@/components/map/LeafletMap").then((module) => module.LeafletMap),
+  { ssr: false },
+);
 
 /**
- * 本人APIでスタンプを保存する画面。
- * @returns スタンプ一覧と位置情報操作
+ * 公開スタンプマップと、ログイン後の本人の収集状態を表示する。
+ * @returns 市町村別対象・本人進捗・位置情報による収集操作
  * @example <StampPage />
  */
 export default function StampPage() {
-  const { user, status } = useAuthSession();
-
-  // State
-  const identity = user?.id ?? null;
-  const activeIdentity = useRef(identity);
-  const [loadedIdentity, setLoadedIdentity] = useState<string | null | undefined>(undefined);
-  const generation = useRef(0);
-  useEffect(() => { activeIdentity.current = identity; generation.current += 1; }, [identity]);
-  const [spots, setSpots] = useState<Spot[]>([]);
-  const [userStamps, setUserStamps] = useState<Stamp[]>([]);
-  const [nearbySpots, setNearbySpots] = useState<NearbySpot[]>([]);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [stampingSpotId, setStampingSpotId] = useState<number | null>(null);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [initError, setInitError] = useState<string | null>(null);
-
-  // 古いユーザーの応答を新しいユーザーの画面へ反映しない。
-  useEffect(() => {
-    let cancelled = false;
-    /**
-     * 公開スポットと本人スタンプを読み込む。
-     * @returns 完了Promise
-     * @example await init();
-     */
-    async function init() {
-      setLoading(true);
-      setInitError(null);
-      setUserStamps([]);
-      setMessage(null);
-      setStampingSpotId(null);
-      try {
-        const allSpots = await fetchSpots();
-        const stamps = identity ? await fetchUserStamps(identity) : [];
-        if (cancelled) return;
-        setSpots(allSpots);
-        setUserStamps(stamps);
-        if (allSpots.length === 0) setInitError("スタンプ対象のスポットをまだ表示できません。時間をおいて再度お試しください。");
-      } catch {
-        if (!cancelled) {
-          setInitError("スタンプページの読み込みに失敗しました。再読み込みしてもう一度お試しください。");
-          setSpots([]);
-          setUserStamps([]);
-        }
-      } finally {
-        if (!cancelled) { setLoadedIdentity(identity); setLoading(false); }
-      }
-    }
-    if (status !== "loading") void init();
-    return () => { cancelled = true; };
-  }, [status, identity]);
-
-  // Get user location
-  /**
-   * @returns なし
-   * @example requestLocation();
-   */
-  const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setLocationError("このブラウザは位置情報に対応していません。");
-      return;
-    }
-
-    setLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLocation(loc);
-        // Filter nearby spots
-        const nearby = filterNearby(spots, loc.lat, loc.lng, STAMP_RADIUS);
-        setNearbySpots(nearby);
-      },
-      (err) => {
-        console.error("Geolocation error:", err);
-        if (err.code === err.PERMISSION_DENIED) {
-          setLocationError("位置情報の許可が必要です。ブラウザ設定から許可してください。");
-        } else if (err.code === err.POSITION_UNAVAILABLE) {
-          setLocationError("位置情報を取得できませんでした。");
-        } else {
-          setLocationError("位置情報の取得に失敗しました。");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
-  }, [spots]);
-
-  // Handle stamp press
-  /**
-   * @param spotId - 対象スポット
-   * @returns 保存完了Promise
-   * @example await handleStamp(1);
-   */
-  const handleStamp = async (spotId: number) => {
-    if (!identity) {
-      setMessage({ type: "error", text: "ログインが必要です。" });
-      return;
-    }
-
-    // Check if already stamped
-    if (userStamps.some((s) => s.spot_id === spotId)) {
-      setMessage({ type: "error", text: "このスポットは既にスタンプ済みです。" });
-      return;
-    }
-
-    const operationGeneration = generation.current;
-    setStampingSpotId(spotId);
-    setMessage(null);
-
-    try {
-      const stamp = await createStamp(identity, spotId);
-      if (activeIdentity.current !== identity || generation.current !== operationGeneration) return;
-      if (stamp) {
-        setUserStamps((prev) => prev.some((item) => item.spot_id === stamp.spot_id) ? prev : [stamp, ...prev]);
-        setMessage({ type: "success", text: "スタンプを獲得しました！" });
-      } else {
-        setMessage({ type: "error", text: "スタンプの登録に失敗しました。" });
-      }
-    } catch {
-      if (activeIdentity.current === identity && generation.current === operationGeneration) setMessage({ type: "error", text: "スタンプの登録に失敗しました。再試行してください。" });
-    } finally {
-      if (activeIdentity.current === identity && generation.current === operationGeneration) setStampingSpotId(null);
-    }
-  };
-
-  // Calculate achievement rate
-  const totalSpots = spots.length;
-  const earnedCount = userStamps.length;
-  const achievementRate = totalSpots > 0 ? Math.round((earnedCount / totalSpots) * 100) : 0;
-
-  // Check if spot is already stamped
-  /**
-   * @param spotId - 対象スポット
-   * @returns 取得済みか
-   * @example isStamped(1);
-   */
-  const isStamped = (spotId: number) => userStamps.some((s) => s.spot_id === spotId);
-
-  // Loading state
-  if (status === "loading" || loading || loadedIdentity !== identity) {
-    return (
-      <div className="space-y-6">
-        <GlassCard title="スタンプラリーを読み込み中" icon={Loader2} badge="Loading">
-          <div className="flex items-center gap-3 text-sm text-emerald-900/80">
-            <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
-            <span>スポットと進捗情報を確認しています。</span>
-          </div>
-        </GlassCard>
-      </div>
-    );
-  }
-
-  // Not logged in
-  if (!user) {
-    return (
-      <div className="space-y-6">
-        <GlassCard title="Stamps start with login" icon={AlertCircle} badge="Save progress">
-          <p className="text-sm text-emerald-900/80">
-            スタンプを集めて進捗を残すにはログインが必要です。地図や検索はそのまま楽しめます。
-          </p>
-          <Link href="/login">
-            <Button className="mt-4">ログインしてスタンプを始める</Button>
-          </Link>
-        </GlassCard>
-        <GlassCard title="できること" icon={StampIcon}>
-          <p className="text-sm text-emerald-900/75">
-            ログイン後は現在地の近くにあるスポットでスタンプを集め、達成率と獲得履歴を残せます。
-          </p>
-        </GlassCard>
-      </div>
-    );
-  }
-
+  const collection = useStampCollection();
+  const { progress } = collection;
+  const personalReady = collection.personalReady && !collection.isSample;
+  const percent = progress.total
+    ? Math.round((progress.earned / progress.total) * 100)
+    : 0;
   return (
     <div className="space-y-6">
-      {initError && (
-        <GlassCard title="スタンプ情報を表示できません" icon={AlertCircle} badge="Retry">
-          <p className="text-sm text-emerald-900/80">{initError}</p>
+      <PageHeading
+        eyebrow="TRAVEL STAMPS"
+        title="旅の足あとを、集めよう。"
+        description="岩手を歩いて、訪れた場所をひとつずつ思い出に。"
+      />
+      {!collection.authenticated && !collection.authLoading && (
+        <GlassCard
+          title="次に訪れたい場所を、地図から。"
+          icon={LogIn}
+          badge="公開プレビュー"
+        >
+          <p>
+            対象スポットはログインなしで見られます。スタンプを収集・保存するにはログインしてください。このプレビューはあなたの訪問記録ではなく、サンプルが保存されることもありません。
+          </p>
+          <Link href="/login?next=%2Fstamps" className="action-link mt-4">
+            ログインして旅を記録
+          </Link>
         </GlassCard>
       )}
-
-      {/* Achievement Card */}
-      <GlassCard title="スタンプ達成率" icon={Trophy} badge={`${earnedCount}/${totalSpots}`}>
-        <div className="space-y-3">
-          <div className="h-3 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-500"
-              style={{ width: `${achievementRate}%` }}
-            />
-          </div>
-          <p className="text-sm text-emerald-50/80">
-            {achievementRate}% 達成（{earnedCount}件 / {totalSpots}件）
-          </p>
-        </div>
-      </GlassCard>
-
-      {/* Location Request */}
-      <GlassCard title="現在地からスタンプ" icon={Navigation} badge="GPS">
-        <div className="space-y-3">
-          <p className="text-sm text-emerald-900/80">
-            現在地から{STAMP_RADIUS}m以内のスポットでスタンプを獲得できます。
-          </p>
-          <Button onClick={requestLocation} variant="primary">
-            <MapPin className="h-4 w-4" />
-            位置情報を取得
+      {collection.privateError && (
+        <div className="space-y-3 rounded-2xl border border-red-200 bg-red-50 p-5">
+          <p role="alert">{collection.privateError}</p>
+          <Button variant="outline" onClick={collection.reload}>
+            進捗をもう一度読み込む
           </Button>
-          {!userLocation && !locationError && (
-            <p className="text-xs text-emerald-900/65">
-              位置情報を取得すると、近くでスタンプ可能なスポットがここに表示されます。
-            </p>
-          )}
-          {locationError && (
-            <div className="flex items-center gap-2 rounded-lg border border-amber-200/30 bg-amber-900/20 px-3 py-2 text-xs text-amber-200">
-              <AlertCircle className="h-4 w-4 text-amber-800" />
-              <span className="text-amber-900">{locationError}</span>
+        </div>
+      )}
+      {collection.authenticated &&
+        !collection.personalReady &&
+        !collection.privateError && (
+          <p role="status">本人のスタンプを確認しています。</p>
+        )}
+      {collection.publicError && (
+        <div className="space-y-3">
+          <p role="alert">{collection.publicError}</p>
+          <Button onClick={collection.reload}>対象をもう一度読み込む</Button>
+        </div>
+      )}
+      {collection.publicLoading ? (
+        <p role="status">対象スポットを読み込んでいます。</p>
+      ) : (
+        <>
+          {collection.isSample && (
+            <div
+              role="status"
+              className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-7"
+            >
+              現在はサンプルの対象を表示しています。本人の進捗には結び付けず、収集・保存もできません。
+              サンプルから詳細ページには移動できません。
+              <Button
+                variant="outline"
+                className="mt-3"
+                onClick={collection.reload}
+              >
+                実際の対象を再確認
+              </Button>
             </div>
           )}
-          {userLocation && (
-            <p className="text-xs text-emerald-900/70">
-              取得座標: {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
-            </p>
-          )}
-        </div>
-      </GlassCard>
-
-      {/* Message */}
-      {message && (
-        <div
-          className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${
-            message.type === "success"
-              ? "border border-emerald-200/30 bg-emerald-900/30 text-emerald-200"
-              : "border border-red-200/30 bg-red-900/30 text-red-200"
-          }`}
-        >
-          {message.type === "success" ? (
-            <CheckCircle2 className="h-5 w-5" />
-          ) : (
-            <AlertCircle className="h-5 w-5" />
-          )}
-          {message.text}
-        </div>
-      )}
-
-      {/* Nearby Spots */}
-      {userLocation && nearbySpots.length > 0 && (
-        <GlassCard
-          title={`近くのスポット (${nearbySpots.length}件)`}
-          icon={MapPin}
-          badge={`${STAMP_RADIUS}m以内`}
-        >
-          <div className="space-y-3">
-            {nearbySpots.map((spot) => {
-              const stamped = isStamped(spot.id);
-              return (
+          {personalReady && !collection.publicError && (
+            <GlassCard
+              title="あなたの旅の足あと"
+              icon={StampIcon}
+              badge={`${progress.earned} / ${progress.total}スポット`}
+            >
+              <div
+                role="progressbar"
+                aria-label="対象スポットの収集率"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={percent}
+                className="h-3 overflow-hidden rounded-full bg-emerald-100"
+              >
                 <div
+                  className="h-full bg-emerald-800"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+              <p className="mt-3">
+                {progress.visitedCities}市町村で取得済み ／ 対象のある
+                {progress.targetCities}市町村
+              </p>
+              {progress.earned === 0 && (
+                <p className="mt-2 text-sm">
+                  まだ対象スポットのスタンプはありません。最初の旅先で集めてみましょう。
+                </p>
+              )}
+              {progress.unavailableCount > 0 && (
+                <p className="mt-2 text-sm">
+                  現在の対象一覧にない記録が{progress.unavailableCount}
+                  件あります。保存済みの記録は保持し、この達成率には含めていません。
+                </p>
+              )}
+            </GlassCard>
+          )}
+          <section aria-labelledby="stamp-map-title" className="space-y-3">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <h2 id="stamp-map-title" className="font-display text-2xl">
+                岩手のスタンプマップ
+              </h2>
+              <p className="text-sm">表示中の対象 {progress.total}スポット</p>
+            </div>
+            <p className="text-sm leading-7">
+              印は対象スポットの場所です。市町村の中心点に近づくだけでは取得できません。掲載している対象の範囲を表示しており、県内すべての観光地を網羅するものではありません。
+            </p>
+            {progress.targets.length ? (
+              <LeafletMap
+                center={IWATE_CENTER}
+                spots={progress.targets}
+                showUser={false}
+                showImages={false}
+                showDetailLinks={!collection.isSample}
+                visitedSpotIds={personalReady ? [...progress.earnedIds] : []}
+                stampProgressKnown={personalReady}
+              />
+            ) : (
+              <p className="rounded-2xl bg-emerald-50 p-5">
+                表示できる対象スポットがありません。時間をおいて再読み込みしてください。
+              </p>
+            )}
+            <p className="text-sm">
+              ○ 対象スポット {personalReady && "／ ✓ 取得済み"}
+              。地図を使わず、下の市町村一覧からも対象を確認できます。
+            </p>
+          </section>
+          <GlassCard title="現在地の近くで集める" icon={MapPin}>
+            <p>
+              対象スポットから200m以内で収集できます。収集ボタンを押すと現在地を再確認します。市町村全体の訪問を証明するものではありません。
+            </p>
+            <Button
+              className="mt-4"
+              disabled={collection.busy || !progress.total}
+              onClick={() => void collection.requestLocation()}
+            >
+              {collection.busy ? "現在地・保存を確認中…" : "位置情報を取得"}
+            </Button>
+            {collection.locationError && (
+              <p role="alert" className="mt-3 text-sm text-red-800">
+                {collection.locationError}
+              </p>
+            )}
+            {collection.location && (
+              <p className="mt-3 text-sm">
+                現在地の推定誤差: 約{Math.ceil(collection.location.accuracy)}
+                m。位置のずれがあるときは取得し直してください。
+              </p>
+            )}
+            {collection.location && collection.nearby.length === 0 && (
+              <p className="mt-3">
+                200m以内に対象スポットが見つかりませんでした。地図で次の旅先を探せます。
+              </p>
+            )}
+            <ul className="mt-4 space-y-3">
+              {collection.nearby.map((spot) => (
+                <li
                   key={spot.id}
-                  className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
-                    stamped
-                      ? "border-emerald-300/60 bg-emerald-50"
-                      : "border-emerald-900/10 bg-white"
-                  }`}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-900/15 bg-white p-4"
                 >
-                  <div className="space-y-1">
-                    <p className="font-medium text-emerald-950">{spot.name}</p>
-                    <p className="text-xs text-emerald-900/70">
-                      {formatDistance(spot.distance)} · #{spot.id}
+                  <div>
+                    {collection.isSample ? (
+                      <span className="font-medium">{spot.name}</span>
+                    ) : (
+                      <Link
+                        href={getSpotHref(spot)}
+                        className="font-medium underline underline-offset-4"
+                      >
+                        {spot.name}
+                      </Link>
+                    )}
+                    <p className="mt-1 text-sm">
+                      現在地から約{formatDistance(spot.distance)}
                     </p>
                   </div>
-                  {stamped ? (
-                    <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs text-emerald-900">
-                      <CheckCircle2 className="h-4 w-4" />
-                      取得済み
-                    </span>
+                  {!collection.authenticated ? (
+                    <Link
+                      href="/login?next=%2Fstamps"
+                      className="action-link action-link-secondary"
+                    >
+                      ログインして収集
+                    </Link>
+                  ) : progress.earnedIds.has(spot.id) ? (
+                    <span className="text-sm">✓ 取得済み</span>
                   ) : (
                     <Button
-                      onClick={() => handleStamp(spot.id)}
-                      disabled={stampingSpotId === spot.id}
-                      className="px-4"
+                      disabled={
+                        !personalReady ||
+                        collection.busy ||
+                        Boolean(collection.publicError)
+                      }
+                      onClick={() => void collection.collect(spot.id)}
+                      aria-label={`${spot.name}のスタンプを収集`}
                     >
-                      {stampingSpotId === spot.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <StampIcon className="h-4 w-4" />
-                      )}
-                      スタンプ
+                      スタンプを収集
                     </Button>
                   )}
-                </div>
-              );
-            })}
-          </div>
-        </GlassCard>
-      )}
-
-      {userLocation && nearbySpots.length === 0 && (
-        <GlassCard title="近くにスポットがありません" icon={MapPin}>
-          <p className="text-sm text-emerald-50/80">
-            {STAMP_RADIUS}m以内にスポットが見つかりませんでした。別の場所で試してみてください。
-          </p>
-        </GlassCard>
-      )}
-
-      {/* Earned Stamps List */}
-      <GlassCard title="獲得済みスタンプ" icon={StampIcon} badge={`${earnedCount}件`}>
-        {userStamps.length === 0 ? (
-          <p className="text-sm text-emerald-900/75">
-            まだスタンプを獲得していません。スポットの近くで「スタンプ」ボタンを押してください。
-          </p>
-        ) : (
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-            {userStamps.map((stamp) => {
-              const spot = spots.find((s) => s.id === stamp.spot_id);
-              return (
-                <div
-                  key={stamp.id}
-                  className="flex aspect-square flex-col items-center justify-center rounded-xl border border-emerald-200/60 bg-emerald-50 p-2 text-center"
+                </li>
+              ))}
+            </ul>
+            {collection.message && (
+              <p
+                role={collection.message.success ? "status" : "alert"}
+                className={`mt-4 rounded-xl p-3 text-sm ${collection.message.success ? "bg-emerald-50" : "bg-red-50 text-red-800"}`}
+              >
+                {collection.message.text}
+              </p>
+            )}
+          </GlassCard>
+          <section aria-labelledby="stamp-cities-title" className="space-y-4">
+            <h2 id="stamp-cities-title" className="font-display text-2xl">
+              市町村ごとの対象と進捗
+            </h2>
+            <p className="text-sm leading-7">
+              進捗は「その市町村で取得した対象スポット数 ／
+              掲載対象数」です。対象未登録は未訪問を意味しません。
+              {!personalReady &&
+                "本人の進捗はログイン後に読み込んで表示します。"}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {progress.groups.map(({ city, spots, total, earned }) => (
+                <details
+                  key={city.id}
+                  className="rounded-2xl border border-emerald-900/15 bg-white p-4"
                 >
-                  <CheckCircle2 className="mb-1 h-5 w-5 text-emerald-800" />
-                  <span className="line-clamp-2 text-[10px] leading-tight text-emerald-900">
-                    {spot?.name ?? `#${stamp.spot_id}`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </GlassCard>
+                  <summary className="min-h-11 cursor-pointer py-2">
+                    <span className="font-medium">{city.name}</span>
+                    <span className="ml-3 text-sm">
+                      {total === 0
+                        ? "対象未登録"
+                        : personalReady
+                          ? `${earned} / ${total}スポット取得`
+                          : `対象 ${total}スポット`}
+                    </span>
+                  </summary>
+                  <ul className="space-y-3 border-t border-emerald-900/10 pt-3">
+                    {spots.map((spot) => (
+                      <li
+                        key={spot.id}
+                        className="flex flex-wrap items-center justify-between gap-2"
+                      >
+                        {collection.isSample ? (
+                          <span className="py-2">{spot.name}</span>
+                        ) : (
+                          <Link
+                            href={getSpotHref(spot)}
+                            className="py-2 underline underline-offset-4"
+                          >
+                            {spot.name}
+                          </Link>
+                        )}
+                        {personalReady && (
+                          <span className="text-xs">
+                            {progress.earnedIds.has(spot.id)
+                              ? "✓ 取得済み"
+                              : "未取得"}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {!total && (
+                    <p className="py-2 text-sm">
+                      現在表示できる対象がありません。
+                    </p>
+                  )}
+                </details>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }

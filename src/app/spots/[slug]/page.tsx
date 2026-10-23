@@ -1,13 +1,12 @@
-import Image from "next/image";
+import { TravelImage } from "@/components/ui/TravelImage";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { MapPin, Camera, Sparkles } from "lucide-react";
+import { MapPin, Camera } from "lucide-react";
 import { fetchCities, fetchGenres, fetchSpots } from "@/lib/supabaseClient";
 import { buildSpotMetadata, buildSpotJsonLd } from "@/lib/seo";
 import { extractSpotIdFromSlug, getSpotHref } from "@/lib/spotRoutes";
 import { getImageUrl } from "@/lib/storage";
-import { Button } from "@/components/ui/Button";
 import { FavoriteToggleButton } from "@/components/favorites/FavoriteToggleButton";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { SITE_URL } from "@/lib/config";
@@ -86,7 +85,7 @@ export default async function SpotDetailPage({ params }: PageProps) {
   const city = cities.find((item) => item.id === spot.city_id) ?? null;
   const genre = genres.find((item) => item.id === spot.genre_id) ?? null;
   const relatedSpots = spots.filter((item) => item.city_id === spot.city_id && item.id !== spot.id).slice(0, 3);
-  const imageUrl = getImageUrl(spot.image_thumb_path ?? spot.image_path ?? city?.image_path ?? null);
+  const imageUrl = getImageUrl(spot.image_thumb_path ?? spot.image_path ?? null);
   const jsonLd = buildSpotJsonLd(spot);
 
   return (
@@ -97,20 +96,11 @@ export default async function SpotDetailPage({ params }: PageProps) {
       />
 
       <section className="overflow-hidden rounded-[32px] border border-emerald-900/10 bg-white shadow-sm">
-        <div className="relative h-72 bg-emerald-100 sm:h-96">
-          {imageUrl ? (
-            <Image src={imageUrl} alt={spot.name} fill priority sizes="100vw" className="object-cover" />
-          ) : (
-            <div className="grid h-full place-items-center text-emerald-900/60">Image coming soon</div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-100/90">
-              {city?.name ?? "Iwate"}
-            </p>
-            <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">{spot.name}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-white/90 sm:text-base">{spot.description}</p>
-          </div>
+        <div className="relative aspect-[3/2] max-h-[32rem] bg-emerald-100"><TravelImage src={imageUrl} alt={spot.name} sizes="(max-width: 1152px) 100vw, 1152px" /></div>
+        <div className="px-5 pt-6 sm:px-8">
+          <p className="text-xs tracking-wider text-emerald-700">{city?.name ?? "岩手県"}</p>
+          <h1 className="mt-3 font-display text-3xl leading-relaxed text-emerald-950 sm:text-4xl">{spot.name}</h1>
+          <p className="mt-4 max-w-3xl text-sm leading-8 text-emerald-900/85">{spot.description}</p>
         </div>
 
         <div className="grid gap-5 p-6 sm:grid-cols-[1.2fr_0.8fr] sm:p-8">
@@ -120,40 +110,24 @@ export default async function SpotDetailPage({ params }: PageProps) {
               <span className="rounded-full bg-sky-50 px-3 py-1.5 text-sky-900">{genre?.name ?? "Spot"}</span>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Link href={`/map?focus=${spot.id}`}>
-                <Button className="w-full justify-between">
-                  <span className="inline-flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    地図で場所を見る
-                  </span>
-                  <Sparkles className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/camera">
-                <Button variant="outline" className="w-full justify-between">
-                  <span className="inline-flex items-center gap-2">
-                    <Camera className="h-4 w-4" />
-                    Camera で旅の記録を残す
-                  </span>
-                  <Sparkles className="h-4 w-4" />
-                </Button>
-              </Link>
+              <Link href={`/map?focus=${spot.id}`} className="action-link"><MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />地図で場所を見る</Link>
+              <Link href="/camera" className="action-link action-link-secondary"><Camera className="h-4 w-4 shrink-0" aria-hidden="true" />カメラで旅を記録</Link>
             </div>
           </div>
 
           <div className="rounded-[24px] border border-emerald-900/10 bg-emerald-50/70 p-5">
-            <h2 className="text-lg font-semibold text-[#0f1c1a]">Trip note</h2>
+            <h2 className="text-lg font-semibold text-[#0f1c1a]">旅先のメモ</h2>
             <dl className="mt-4 space-y-3 text-sm text-emerald-900/75">
               <div>
-                <dt className="font-medium text-[#0f1c1a]">Area</dt>
+                <dt className="font-medium text-[#0f1c1a]">エリア</dt>
                 <dd>{city?.name ?? "Iwate"}</dd>
               </div>
               <div>
-                <dt className="font-medium text-[#0f1c1a]">Category</dt>
+                <dt className="font-medium text-[#0f1c1a]">ジャンル</dt>
                 <dd>{genre?.name ?? "Spot"}</dd>
               </div>
               <div>
-                <dt className="font-medium text-[#0f1c1a]">Coordinates</dt>
+                <dt className="font-medium text-[#0f1c1a]">位置</dt>
                 <dd>
                   {spot.lat.toFixed(4)}, {spot.lng.toFixed(4)}
                 </dd>
@@ -173,13 +147,13 @@ export default async function SpotDetailPage({ params }: PageProps) {
 
       {relatedSpots.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[#0f1c1a]">Nearby inspiration</h2>
+          <h2 className="text-2xl font-semibold text-[#0f1c1a]">同じエリアのスポット</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {relatedSpots.map((item) => (
               <Link
                 key={item.id}
                 href={getSpotHref(item)}
-                className="rounded-[24px] border border-emerald-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300"
+                className="rounded-[24px] border border-emerald-900/10 bg-white p-5 shadow-sm transition hover:border-emerald-300"
               >
                 <p className="text-sm font-semibold text-[#0f1c1a]">{item.name}</p>
                 <p className="mt-2 line-clamp-3 text-sm leading-6 text-emerald-900/70">{item.description}</p>

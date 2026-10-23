@@ -946,7 +946,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               variant="ghost"
               size="sm"
               onClick={handleScaleDown}
-              className="justify-center gap-0.5 active:scale-95"
+              className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <Minus className="h-3.5 w-3.5" />
               <span className="text-[11px]">縮小</span>
@@ -955,7 +955,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               variant="ghost"
               size="sm"
               onClick={toggleRotation}
-              className="justify-center gap-0.5 active:scale-95"
+              className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <RotateCw className="h-3.5 w-3.5" />
               <span className="text-[11px]">{isRotating ? "停止" : "回転"}</span>
@@ -964,7 +964,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               variant="ghost"
               size="sm"
               onClick={handleScaleUp}
-              className="justify-center gap-0.5 active:scale-95"
+              className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <Plus className="h-3.5 w-3.5" />
               <span className="text-[11px]">拡大</span>
@@ -973,7 +973,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               variant="ghost"
               size="sm"
               onClick={handleReset}
-              className="justify-center gap-0.5 active:scale-95"
+              className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span className="text-[11px]">リセット</span>

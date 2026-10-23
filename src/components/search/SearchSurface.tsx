@@ -9,7 +9,7 @@ import { PageShortcut } from "@/components/ui/PageShortcut";
 import { getImageUrl } from "@/lib/storage";
 import Image from "next/image";
 import { useResolvedStorageUrls } from "@/lib/storageSignedClient";
-import { getSpotHref } from "@/lib/spotRoutes";
+import { SpotCard } from "@/components/ui/SpotCard";
 import { splitEventsByTimeline } from "@/lib/eventFilters";
 
 type SearchTab = "spot" | "event";
@@ -32,6 +32,7 @@ type Props = {
   genres: Genre[];
   defaultSpots: Spot[];
   defaultEvents: Event[];
+  initialTab?: SearchTab;
 };
 
 const PAGE_SIZE = 50;
@@ -68,12 +69,13 @@ function buildSearchQuery(params: {
  * DB 検索 API を利用し、市区町村・ジャンル・キーワードで安全に絞り込む。
  *
  * @param props - コンポーネントプロパティ
+ * @param props.initialTab - URLで指定された初期タブ。既定はスポット
  * @returns SearchSurface コンポーネント
  * @example
  * <SearchSurface cities={cities} genres={genres} />
  */
-export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: Props) {
-  const [tab, setTab] = useState<SearchTab>("spot");
+export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, initialTab = "spot" }: Props) {
+  const [tab, setTab] = useState<SearchTab>(initialTab);
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [selectedCityId, setSelectedCityId] = useState<string>("all");
@@ -178,10 +180,9 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
     (spot: Spot): string | null => {
       if (spot.image_thumb_path) return spot.image_thumb_path;
       if (spot.image_path) return spot.image_path;
-      const city = cityById.get(spot.city_id);
-      return city?.image_thumb_path ?? city?.image_path ?? null;
+      return null;
     },
-    [cityById]
+    []
   );
 
   /**
@@ -237,19 +238,20 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
   const endIndex = Math.min(page * PAGE_SIZE, total);
 
   return (
-    <div className="space-y-4 rounded-3xl border border-emerald-900/10 bg-gradient-to-b from-[#f9fffc] to-[#eef8f4] p-4 shadow-sm ring-1 ring-emerald-900/10 sm:space-y-6 sm:p-5">
+    <div className="space-y-6">
       <div className="flex justify-end"><PageShortcut target="favorites" /></div>
       <div className="flex items-center gap-3 rounded-2xl border border-emerald-900/15 bg-white px-4 py-3 shadow-sm">
         <Search className="h-5 w-5 text-emerald-700" strokeWidth={1.8} />
         <input
+          aria-label="スポット・イベントのキーワード"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
           placeholder="スポット名、キーワードで検索..."
-          className="w-full bg-transparent text-sm text-emerald-950 placeholder:text-emerald-900/45 focus:outline-none"
+          className="w-full bg-transparent text-sm text-emerald-950 placeholder:text-emerald-900/60"
         />
         <Button
           variant="ghost"
-          className="h-9 border border-emerald-900/10 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+          className="shrink-0 border border-emerald-900/10 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
           onClick={() => setKeyword("")}
         >
           クリア
@@ -262,7 +264,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
           <select
             value={selectedCityId}
             onChange={(event) => setSelectedCityId(event.target.value)}
-            className="min-w-0 flex-1 rounded-md border border-emerald-900/15 bg-white px-2 py-1 text-sm text-emerald-900"
+            className="min-w-0 flex-1 rounded-md border border-emerald-900/15 bg-white px-2 py-2.5 text-sm text-emerald-900"
           >
             <option value="all">すべて</option>
             {cities.map((city) => (
@@ -278,7 +280,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
             value={selectedGenreId}
             onChange={(event) => setSelectedGenreId(event.target.value)}
             disabled={tab !== "spot"}
-            className="min-w-0 flex-1 rounded-md border border-emerald-900/15 bg-white px-2 py-1 text-sm text-emerald-900 disabled:opacity-50"
+            className="min-w-0 flex-1 rounded-md border border-emerald-900/15 bg-white px-2 py-2.5 text-sm text-emerald-900 disabled:opacity-50"
           >
             <option value="all">すべて</option>
             {genres.map((genre) => (
@@ -292,13 +294,14 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
 
       <div className="flex gap-2 rounded-2xl border border-emerald-900/10 bg-white/70 p-1.5">
         {[
-          { key: "spot", label: "Spots", icon: LocateFixed },
-          { key: "event", label: "Events", icon: Navigation },
+          { key: "spot", label: "スポット", icon: LocateFixed },
+          { key: "event", label: "イベント", icon: Navigation },
         ].map((item) => (
           <Button
             key={item.key}
             variant={tab === item.key ? "primary" : "ghost"}
             size="sm"
+            aria-pressed={tab === item.key}
             onClick={() => setTab(item.key as SearchTab)}
             className="flex-1 justify-center gap-2"
           >
@@ -310,7 +313,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
 
       {isIdleState ? (
         <div className="rounded-2xl border border-emerald-900/10 bg-white/70 px-4 py-3 text-xs text-emerald-900/70">
-          フィルタ未選択のため、おすすめのスポットと直近イベントを表示しています。
+          キーワードやエリアを選んで、気になる旅先を絞り込めます。
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-emerald-900/70">
@@ -332,10 +335,10 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
 
       {isIdleState ? (
         <div className="space-y-6">
-          <section className="space-y-3">
+          {tab === "spot" && <section className="space-y-3">
             <div className="px-1">
-              <h2 className="text-lg font-semibold text-[#0f1c1a]">人気のスポット</h2>
-              <p className="text-sm text-emerald-900/70">今日の旅先候補として 8 件をピックアップしています。</p>
+              <h2 className="text-lg font-semibold text-[#0f1c1a]">旅先のヒント</h2>
+              <p className="text-sm text-emerald-900/70">岩手の風景や文化を楽しむ、旅先の候補です。</p>
             </div>
             <div className="card-grid">
               {defaultSpots.map((spot) => {
@@ -344,36 +347,15 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
                   ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
                   : null;
                 return (
-                  <GlassCard key={spot.id} title={spot.name} icon={LocateFixed} badge={`#${spot.id}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 text-sm text-emerald-900/80">{spot.description}</p>
-                        <a
-                          href={getSpotHref(spot)}
-                          className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-emerald-700 underline underline-offset-4 hover:text-emerald-800"
-                        >
-                          詳細を見る
-                        </a>
-                      </div>
-                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
-                        {imageUrl ? (
-                          <Image src={imageUrl} alt={spot.name} fill sizes="96px" className="object-cover" />
-                        ) : (
-                          <div className="grid h-full w-full place-items-center text-emerald-700/70">
-                            <ImageIcon className="h-4 w-4" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </GlassCard>
+                  <SpotCard key={spot.id} spot={spot} cityName={cityById.get(spot.city_id)?.name} imageUrl={imageUrl} />
                 );
               })}
             </div>
-          </section>
+          </section>}
 
-          <section className="space-y-3">
+          {tab === "event" && <section className="space-y-3">
             <div className="px-1">
-              <h2 className="text-lg font-semibold text-[#0f1c1a]">新着イベント</h2>
+              <h2 className="text-lg font-semibold text-[#0f1c1a]">もうすぐ開催</h2>
               <p className="text-sm text-emerald-900/70">直近で開催予定のイベントをまとめています。</p>
             </div>
             <div className="card-grid">
@@ -408,7 +390,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
                 );
               })}
             </div>
-          </section>
+          </section>}
         </div>
       ) : (
         <div className="card-grid">
@@ -419,28 +401,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents }: P
               ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
               : null;
             return (
-              <GlassCard key={spot.id} title={spot.name} icon={LocateFixed} badge={`#${spot.id}`}>
-                <div className="flex items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm text-emerald-900/80">{spot.description}</p>
-                    <a
-                      href={getSpotHref(spot)}
-                      className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-emerald-700 underline underline-offset-4 hover:text-emerald-800"
-                    >
-                      詳細を見る
-                    </a>
-                  </div>
-                  <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-emerald-900/10 bg-emerald-50">
-                    {imageUrl ? (
-                      <Image src={imageUrl} alt={spot.name} fill sizes="96px" className="object-cover" />
-                    ) : (
-                      <div className="grid h-full w-full place-items-center text-emerald-700/70">
-                        <ImageIcon className="h-4 w-4" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </GlassCard>
+              <SpotCard key={spot.id} spot={spot} cityName={cityById.get(spot.city_id)?.name} imageUrl={imageUrl} />
             );
           })}
 

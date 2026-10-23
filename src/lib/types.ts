@@ -143,3 +143,6 @@ export type AdminSpotListItem = Spot & {
 export type AdminEventListItem = Event & {
   city?: AdminCitySummary | null;
 };
+
+/** 公開スタンプ対象。サンプルは本人の進捗計算・保存に使用しない。 */
+export type StampCatalog = { spots: Spot[]; cities: City[]; isSample: boolean };

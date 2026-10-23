@@ -1,0 +1,79 @@
+{
+  "initialProbe": {
+    "iterations": 150,
+    "locatorFailures": 12,
+    "atomicFailures": 0,
+    "samples": [
+      {
+        "connected": false,
+        "filter": ""
+      },
+      {
+        "connected": false,
+        "filter": ""
+      },
+      {
+        "connected": false,
+        "filter": ""
+      },
+      {
+        "connected": false,
+        "filter": ""
+      },
+      {
+        "connected": false,
+        "filter": ""
+      }
+    ]
+  },
+  "predicateProbe": {
+    "iterations": 150,
+    "locatorFailures": 5,
+    "atomicFailures": 0,
+    "samples": [
+      {
+        "connected": false,
+        "filter": ""
+      },
+      {
+        "connected": false,
+        "filter": ""
+      },
+      {
+        "connected": false,
+        "filter": ""
+      },
+      {
+        "connected": false,
+        "filter": ""
+      },
+      {
+        "connected": false,
+        "filter": ""
+      }
+    ],
+    "actualPredicate": {
+      "clean": [],
+      "inverse": [
+        {
+          "media": "CANVAS",
+          "source": null,
+          "ancestor": "MAIN",
+          "className": null,
+          "filter": "invert(1)",
+          "connected": true
+        }
+      ],
+      "blur": [
+        {
+          "media": "CANVAS",
+          "source": null,
+          "ancestor": "CANVAS",
+          "className": null,
+          "filter": "blur(1px)",
+          "connected": true
+        }
+      ]
+    }
+  }
+}

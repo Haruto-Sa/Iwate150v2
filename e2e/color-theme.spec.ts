@@ -52,13 +52,23 @@ for (const theme of ["light", "dark"] as const) test(`${theme}の主要画面と
     const panel = page.locator(".bg-app-surface").first();
     if (await panel.count()) await expect(panel).toHaveCSS("background-color", theme === "dark" ? "rgb(28, 44, 38)" : "rgb(255, 255, 255)");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    const filteredMedia = await page.locator("img, canvas, video, .leaflet-tile-pane").evaluateAll(elements => elements.some(element => {
+    // モデル読込でcanvasが置換されるため、DOM取得とstyle判定を同じ評価内で行う。
+    const filteredMedia = await page.evaluate(() => Array.from(document.querySelectorAll("img, canvas, video, .leaflet-tile-pane")).flatMap(element => {
+      const filters = [];
       for (let node: Element | null = element; node; node = node.parentElement) {
-        if (getComputedStyle(node).filter !== "none") return true;
+        const filter = getComputedStyle(node).filter;
+        if (filter !== "none") filters.push({
+          media: element.tagName,
+          source: element.getAttribute("src"),
+          ancestor: node.tagName,
+          className: node.getAttribute("class"),
+          filter,
+          connected: node.isConnected,
+        });
       }
-      return false;
+      return filters;
     }));
-    expect(filteredMedia).toBe(false);
+    expect(filteredMedia, `${path} (${theme})のメディアと祖先のfilter`).toEqual([]);
     await page.screenshot({ path: info.outputPath(`${theme}-${path.replaceAll("/", "") || "home"}.png`), fullPage: true, animations: "disabled" });
   }
   await page.goto("/search");

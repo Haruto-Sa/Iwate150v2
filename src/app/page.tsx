@@ -5,7 +5,8 @@ import { fetchCities, fetchEvents, fetchSpots } from "@/lib/supabaseClient";
 import { HomeCalendarSwitcher } from "@/components/home/HomeCalendarSwitcher";
 import { SpotCard } from "@/components/ui/SpotCard";
 import { SectionTitle } from "@/components/ui/SectionTitle";
-import { getImageUrl, resolveServerStorageUrls } from "@/lib/storage";
+import { getImageUrl } from "@/lib/storage";
+import { resolveServerStorageUrls } from "@/lib/storageServer";
 import { buildPageMetadata, buildHomeJsonLd } from "@/lib/seo";
 
 export const revalidate = 60;

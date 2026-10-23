@@ -15,7 +15,7 @@ const api = vi.hoisted(() => ({
 vi.mock("@/components/auth/SessionProvider", () => ({
   useAuthSession: () => session(),
 }));
-vi.mock("@/lib/supabaseClient", () => api);
+vi.mock("@/lib/privateUserClient", () => api);
 const spots: Spot[] = [1, 2, 3].map((id) => ({
   id,
   name: `スポット${id}`,

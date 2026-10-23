@@ -1,3 +1,5 @@
+import type { PagedResult } from "./paging";
+
 export type City = {
   id: number;
   name: string;
@@ -130,13 +132,7 @@ export type AdminSpotUpdateInput = Partial<AdminSpotCreateInput>;
 
 export type AdminEventUpdateInput = Partial<AdminEventCreateInput>;
 
-export type AdminListPage<T> = {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  hasNext: boolean;
-};
+export type AdminListPage<T> = PagedResult<T>;
 
 export type AdminSpotListItem = Spot & {
   city?: AdminCitySummary | null;

@@ -1,3 +1,5 @@
+import "server-only";
+import { normalizePage, normalizePageSize, buildPagedResult } from "./paging";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { getServerAdminClient } from "@/lib/authServer";
 import { mockCities, mockEvents, mockGenres, mockSpots } from "@/lib/mockData";
@@ -45,58 +47,6 @@ export class AdminServerNotFoundError extends Error {
     super(message);
     this.name = "AdminServerNotFoundError";
   }
-}
-
-/**
- * ページ番号を安全な値へ正規化する。
- *
- * @param page - 入力ページ番号
- * @returns 1 以上のページ番号
- * @example
- * normalizePage(0);
- */
-function normalizePage(page: number): number {
-  if (!Number.isFinite(page)) return 1;
-  return Math.max(1, Math.floor(page));
-}
-
-/**
- * ページサイズを安全な範囲へ正規化する。
- *
- * @param pageSize - 入力ページサイズ
- * @returns 1〜MAX_PAGE_SIZE のページサイズ
- * @example
- * normalizePageSize(20);
- */
-function normalizePageSize(pageSize: number): number {
-  if (!Number.isFinite(pageSize)) return DEFAULT_PAGE_SIZE;
-  return Math.min(MAX_PAGE_SIZE, Math.max(1, Math.floor(pageSize)));
-}
-
-/**
- * 管理一覧用のページング結果を組み立てる。
- *
- * @param items - 現在ページの項目
- * @param total - 総件数
- * @param page - 現在ページ番号
- * @param pageSize - ページサイズ
- * @returns ページング結果
- * @example
- * buildPagedResult([], 0, 1, 20);
- */
-function buildPagedResult<T>(
-  items: T[],
-  total: number,
-  page: number,
-  pageSize: number
-): AdminListPage<T> {
-  return {
-    items,
-    total,
-    page,
-    pageSize,
-    hasNext: page * pageSize < total,
-  };
 }
 
 /**
@@ -336,7 +286,7 @@ export async function fetchAdminSpotsPage(
   pageSize = DEFAULT_PAGE_SIZE
 ): Promise<AdminListPage<AdminSpotListItem>> {
   const safePage = normalizePage(page);
-  const safePageSize = normalizePageSize(pageSize);
+  const safePageSize = normalizePageSize(pageSize, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
   const from = (safePage - 1) * safePageSize;
   const to = from + safePageSize - 1;
   const client = getServerAdminClient();
@@ -481,7 +431,7 @@ export async function fetchAdminEventsPage(
   pageSize = DEFAULT_PAGE_SIZE
 ): Promise<AdminListPage<AdminEventListItem>> {
   const safePage = normalizePage(page);
-  const safePageSize = normalizePageSize(pageSize);
+  const safePageSize = normalizePageSize(pageSize, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
   const from = (safePage - 1) * safePageSize;
   const to = from + safePageSize - 1;
   const client = getServerAdminClient();

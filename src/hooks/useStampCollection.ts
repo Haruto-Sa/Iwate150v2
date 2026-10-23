@@ -6,7 +6,7 @@ import {
   createStamp,
   fetchStampCatalog,
   fetchUserStamps,
-} from "@/lib/supabaseClient";
+} from "@/lib/privateUserClient";
 import { filterNearby, haversineDistance } from "@/lib/geo";
 import {
   buildStampProgress,

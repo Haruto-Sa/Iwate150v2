@@ -1,3 +1,4 @@
+import { normalizePage, normalizePageSize, buildPagedResult, type PagedResult } from "./paging";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { IWATE_PUBLIC_BOUNDS } from "./config";
 import { mockCities, mockEvents, mockGenres, mockSpots, mockStampCatalog } from "./mockData";
@@ -5,10 +6,8 @@ import { getCurrentDateKey, getUpcomingEvents, sortEventsForTimeline } from "./e
 import {
   City,
   Event,
-  Favorite,
   Genre,
   Spot,
-  Stamp,
   StampCatalog,
 } from "./types";
 
@@ -36,13 +35,7 @@ if (!hasEnv && typeof console !== "undefined") {
 
 export const getSupabaseClient = () => client;
 
-export type PagedResult<T> = {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  hasNext: boolean;
-};
+export type { PagedResult } from "./paging";
 
 export type SpotSearchParams = {
   keyword?: string | null;
@@ -73,6 +66,9 @@ const SEARCH_DEFAULT_PAGE_SIZE = 50;
 const SEARCH_MAX_PAGE_SIZE = 100;
 const SEARCH_MAX_KEYWORD_LENGTH = 100;
 
+// ─────────────────────────────────────────────────────────────
+// 検索ヘルパー
+
 /**
  * 検索キーワードを正規化する。
  *
@@ -98,54 +94,6 @@ function normalizeKeyword(value: string | null | undefined): string {
  */
 function escapeForIlike(value: string): string {
   return value.replace(/[%_\\]/g, "\\$&");
-}
-
-/**
- * ページ番号を安全な範囲に正規化する。
- *
- * @param value - 入力ページ番号
- * @returns 1以上のページ番号
- * @example
- * const page = normalizePage(0);
- */
-function normalizePage(value: number | undefined): number {
-  if (!Number.isFinite(value)) return 1;
-  return Math.max(1, Math.floor(value as number));
-}
-
-/**
- * ページサイズを安全な範囲に正規化する。
- *
- * @param value - 入力ページサイズ
- * @returns 1〜SEARCH_MAX_PAGE_SIZE のページサイズ
- * @example
- * const pageSize = normalizePageSize(50);
- */
-function normalizePageSize(value: number | undefined): number {
-  if (!Number.isFinite(value)) return SEARCH_DEFAULT_PAGE_SIZE;
-  const safe = Math.floor(value as number);
-  return Math.min(SEARCH_MAX_PAGE_SIZE, Math.max(1, safe));
-}
-
-/**
- * ページング結果を構築する。
- *
- * @param items - 現在ページのアイテム
- * @param total - 総件数
- * @param page - 現在ページ
- * @param pageSize - ページサイズ
- * @returns ページング結果
- * @example
- * const result = buildPagedResult([], 0, 1, 50);
- */
-function buildPagedResult<T>(items: T[], total: number, page: number, pageSize: number): PagedResult<T> {
-  return {
-    items,
-    total,
-    page,
-    pageSize,
-    hasNext: page * pageSize < total,
-  };
 }
 
 /**
@@ -215,6 +163,9 @@ function buildEventMockSearchResult(
   const items = local.slice(from, to + 1);
   return buildPagedResult(items, total, page, pageSize);
 }
+
+// ─────────────────────────────────────────────────────────────
+// 公開データの読み取り
 
 /**
  * 公開画面に出してよいスポットか判定する。
@@ -378,6 +329,9 @@ export async function fetchEvents(options: FetchEventsOptions = {}): Promise<Eve
   return applyEventFilters((data ?? []) as Event[]);
 }
 
+// ─────────────────────────────────────────────────────────────
+// 公開データの検索
+
 /**
  * スポットを DB で検索する（市区町村・ジャンル・キーワード + ページング）。
  *
@@ -388,7 +342,7 @@ export async function fetchEvents(options: FetchEventsOptions = {}): Promise<Eve
  */
 export async function searchSpots(params: SpotSearchParams): Promise<PagedResult<Spot>> {
   const page = normalizePage(params.page);
-  const pageSize = normalizePageSize(params.pageSize);
+  const pageSize = normalizePageSize(params.pageSize, SEARCH_DEFAULT_PAGE_SIZE, SEARCH_MAX_PAGE_SIZE);
   const keyword = normalizeKeyword(params.keyword);
 
   if (!client) {
@@ -436,7 +390,7 @@ export async function searchSpots(params: SpotSearchParams): Promise<PagedResult
  */
 export async function searchEvents(params: EventSearchParams): Promise<PagedResult<Event>> {
   const page = normalizePage(params.page);
-  const pageSize = normalizePageSize(params.pageSize);
+  const pageSize = normalizePageSize(params.pageSize, SEARCH_DEFAULT_PAGE_SIZE, SEARCH_MAX_PAGE_SIZE);
   const keyword = normalizeKeyword(params.keyword);
 
   if (!client) {
@@ -468,138 +422,7 @@ export async function searchEvents(params: EventSearchParams): Promise<PagedResu
 }
 
 // ─────────────────────────────────────────────────────────────
-// 本人データはサーバーセッションを検証するAPI経由でのみ操作する。
-
-/**
- * 本人APIへリクエストする。失敗を空一覧や保存成功に変換しない。
- *
- * @param path - API名
- * @param identity - 開始時のセッションID（所有者指定には使わない）
- *
- * @param method - HTTP method
- * @param body - 本文
- *
- * @returns API結果
- *
- * @example await requestPrivateData("favorites", identity);
- */
-async function requestPrivateData<T>(path: string, identity: string, method = "GET", body?: unknown): Promise<T> {
-  const response = await fetch(`/api/me/${path}`, {
-    method, credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(15_000),
-    headers: { "Content-Type": "application/json", "X-Session-User": identity },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
-  if (!response.ok) throw new Error("保存サービスに接続できません。再読み込みしてお試しください。");
-  return response.json() as Promise<T>;
-}
-
-/**
- * 本人の一覧を上限付きで全ページ取得する。
- *
- * @param table - 一覧名
- * @param identity - 開始時セッション
- *
- * @returns 本人の保存済みレコード
- *
- * @example await fetchPrivateRecords<Favorite>("favorites", identity);
- */
-async function fetchPrivateRecords<T>(table: string, identity: string): Promise<T[]> {
-  const items: T[] = [];
-  let offset: number | null = 0;
-  for (let page = 0; page < 100 && offset !== null; page++) {
-    const result: { items: T[]; nextOffset: number | null } = await requestPrivateData(`${table}?offset=${offset}`, identity);
-    items.push(...result.items);
-    offset = result.nextOffset;
-  }
-  if (offset !== null) throw new Error("保存件数が多すぎます。サポートへお問い合わせください。");
-  return items;
-}
-
-/**
- * 本人のスタンプを取得する。
- *
- * @param identity - 開始時セッションID
- * @returns 保存済みスタンプ
- *
- * @example await fetchUserStamps(user.id);
- */
-export async function fetchUserStamps(identity: string): Promise<Stamp[]> {
-  return fetchPrivateRecords("stamps", identity);
-}
-
-/**
- * 本人のスタンプを冪等に保存する。
- *
- * @param identity - 開始時セッションID
- * @param spotId - スポットID
- *
- * @returns 保存確認済みスタンプ
- *
- * @example await createStamp(user.id, 10);
- */
-export async function createStamp(identity: string, spotId: number): Promise<Stamp | null> {
-  const result = await requestPrivateData<{ items: Stamp[] }>("stamps", identity, "POST", { spotId });
-  return result.items.find((item) => item.spot_id === spotId) ?? null;
-}
-
-/**
- * 本人のお気に入りを取得する。
- *
- * @param identity - 開始時セッションID
- * @returns 保存済みお気に入り
- *
- * @example await fetchUserFavorites(user.id);
- */
-export async function fetchUserFavorites(identity: string): Promise<Favorite[]> {
-  return fetchPrivateRecords("favorites", identity);
-}
-
-/**
- * 本人のお気に入りを冪等に追加する。
- *
- * @param identity - 開始時セッションID
- * @param spotId - スポットID
- *
- * @returns 保存確認済みお気に入り
- *
- * @example await addFavorite(user.id, 10);
- */
-export async function addFavorite(identity: string, spotId: number): Promise<Favorite | null> {
-  const result = await requestPrivateData<{ items: Favorite[] }>("favorites", identity, "PUT", { spotId });
-  return result.items.find((item) => item.spot_id === spotId) ?? null;
-}
-
-/**
- * 本人のお気に入りだけを削除する。
- *
- * @param identity - 開始時セッションID
- * @param spotId - スポットID
- *
- * @returns 成功時true、通信失敗時は例外
- *
- * @example await removeFavorite(user.id, 10);
- */
-export async function removeFavorite(identity: string, spotId: number): Promise<boolean> {
-  await requestPrivateData("favorites", identity, "DELETE", { spotId });
-  return true;
-}
-
-/**
- * 一回の同期で保存を確認したIDを返す。
- *
- * @param identity - 開始時セッションID
- * @param spotIds - 最大100件のスポットID
- *
- * @returns 保存確認済みID
- *
- * @example await mergeFavorites(user.id, [1, 2]);
- */
-export async function mergeFavorites(identity: string, spotIds: number[]): Promise<number[]> {
-  if (!spotIds.length) return [];
-  const result = await requestPrivateData<{ persistedSpotIds: number[] }>("favorites", identity, "POST", { spotIds });
-  return result.persistedSpotIds;
-}
-
+// 公開スタンプカタログ
 
 /**
  * ID順に公開対象を最後まで取得する。途中失敗・制限超過時は部分一覧を返さない。
@@ -649,28 +472,6 @@ export async function loadStampCatalog(): Promise<StampCatalog> {
     ]);
     if (!spots || cities.error || controller.signal.aborted) return mockStampCatalog;
     return { spots, cities: (cities.data ?? []) as City[], isSample: false };
-  } catch {
-    return mockStampCatalog;
-  } finally {
-    clearTimeout(timer);
-    controller.abort();
-  }
-}
-
-/**
- * 出所情報を保った公開スタンプカタログを同一オリジンから取得する。
- * @returns 公開対象。通信失敗時は閲覧専用サンプル
- * @example const catalog = await fetchStampCatalog();
- */
-export async function fetchStampCatalog(): Promise<StampCatalog> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch("/api/stamps/catalog", { cache: "no-store", signal: controller.signal });
-    if (!response.ok) return mockStampCatalog;
-    const catalog = await response.json() as StampCatalog;
-    if (!Array.isArray(catalog.spots) || !Array.isArray(catalog.cities) || typeof catalog.isSample !== "boolean") return mockStampCatalog;
-    return catalog;
   } catch {
     return mockStampCatalog;
   } finally {

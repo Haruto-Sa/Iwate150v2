@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const signing = vi.hoisted(() => ({ from: vi.fn(), sign: vi.fn() }));
+vi.mock("server-only", () => ({}));
 vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({ storage: { from: signing.from } }) }));
 
 /**
@@ -13,7 +14,7 @@ async function loadStorage(env: Record<string, string | undefined> = {}) {
   for (const key of ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET", "SUPABASE_STORAGE_BUCKET", "NEXT_PUBLIC_SUPABASE_STORAGE_MODE", "NEXT_PUBLIC_SUPABASE_SIGNED_URL_EXPIRES_IN", "SUPABASE_SERVICE_ROLE_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]) vi.stubEnv(key, undefined);
   for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
   vi.resetModules();
-  return import("./storage");
+  return { ...await import("./storage"), ...await import("./storageServer") };
 }
 
 beforeEach(() => {

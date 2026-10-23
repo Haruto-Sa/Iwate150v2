@@ -9,7 +9,7 @@ import {
   fetchUserFavorites,
   mergeFavorites,
   removeFavorite,
-} from "@/lib/supabaseClient";
+} from "@/lib/privateUserClient";
 import type { Spot } from "@/lib/types";
 
 const LEGACY_OWNER_KEY = `${GUEST_FAVORITES_KEY}:sync-owner`;

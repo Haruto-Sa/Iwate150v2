@@ -18,16 +18,23 @@ test("検索結果に対象施設の年度・入込数・出典を表示し、�
 
 test("操作の準備前は検索条件を変更させず、準備後の入力を検索へ反映する", async ({ page }) => {
   let release!: () => void;
+  let scriptsHeld = false;
   const scriptsReady = new Promise<void>(resolve => { release = resolve; });
-  await page.route(/\/_next\/static\/.*\.js(?:\?|$)/, async route => { await scriptsReady; await route.continue(); });
+  // hydrationを保留し、ストリーミング用の非表示領域も含めてSSRの無効化を検証する。
+  await page.route(/\/_next\/static\/.*\.js(?:\?|$)/, async route => { scriptsHeld = true; await scriptsReady; await route.continue(); });
   try {
     await page.goto("/search", { waitUntil: "commit" });
-    const input = page.getByRole("textbox", { name: "スポット・イベントのキーワード" });
+    await expect.poll(() => scriptsHeld).toBe(true);
+    const input = page.getByLabel("スポット・イベントのキーワード", { exact: true });
     await expect(input).toBeDisabled();
-    await expect(page.getByRole("combobox", { name: "市区町村" })).toBeDisabled();
+    const filters = page.locator("fieldset select");
+    await expect(filters).toHaveCount(2);
+    for (const filter of await filters.all()) await expect(filter).toBeDisabled();
     release();
-    await expect(input).toBeEnabled();
-    await input.fill("龍泉洞");
+    const readyInput = page.getByRole("textbox", { name: "スポット・イベントのキーワード" });
+    await expect(readyInput).toBeVisible();
+    await expect(readyInput).toBeEnabled();
+    await readyInput.fill("龍泉洞");
     await expect(page.getByRole("article")).toHaveCount(1);
     await expect(page.getByRole("heading", { name: "龍泉洞", exact: true })).toBeVisible();
   } finally { release(); }

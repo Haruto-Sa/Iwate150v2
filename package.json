@@ -61,5 +61,8 @@
   },
   "overrides": {
     "baseline-browser-mapping": "2.10.0"
+  },
+  "patchedDependencies": {
+    "next@16.0.8": "patches/next@16.0.8.patch"
   }
 }

@@ -8,8 +8,19 @@ const test = base.extend({
 
 test.use({ permissions: ["camera"] });
 
+const faceErrors: string[] = [];
+test.beforeEach(async ({ page }) => {
+  faceErrors.length = 0;
+  page.on("console", (message) => {
+    if (message.text().startsWith("faceMesh onFrame error") && faceErrors.length < 4) {
+      faceErrors.push(message.text().slice(0, 768));
+    }
+  });
+});
+
 test.afterEach(async ({ page }, testInfo) => {
   if (testInfo.status === testInfo.expectedStatus || page.isClosed()) return;
+  console.error("Camera inference diagnostics:", faceErrors);
   const diagnostics = await page.evaluate(() => {
     const video = document.querySelector("video");
     return {

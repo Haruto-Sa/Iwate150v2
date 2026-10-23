@@ -104,6 +104,17 @@ describe("camera face worker", () => {
     await tracker.close();
   });
 
+  it("preserves the failing stage and bounded worker error for diagnosis", async () => {
+    const tracker = await readyTracker();
+    vi.stubGlobal("createImageBitmap", vi.fn().mockResolvedValue({ close: vi.fn() }));
+    const response = tracker.send({ image: document.createElement("video") });
+    const assertion = expect(response).rejects.toThrow("Face inference failed (copy-frame): TypeError: canvas unavailable");
+    await vi.advanceTimersByTimeAsync(0);
+    worker.onmessage({ data: { type: "error", stage: "copy-frame", message: "TypeError: canvas unavailable" } });
+    await assertion;
+    expect(worker.terminate).toHaveBeenCalledOnce();
+  });
+
   it("surfaces worker errors and terminates the failed worker", async () => {
     const ready = createCameraFaceWorker("/mediapipe/face_mesh");
     const assertion = expect(ready).rejects.toThrow("failed");

@@ -53,12 +53,12 @@ export async function createCameraFaceWorker(assetBase: string): Promise<CameraF
     });
   }
 
-  worker.onerror = () => fail(new Error("Face worker failed"));
+  worker.onerror = (event) => fail(new Error(`Face worker failed: ${event?.message?.slice(0, 512) ?? "unknown error"}`));
   worker.onmessageerror = () => fail(new Error("Face worker response could not be read"));
-  worker.onmessage = ({ data }: MessageEvent<{ type: string; multiFaceLandmarks: NormalizedLandmarkListList }>) => {
+  worker.onmessage = ({ data }: MessageEvent<{ type: string; message?: string; stage?: string; multiFaceLandmarks: NormalizedLandmarkListList }>) => {
     if (closed || !pending) return;
     if (data.type === "error") {
-      fail(new Error("Face inference failed"));
+      fail(new Error(`Face inference failed (${data.stage ?? "unknown"}): ${data.message?.slice(0, 512) ?? "unknown error"}`));
       return;
     }
     if (data.type !== "ready" && data.type !== "result") return;

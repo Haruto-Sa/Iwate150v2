@@ -11,6 +11,7 @@ let landmarks = [];
  * @example self.onmessage({ data: { type: 'frame', image: bitmap } });
  */
 self.onmessage = async ({ data }) => {
+  let stage = "initialize";
   try {
     if (data.type === 'init') {
       tracker = new FaceMesh({ locateFile: (file) => `${data.assetBase}/${file.replace('face_mesh_solution_simd_wasm_bin.js', 'face_mesh_solution_wasm_bin.js').replace('face_mesh_solution_simd_wasm_bin.wasm', 'face_mesh_solution_wasm_bin.wasm')}` });
@@ -22,6 +23,7 @@ self.onmessage = async ({ data }) => {
       await tracker.initialize();
       self.postMessage({ type: 'ready' });
     } else if (data.type === 'frame') {
+      stage = 'copy-frame';
       try {
         canvas ??= new OffscreenCanvas(data.image.width, data.image.height);
         if (canvas.width !== data.image.width) canvas.width = data.image.width;
@@ -31,10 +33,11 @@ self.onmessage = async ({ data }) => {
         data.image.close();
       }
       landmarks = [];
+      stage = 'inference';
       await tracker.send({ image: canvas });
       self.postMessage({ type: 'result', multiFaceLandmarks: landmarks });
     }
   } catch (error) {
-    self.postMessage({ type: 'error', message: String(error) });
+    self.postMessage({ type: 'error', stage, message: String(error).slice(0, 512) });
   }
 };

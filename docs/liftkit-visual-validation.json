@@ -1,0 +1,175 @@
+{
+  "initialScreenshots": [
+    {
+      "name": "screenshots-home-at-320px-screenshots/home-320.png",
+      "changedPixels": 0,
+      "totalPixels": 1064000,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-home-at-320px-webkit-ui/home-320.png",
+      "changedPixels": 0,
+      "totalPixels": 4256000,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-login-at-390px-webkit-ui/login-390.png",
+      "before": {
+        "format": "raw",
+        "width": 780,
+        "height": 1800,
+        "channels": 4,
+        "depth": "uchar",
+        "premultiplied": false,
+        "size": 5616000
+      },
+      "after": {
+        "format": "raw",
+        "width": 780,
+        "height": 1880,
+        "channels": 4,
+        "depth": "uchar",
+        "premultiplied": false,
+        "size": 5865600
+      }
+    },
+    {
+      "name": "screenshots-home-at-390px-webkit-ui/home-390.png",
+      "changedPixels": 0,
+      "totalPixels": 5288400,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-home-at-390px-screenshots/home-390.png",
+      "changedPixels": 0,
+      "totalPixels": 1322100,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-search-at-1440px-webkit-ui/search-1440.png",
+      "changedPixels": 0,
+      "totalPixels": 12551040,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-login-at-320px-webkit-ui/login-320.png",
+      "changedPixels": 0,
+      "totalPixels": 1273600,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-search-at-1440px-screenshots/search-1440.png",
+      "changedPixels": 0,
+      "totalPixels": 3165120,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-search-at-320px-webkit-ui/search-320.png",
+      "changedPixels": 0,
+      "totalPixels": 4586240,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-search-at-320px-screenshots/search-320.png",
+      "changedPixels": 0,
+      "totalPixels": 1158720,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-login-at-320px-screenshots/login-320.png",
+      "changedPixels": 0,
+      "totalPixels": 318400,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-home-at-1440px-webkit-ui/home-1440.png",
+      "changedPixels": 0,
+      "totalPixels": 11352960,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-login-at-1440px-screenshots/login-1440.png",
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-search-at-390px-webkit-ui/search-390.png",
+      "changedPixels": 0,
+      "totalPixels": 5670600,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-search-at-390px-screenshots/search-390.png",
+      "changedPixels": 0,
+      "totalPixels": 1432470,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-login-at-390px-screenshots/login-390.png",
+      "changedPixels": 0,
+      "totalPixels": 366600,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-login-at-1440px-webkit-ui/login-1440.png",
+      "changedPixels": 0,
+      "totalPixels": 5184000,
+      "bounds": null
+    },
+    {
+      "name": "screenshots-home-at-1440px-screenshots/home-1440.png",
+      "changedPixels": 0,
+      "totalPixels": 2838240,
+      "bounds": null
+    }
+  ],
+  "webkitLogin390Recheck": {
+    "before": {
+      "format": "raw",
+      "width": 780,
+      "height": 1880,
+      "channels": 4,
+      "depth": "uchar",
+      "premultiplied": false,
+      "size": 5865600
+    },
+    "after": {
+      "format": "raw",
+      "width": 780,
+      "height": 1880,
+      "channels": 4,
+      "depth": "uchar",
+      "premultiplied": false,
+      "size": 5865600
+    },
+    "identical": true
+  },
+  "css": [
+    {
+      "file": "e8a8a2d2fcbf5545.css",
+      "sha256": "b1dda028fe34f7e0fa822f33c7fa0f39214f6dc52d83b8085ee9572bdff1b314",
+      "identical": true
+    },
+    {
+      "file": "29096c1543fe335c.css",
+      "sha256": "471924a70794aeed88139be976049b3e202df01ba42e088cdb27e2f885ec9a51",
+      "identical": true
+    },
+    {
+      "file": "1de76be520b4de19.css",
+      "sha256": "30d81818adeb07a03aa569a526b6e24e5874b6ce3ba11c254fcb837135543dd0",
+      "identical": true
+    },
+    {
+      "file": "1d65a4198b500316.css",
+      "sha256": "ec1b3b560b4aec59882130de54ae2d7ec91fb3dd3c0d002615f00ea0ce84dfae",
+      "identical": true
+    },
+    {
+      "file": "e40e5dfc6cc77bc5.css",
+      "sha256": "b7e22afdc3c176f6e6fc644657a05a8eef7c7c61ffe90a760d4b74d5ddee5e84",
+      "identical": true
+    }
+  ]
+}

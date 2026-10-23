@@ -14,7 +14,6 @@
     "test:screenshots": "playwright test --project=screenshots",
     "storage:migrate": "bun run scripts/migrate_storage_assets.ts",
     "storage:verify": "bun run scripts/verify_storage_links.ts",
-    "add": "liftkit add",
     "icons:generate": "node scripts/generate-app-icons.mjs",
     "icons:check": "node scripts/check-app-icons.mjs"
   },
@@ -40,7 +39,6 @@
     "three": "^0.169.0"
   },
   "devDependencies": {
-    "@chainlift/liftkit": "^0.2.0",
     "@playwright/test": "1.64.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.8.0",

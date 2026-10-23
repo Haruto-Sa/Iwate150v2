@@ -26,7 +26,6 @@
         "three": "^0.169.0",
       },
       "devDependencies": {
-        "@chainlift/liftkit": "^0.2.0",
         "@playwright/test": "1.64.0",
         "@tailwindcss/postcss": "^4",
         "@testing-library/jest-dom": "^6.8.0",
@@ -104,8 +103,6 @@
     "@babel/traverse": ["@babel/traverse@7.28.5", "", { "dependencies": { "@babel/code-frame": "^7.27.1", "@babel/generator": "^7.28.5", "@babel/helper-globals": "^7.28.0", "@babel/parser": "^7.28.5", "@babel/template": "^7.27.2", "@babel/types": "^7.28.5", "debug": "^4.3.1" } }, "sha512-TCCj4t55U90khlYkVV/0TfkJkAkUg3jZFA3Neb7unZT8CPok7iiRfaX0F+WnqWqt7OxhOn0uBKXCw4lbL8W0aQ=="],
 
     "@babel/types": ["@babel/types@7.28.5", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA=="],
-
-    "@chainlift/liftkit": ["@chainlift/liftkit@0.2.0", "", { "bin": { "liftkit": "dist/cli.cjs" } }, "sha512-9St6tcUE46OHarYOdG2mJQIIbEL2djfKB3YtwnFWoKpC5fwFsK48D395QOxGcqnz4p1xZ3dvQ8ae/8zn+g1BdQ=="],
 
     "@csstools/color-helpers": ["@csstools/color-helpers@6.0.2", "", {}, "sha512-LMGQLS9EuADloEFkcTBR3BwV/CGHV7zyDxVRtVDTwdI2Ca4it0CCVTT9wCkxSgokjE5Ho41hEPgb8OEUwoXr6Q=="],
 

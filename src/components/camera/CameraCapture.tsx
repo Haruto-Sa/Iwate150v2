@@ -12,7 +12,7 @@ import { createCameraStream } from "@/lib/cameraStream";
 import { getModelUrl } from "@/lib/storage";
 import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
 import * as THREE from "three";
-import { loadCameraModel, disposeCameraModel } from "@/lib/cameraModel";
+import { loadCameraModel, disposeCameraModel, normalizeCameraModel } from "@/lib/cameraModel";
 
 import { CAMERA_VIDEO_MAX_EDGE, CAMERA_VIDEO_MAX_MS, getCameraRecordingMime, startCameraRecording, type CameraRecording } from "@/lib/cameraRecording";
 
@@ -458,17 +458,10 @@ export function CameraCapture() {
         return;
       }
       markCameraTiming(`${id}:object-ready`);
-      const box = new THREE.Box3().setFromObject(object);
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const normalizeScale = Math.max(0.012, 1.0 / maxDim);
-      object.scale.setScalar(normalizeScale);
-      box.setFromObject(object);
-      object.position.sub(box.getCenter(new THREE.Vector3()));
-      object.visible = false;
-      object.userData.normalizeScale = normalizeScale;
-      modelMapRef.current[id] = object;
-      sceneRef.current?.add(object);
+      const model = normalizeCameraModel(object);
+      model.visible = false;
+      modelMapRef.current[id] = model;
+      sceneRef.current?.add(model);
       setModelStatusMap((prev) => ({ ...prev, [id]: "ready" }));
     }).catch(() => {
       if (!unmountedRef.current && !controller.signal.aborted) {

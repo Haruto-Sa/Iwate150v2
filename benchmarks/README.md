@@ -19,7 +19,7 @@ The first visit uses a fresh context; revisit uses in-app navigation. Normal cas
 
 ## Reproduce
 
-Use Node 22, Bun 1.3.4 and the repository's Playwright browsers. Build with the mock-data/OAuth-disabled environment used by `playwright.config.ts`. Ensure port 3100 is free.
+Use Node 22, Bun 1.3.4 and the repository's Playwright browsers. Build with the mock-data/OAuth-disabled environment used by `playwright.config.ts`. Ensure ports 3100 (browser-facing proxy) and 3101 (owned Next.js server) are free.
 
 ```sh
 curl --fail --location https://storage.googleapis.com/mediapipe-assets/portrait.jpg -o /tmp/camera-portrait.jpg
@@ -44,7 +44,7 @@ Disabling `refineLandmarks` was tried but not retained: one 12-condition run sti
 
 OBJ and MTL requests start together. Assets have a 32 MiB response limit and a shared 20-second deadline; selecting away aborts pending fetches. External MTL textures participate in cancellation; FBX embedded-image loading is tracked for completion. Synchronous Three.js parsing is not interruptible. A one-second injected response delay is still not a low-bandwidth experiment.
 
-Face inference uses one shared Worker where supported, with a 20-second initialization deadline and a 20-second frame deadline. This keeps the UI available during inference rather than promising faster inference. The generated vendor script retains the upstream license, applies version-checked corrections to the legacy Worker initialization, and preserves the existing inference settings and iOS CPU preference. Unsupported Worker/OffscreenCanvas environments retain the previous main-thread path; the Worker deadline does not apply to that path. The shared Worker is retained for revisit, while page-owned Three.js objects are disposed on leave.
+Face inference uses one shared Worker where supported, with a 20-second initialization deadline and a 20-second frame deadline. This moves inference off the main thread, but does not establish uninterrupted UI response: the end-to-end bandwidth experiment below still observed long timer gaps. The generated vendor script retains the upstream license, applies version-checked corrections to the legacy Worker initialization, and preserves the existing inference settings and iOS CPU preference. Unsupported Worker/OffscreenCanvas environments retain the previous main-thread path; the Worker deadline does not apply to that path. The shared Worker is retained for revisit, while page-owned Three.js objects are disposed on leave.
 
 Tests cover stalled inference with ordinary-photo fallback, stalled model loads, retry, cancellation, and stale-subscriber isolation. Physical device rendering, moving-face tracking, sustained memory/power usage and the original performance targets remain open.
 
@@ -52,7 +52,25 @@ Tests cover stalled inference with ordinary-photo fallback, stalled model loads,
 
 The runner also translates the public portrait by -64/+64 pixels in a 640-pixel stream. For each front/back mode it reads actual transparent model-canvas pixels and checks that the alpha-weighted horizontal centroid moves in the expected direction by more than 6% of the output width. `camera-tracking-validation.json` records all 16 directional checks across two engine/device profiles and cold/revisit conditions. Observed shifts were about 9–10%, with reversed direction in the mirrored front mode. Every condition also saved a PNG.
 
-This validates tracking of a translated image and requested facing-mode transforms. It does not validate live head rotation, occlusion, physical camera selection or physical-device performance. The runner now fails if any of the 20 expected render/capture conditions is incomplete. Timing marks after the moving-face scenario's camera switch refer to the restarted camera and must not be included in first-start performance comparisons.
+This validates tracking of a translated image and requested facing-mode transforms. It does not validate live head rotation, occlusion, physical camera selection or physical-device performance. The runner now fails if any of the 24 expected render/capture conditions is incomplete. Timing marks after the moving-face scenario's camera switch refer to the restarted camera and must not be included in first-start performance comparisons.
 
 
 Linux CI exposed a legacy Emscripten registration failure (`GLctx` was unset on the first frame). The Worker now obtains the actual OffscreenCanvas WebGL context, determines its version from `GL_VERSION`, and registers/activates that same context with Emscripten. Constructor presence alone is not used as proof of context availability. If neither WebGL context can be created in the Worker, only that explicit unsupported case falls back to the original main-thread implementation; inference errors/timeouts continue to surface as failures.
+
+
+## Shared-bandwidth comparison (2026-10-24)
+
+The runner now includes `limited-bandwidth`: a local HTTP proxy applies one shared 8 Mbps (1,000,000 bytes/s) response-body budget across concurrent page, model and Worker requests. Service Worker is unavailable for this scenario; browser HTTP caches remain enabled. This does not emulate radio latency, packet loss, protocol headers or a physical device. Use `--bandwidth-only` for the four profile/visit cases. The default run covers 24 cases.
+
+`camera-bandwidth-before.json` uses application commit `b4fd526`; `camera-bandwidth-after.json` uses `7ae7293`. Both use the same instrumented runner and one sample per condition. All eight cases reached model rendering and PNG capture. A 100ms main-thread timer records the largest observed gap without storing an unbounded event history.
+
+| Profile / visit | Display before (ms) | Display after (ms) | Largest UI timer gap before (ms) | After (ms) |
+| --- | ---: | ---: | ---: | ---: |
+| iPhone / cold | 10359 | 10556 | 235 | 193 |
+| iPhone / revisit | 4678 | 4813 | 202 | 143 |
+| Android / cold | 20040 | 22750 | 9737 | 7641 |
+| Android / revisit | 1574 | 760 | 407 | 438 |
+
+The first-display target is not met by this evidence. Significant Android-profile UI stalls remain despite moving inference to a Worker. Host scheduling and shared GPU work are potential contributors, not established causes. The earlier isolated Worker timer experiment must not be used to claim responsiveness of the complete camera screen. These profile measurements are separate from Android-emulator and physical-iPhone checks.
+
+Linux CI for `7ae7293` passed 229 E2E tests with two skips after the WebGL registration fix. This establishes the covered browser behaviors, not physical camera behavior, OAuth, live database policies or performance targets.

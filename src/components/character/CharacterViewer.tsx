@@ -893,12 +893,12 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       <div ref={mountRef} className="h-full w-full" />
       {status === "loading" && (
         <div className="absolute inset-0 grid place-items-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
-            <p className="text-xs font-medium text-emerald-900/70">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-app-surface/95 p-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-app-line-soft border-t-emerald-600" />
+            <p className="text-xs font-medium text-app-ink-muted">
               3Dモデルを読み込み中...
             </p>
-            <p className="text-[11px] text-emerald-900/45">
+            <p className="text-[11px] text-app-ink-muted">
               しばらくお待ちください
             </p>
           </div>
@@ -906,14 +906,14 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       )}
       {status === "error" && (
         <div className="absolute inset-0 grid place-items-center">
-          <div className="rounded-2xl border border-emerald-900/10 bg-white/90 px-4 py-3 text-center text-xs font-medium text-emerald-900/80 shadow-sm">
+          <div className="rounded-2xl border border-app-line/10 bg-app-surface/90 px-4 py-3 text-center text-xs font-medium text-app-ink/80 shadow-sm">
             <p>
               {errorType === "webgl"
                 ? "この端末では3D表示を開始できませんでした"
                 : "モデルを表示できませんでした"}
             </p>
             {errorMessage && (
-              <p className="mt-1 text-[11px] text-emerald-900/70">{errorMessage}</p>
+              <p className="mt-1 text-[11px] text-app-ink-muted">{errorMessage}</p>
             )}
             {errorType === "model" && (
               <Button
@@ -936,7 +936,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
           }`}
         >
           <div
-            className={`pointer-events-auto gap-1 bg-white/85 text-emerald-900 shadow-lg shadow-emerald-200/50 backdrop-blur ${
+            className={`pointer-events-auto gap-1 bg-app-surface/85 text-app-ink shadow-lg shadow-emerald-200/50 backdrop-blur ${
               controlsPlacement === "bottom"
                 ? "grid grid-cols-4 rounded-2xl p-2"
                 : "flex rounded-full px-2 py-1"

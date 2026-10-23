@@ -31,22 +31,22 @@ export default async function StudioWorkspaceLayout({ children }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[32px] border border-emerald-900/10 bg-[linear-gradient(135deg,rgba(236,253,245,0.95),rgba(255,255,255,0.92))] p-6 shadow-sm ring-1 ring-emerald-900/5 sm:p-8">
+      <section className="rounded-[32px] border border-app-line/10 bg-app-surface-soft p-6 shadow-sm ring-1 ring-app-line/5 sm:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Studio workspace</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-app-accent-ink">Studio workspace</p>
             <div>
-              <h1 className="text-3xl font-semibold text-zinc-950">Operational console</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-zinc-600">
+              <h1 className="text-3xl font-semibold text-app-ink-strong">Operational console</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-7 text-app-ink-muted">
                 管理操作はすべてサーバー側で role を再検証したうえで実行します。公開面とは分離した運用ワークスペースとして扱います。
               </p>
             </div>
           </div>
           <div className="flex flex-col items-start gap-3 lg:items-end">
-            <span className="inline-flex rounded-full bg-white px-3 py-1 text-sm font-medium text-emerald-900 ring-1 ring-emerald-900/10">
+            <span className="inline-flex rounded-full bg-app-surface px-3 py-1 text-sm font-medium text-app-ink ring-1 ring-app-line/10">
               {currentUser.role}
             </span>
-            <Link href="/" className="text-sm font-medium text-emerald-900 underline decoration-emerald-300 underline-offset-4">
+            <Link href="/" className="text-sm font-medium text-app-ink underline decoration-emerald-300 underline-offset-4">
               Public site
             </Link>
           </div>

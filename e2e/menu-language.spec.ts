@@ -23,7 +23,7 @@ test("メニュー言語を切り替え、移動と再読み込み後も維持�
   await page.reload();
   await expect(page.getByRole("button", { name: "More", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "More", exact: true }).click();
-  await dialog.getByRole("combobox").selectOption("ja");
+  await dialog.getByRole("combobox", { name: "メニューの言語 Menu language" }).selectOption("ja");
   await dialog.getByRole("button", { name: "その他を閉じる", exact: true }).click();
   await expect(page.getByRole("button", { name: "その他", exact: true })).toBeFocused();
 });
@@ -64,7 +64,7 @@ test("別タブの言語変更を反映する", async ({ page, context }) => {
   const other = await context.newPage();
   await other.goto("/search");
   await page.getByRole("button", { name: "その他", exact: true }).click();
-  await page.getByRole("combobox").selectOption("en");
+  await page.getByRole("combobox", { name: "メニューの言語 Menu language" }).selectOption("en");
   await expect(other.getByRole("button", { name: "More", exact: true })).toBeVisible();
   await other.close();
 });

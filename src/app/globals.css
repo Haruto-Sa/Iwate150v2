@@ -12,8 +12,71 @@
   --lk-primary: #234f40;
   --lk-onprimary: #ffffff;
 }
+/* 色の用途を固定し、テーマごとの値だけを切り替える。メディアにはフィルターを掛けない。 */
+:root {
+  --app-surface: #ffffff;
+  --app-surface-soft: #f0f5ee;
+  --app-surface-tint: #e2ecde;
+  --app-surface-subtle: #eeeee4;
+  --app-ink: #234538;
+  --app-ink-strong: #172f26;
+  --app-ink-muted: #53665c;
+  --app-accent-ink: #30573f;
+  --app-line: #234538;
+  --app-line-soft: #c9dbc2;
+  --app-info: #075985;
+  --app-info-surface: #f0f9ff;
+  --app-danger: #991b1b;
+  --app-danger-surface: #fef2f2;
+  --app-warning: #78350f;
+  --app-warning-surface: #fffbeb;
+  --app-highlight: #a14432;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #101c17;
+  --foreground: #d9e8dc;
+  --app-surface: #1c2c26;
+  --app-surface-soft: #192921;
+  --app-surface-tint: #284235;
+  --app-surface-subtle: #14241c;
+  --app-ink: #d9e8dc;
+  --app-ink-strong: #edf3e9;
+  --app-ink-muted: #b6cabb;
+  --app-accent-ink: #a4c39c;
+  --app-line: #b6cabb;
+  --app-line-soft: #405c4a;
+  --app-info: #b7def6;
+  --app-info-surface: #1c303c;
+  --app-danger: #ffc8c4;
+  --app-danger-surface: #3d2425;
+  --app-warning: #f0d19c;
+  --app-warning-surface: #342c1d;
+  --app-highlight: #edaa92;
+  --lk-primary: #234f40;
+  --lk-onprimary: #ffffff;
+}
 @theme inline {
   --color-background: var(--background);
+  --color-app-canvas: var(--background);
+  --color-app-surface: var(--app-surface);
+  --color-app-surface-soft: var(--app-surface-soft);
+  --color-app-surface-tint: var(--app-surface-tint);
+  --color-app-surface-subtle: var(--app-surface-subtle);
+  --color-app-ink: var(--app-ink);
+  --color-app-ink-strong: var(--app-ink-strong);
+  --color-app-ink-muted: var(--app-ink-muted);
+  --color-app-accent-ink: var(--app-accent-ink);
+  --color-app-line: var(--app-line);
+  --color-app-line-soft: var(--app-line-soft);
+  --color-app-info: var(--app-info);
+  --color-app-info-surface: var(--app-info-surface);
+  --color-app-danger: var(--app-danger);
+  --color-app-danger-surface: var(--app-danger-surface);
+  --color-app-warning: var(--app-warning);
+  --color-app-warning-surface: var(--app-warning-surface);
+  --color-app-highlight: var(--app-highlight);
+
   --color-foreground: var(--foreground);
   --font-sans: var(--font-body), sans-serif;
   --font-display:
@@ -42,15 +105,15 @@ body {
   font-family: var(--font-body), sans-serif;
 }
 ::selection {
-  background: #dce8d3;
-  color: #172f26;
+  background: var(--app-surface-tint);
+  color: var(--app-ink-strong);
 }
 a,
 button {
   -webkit-tap-highlight-color: transparent;
 }
 :where(a, button, input, select, textarea, summary):focus-visible {
-  outline: 2px solid #a14432;
+  outline: 2px solid var(--app-highlight);
   outline-offset: 4px;
 }
 button,
@@ -69,15 +132,15 @@ textarea {
   min-width: 0;
 }
 .glass {
-  background-color: rgb(255 255 252 / 96%);
+  background-color: color-mix(in srgb, var(--app-surface) 96%, transparent);
 }
 .glass-nav {
-  background: #f6f5ef;
-  border-color: #234f4020;
+  background: var(--background);
+  border-color: color-mix(in srgb, var(--app-line) 15%, transparent);
 }
 @supports (backdrop-filter: blur(16px)) {
   .glass-nav {
-    background-color: rgb(246 245 239 / 88%);
+    background-color: color-mix(in srgb, var(--background) 88%, transparent);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
@@ -110,11 +173,11 @@ textarea {
 }
 .action-link-secondary {
   background: transparent;
-  color: #234f40;
-  box-shadow: inset 0 0 0 1px #234f4040;
+  color: var(--app-accent-ink);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-line) 25%, transparent);
 }
 .action-link-secondary:hover {
-  background: #e2ecde;
+  background: var(--app-surface-tint);
 }
 .interactive-lift {
   transition:

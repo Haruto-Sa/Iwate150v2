@@ -48,36 +48,36 @@ export function LegacyCalendarBoard({ events }: Props) {
   }, [maxDay, currentMonth, monthEvents]);
 
   return (
-    <div className="glass rounded-3xl border border-emerald-900/10 bg-white p-4 ring-1 ring-emerald-900/10 shadow-sm sm:p-5">
+    <div className="glass rounded-3xl border border-app-line/10 bg-app-surface p-4 ring-1 ring-app-line/10 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200/60">
+          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-app-surface-tint text-app-ink ring-1 ring-app-line-soft/60">
             <CalendarDays className="h-5 w-5" />
           </span>
           <div>
-            <p className="font-display text-xl text-emerald-950">イベント一覧</p>
-            <p className="text-xs text-emerald-900/65">日ごとの縦スクロール表示</p>
+            <p className="font-display text-xl text-app-ink-strong">イベント一覧</p>
+            <p className="text-xs text-app-ink-muted">日ごとの縦スクロール表示</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-full border border-emerald-900/10 bg-emerald-50 px-2 py-1 text-sm text-emerald-900/80">
+        <div className="flex items-center gap-2 rounded-full border border-app-line/10 bg-app-surface-soft px-2 py-1 text-sm text-app-ink/80">
           <Button
             variant="ghost"
             onClick={() =>
               setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
             }
             aria-label="previous month"
-            className="h-11 w-11 rounded-full p-0 hover:bg-emerald-100"
+            className="h-11 w-11 rounded-full p-0 hover:bg-app-surface-tint"
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <span className="px-2 font-semibold text-emerald-900">{monthLabel}</span>
+          <span className="px-2 font-semibold text-app-ink">{monthLabel}</span>
           <Button
             variant="ghost"
             onClick={() =>
               setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
             }
             aria-label="next month"
-            className="h-11 w-11 rounded-full p-0 hover:bg-emerald-100"
+            className="h-11 w-11 rounded-full p-0 hover:bg-app-surface-tint"
           >
             <ChevronRight className="h-5 w-5" />
           </Button>
@@ -96,20 +96,20 @@ export function LegacyCalendarBoard({ events }: Props) {
               key={date.toISOString()}
               className={`rounded-2xl border p-3 ${
                 isToday
-                  ? "border-emerald-400/60 bg-emerald-50 ring-1 ring-emerald-300/40"
-                  : "border-emerald-900/10 bg-white"
+                  ? "border-emerald-400/60 bg-app-surface-soft ring-1 ring-app-line-soft/40"
+                  : "border-app-line/10 bg-app-surface"
               }`}
             >
               <div className="flex gap-3">
                 <div className="w-16 shrink-0 text-center">
-                  <p className="text-xl font-semibold text-emerald-950">{day}</p>
+                  <p className="text-xl font-semibold text-app-ink-strong">{day}</p>
                   <p
                     className={`text-xs ${
                       weekday === 0
-                        ? "text-rose-600"
+                        ? "text-app-danger"
                         : weekday === 6
-                          ? "text-blue-600"
-                          : "text-emerald-900/65"
+                          ? "text-app-info"
+                          : "text-app-ink-muted"
                     }`}
                   >
                     {weekJa[weekday]}
@@ -122,19 +122,19 @@ export function LegacyCalendarBoard({ events }: Props) {
                 </div>
                 <div className="min-w-0 flex-1 space-y-1.5">
                   {list.length === 0 ? (
-                    <p className="text-sm text-emerald-900/50">イベントなし</p>
+                    <p className="text-sm text-app-ink-muted">イベントなし</p>
                   ) : (
                     list.map((ev) => (
                       <div
                         key={`${date.toISOString()}-${ev.id}`}
-                        className="rounded-xl border border-emerald-900/10 bg-emerald-50/60 px-3 py-2"
+                        className="rounded-xl border border-app-line/10 bg-app-surface-soft/60 px-3 py-2"
                       >
-                        <p className="text-sm font-semibold text-emerald-950">{ev.title}</p>
-                        <p className="mt-0.5 flex items-center gap-1 text-xs text-emerald-900/70">
+                        <p className="text-sm font-semibold text-app-ink-strong">{ev.title}</p>
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-app-ink-muted">
                           <MapPin className="h-3.5 w-3.5" />
                           {ev.location ?? "未設定"}
                         </p>
-                        <p className="mt-0.5 text-[11px] text-emerald-900/60">
+                        <p className="mt-0.5 text-[11px] text-app-ink-muted">
                           {ev.start_date}
                           {ev.end_date && ev.end_date !== ev.start_date ? ` – ${ev.end_date}` : ""}
                         </p>

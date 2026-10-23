@@ -47,7 +47,7 @@ export function FavoritesScreen() {
           {favorites.error && (
             <p
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-7 text-red-800"
+              className="rounded-xl border border-app-danger/30 bg-app-danger-surface p-4 text-sm leading-7 text-app-danger"
             >
               {favorites.error}
             </p>
@@ -55,7 +55,7 @@ export function FavoritesScreen() {
           {favorites.notice && (
             <p
               role="status"
-              className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-7"
+              className="rounded-xl border border-app-line-soft bg-app-surface-soft p-4 text-sm leading-7"
             >
               {favorites.notice}
             </p>
@@ -124,7 +124,7 @@ export function FavoritesScreen() {
                             return (
                               <article
                                 key={spot.id}
-                                className="overflow-hidden rounded-2xl border border-emerald-900/15 bg-white"
+                                className="overflow-hidden rounded-2xl border border-app-line/15 bg-app-surface"
                               >
                                 <div className="relative aspect-[3/2]">
                                   <TravelImage
@@ -177,7 +177,7 @@ export function FavoritesScreen() {
                     )}
                   </GlassCard>
                   {favorites.legacySpots.length > 0 && (
-                    <section className="rounded-2xl border border-emerald-900/15 bg-white p-5">
+                    <section className="rounded-2xl border border-app-line/15 bg-app-surface p-5">
                       <h2 className="font-display text-xl">
                         以前この端末に保存したスポット
                       </h2>
@@ -207,7 +207,7 @@ export function FavoritesScreen() {
                     </section>
                   )}
                   {favorites.hasOtherLegacyOwner && (
-                    <p className="text-sm leading-7 text-emerald-900/80">
+                    <p className="text-sm leading-7 text-app-ink/80">
                       以前の端末保存は元のアカウントで確認できます。このアカウントには追加していません。
                     </p>
                   )}

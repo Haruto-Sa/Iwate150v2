@@ -259,7 +259,7 @@ export function LeafletMap({
   }, [fitUserPos, markers, showUser]);
 
   return (
-    <div className={`relative z-0 isolate w-full overflow-hidden rounded-2xl border border-emerald-900/10 ${embedded ? "h-64" : "h-[60vh] shadow-xl ring-1 ring-white/10"}`}>
+    <div className={`relative z-0 isolate w-full overflow-hidden rounded-2xl border border-app-line/10 ${embedded ? "h-64" : "h-[60vh] shadow-xl ring-1 ring-white/10"}`}>
       <MapContainer
         key={centerKey}
         center={[center.lat, center.lng]}
@@ -316,7 +316,7 @@ export function LeafletMap({
                 )}
                 {spot.reference_url && (
                   <ConfirmedExternalLink
-                    className="text-emerald-600 underline underline-offset-2"
+                    className="text-app-accent-ink underline underline-offset-2"
                     href={spot.reference_url}
                   >
                     関連リンク
@@ -325,7 +325,7 @@ export function LeafletMap({
                 <div className="flex items-center gap-2">
                   {showDetailLinks && (
                     <a
-                      className="text-emerald-700 underline text-sm"
+                      className="text-app-accent-ink underline text-sm"
                       href={getSpotHref(spot)}
                     >
                       詳細を見る
@@ -352,12 +352,12 @@ export function LeafletMap({
         })}
         {userPos && userIcon && (
           <MapMarker position={[userPos.lat, userPos.lng]} icon={userIcon}>
-            <div className="text-sm font-semibold text-emerald-700">現在地</div>
+            <div className="text-sm font-semibold text-app-accent-ink">現在地</div>
           </MapMarker>
         )}
       </MapContainer>
       {embedded && tileFailed && (
-        <p role="status" className="absolute inset-x-3 top-3 z-[1000] rounded-lg bg-white px-3 py-2 text-sm text-emerald-950 shadow-sm">地図を読み込めません。ルート検索をご利用ください。</p>
+        <p role="status" className="absolute inset-x-3 top-3 z-[1000] rounded-lg bg-app-surface px-3 py-2 text-sm text-app-ink-strong shadow-sm">地図を読み込めません。ルート検索をご利用ください。</p>
       )}
     </div>
   );

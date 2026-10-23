@@ -206,11 +206,11 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
       {confirmation}
       <PageHeading title="地図" actions={<PageShortcut target="favorites" />} />
 
-      <div className="rounded-2xl border border-emerald-900/15 bg-white p-4">
+      <div className="rounded-2xl border border-app-line/15 bg-app-surface p-4">
         {hasSpots ? (
           <>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <label className="flex items-center gap-2 text-sm text-emerald-900/85">
+              <label className="flex items-center gap-2 text-sm text-app-ink/85">
                 <input
                   type="checkbox"
                   checked={showAllSpots}
@@ -219,7 +219,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
                 />
                 すべての観光地を表示する
               </label>
-              <label className="flex items-center gap-2 text-sm text-emerald-900/80">
+              <label className="flex items-center gap-2 text-sm text-app-ink/80">
                 <input
                   type="checkbox"
                   checked={autoUpdate}
@@ -253,12 +253,12 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
               </Button>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <label className="flex items-center justify-between gap-3 rounded-lg border border-emerald-900/10 bg-white/75 px-3 py-2 text-sm text-emerald-900/90">
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-app-line/10 bg-app-surface/75 px-3 py-2 text-sm text-app-ink/90">
                 <span>表示件数</span>
                 <select
                   value={nearbyTargetCount}
                   onChange={(event) => setNearbyTargetCount(Number(event.target.value))}
-                  className="rounded-md border border-emerald-900/15 bg-white px-2 py-2.5 text-emerald-900"
+                  className="rounded-md border border-app-line/15 bg-app-surface px-2 py-2.5 text-app-ink"
                 >
                   {TARGET_NEARBY_OPTIONS.map((count) => (
                     <option key={count} value={count}>
@@ -267,12 +267,12 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
                   ))}
                 </select>
               </label>
-              <label className="flex items-center justify-between gap-3 rounded-lg border border-emerald-900/10 bg-white/75 px-3 py-2 text-sm text-emerald-900/90">
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-app-line/10 bg-app-surface/75 px-3 py-2 text-sm text-app-ink/90">
                 <span>最大検索半径</span>
                 <select
                   value={maxSearchRadius}
                   onChange={(event) => setMaxSearchRadius(Number(event.target.value))}
-                  className="rounded-md border border-emerald-900/15 bg-white px-2 py-2.5 text-emerald-900"
+                  className="rounded-md border border-app-line/15 bg-app-surface px-2 py-2.5 text-app-ink"
                 >
                   {MAX_SEARCH_RADIUS_OPTIONS.map((radius) => (
                     <option key={radius} value={radius}>
@@ -284,17 +284,17 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
             </div>
 
             {locError && (
-              <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <div className="mt-2 rounded-lg border border-app-warning/30 bg-app-warning-surface px-3 py-2 text-xs text-app-warning">
                 {locError}
               </div>
             )}
             {routeNotice && (
-              <div role="alert" className="mt-2 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+              <div role="alert" className="mt-2 rounded-lg border border-app-info/30 bg-app-info-surface px-3 py-2 text-xs text-app-info">
                 {routeNotice}
               </div>
             )}
 
-            <div className="mt-4 overflow-hidden rounded-2xl border border-emerald-900/10">
+            <div className="mt-4 overflow-hidden rounded-2xl border border-app-line/10">
               <LeafletMap
                 center={mapCenter}
                 zoom={9}
@@ -306,7 +306,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
             </div>
           </>
         ) : (
-          <div className="rounded-2xl border border-dashed border-emerald-900/15 bg-white/70 px-4 py-8 text-center text-sm text-emerald-900/70">
+          <div className="rounded-2xl border border-dashed border-app-line/15 bg-app-surface/70 px-4 py-8 text-center text-sm text-app-ink-muted">
             地図に表示できるスポットを準備しています。検索からも旅先を探せます。
           </div>
         )}
@@ -325,11 +325,11 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
               icon={MapPin}
               badge={`${Math.round(spot.distance)} m`}
             >
-              <p className="line-clamp-2 text-sm text-emerald-900/80">{spot.description}</p>
+              <p className="line-clamp-2 text-sm text-app-ink/80">{spot.description}</p>
               <div className="mt-3 flex items-center gap-3">
                 <a
                   href={getSpotHref(spot)}
-                  className="inline-flex items-center gap-2 text-xs text-emerald-800 underline underline-offset-4"
+                  className="inline-flex items-center gap-2 text-xs text-app-accent-ink underline underline-offset-4"
                 >
                   詳細を見る
                 </a>
@@ -347,7 +347,7 @@ export function SpotSurface({ spots, focusSpotId = null }: Props) {
           ))
         ) : (
           <GlassCard title="公開スポットはまだありません" icon={MapPin}>
-            <p className="text-sm text-emerald-900/75">
+            <p className="text-sm text-app-ink/75">
               スポット情報が公開されると、ここから場所やルートを確認できます。
             </p>
           </GlassCard>

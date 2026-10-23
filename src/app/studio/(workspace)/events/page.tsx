@@ -37,13 +37,13 @@ export default async function StudioEventsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-zinc-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Events management</p>
-        <h2 className="mt-2 flex items-center gap-2 text-3xl font-semibold text-zinc-950">
-          <CalendarDays className="h-6 w-6 text-emerald-700" />
+      <section className="rounded-[28px] border border-app-line-soft bg-app-surface p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-app-accent-ink">Events management</p>
+        <h2 className="mt-2 flex items-center gap-2 text-3xl font-semibold text-app-ink-strong">
+          <CalendarDays className="h-6 w-6 text-app-accent-ink" />
           イベント CRUD
         </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-600">
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-app-ink-muted">
           開始日・終了日の整合性は API 側で検証し、一覧はページング付きでサーバーから返します。
         </p>
       </section>

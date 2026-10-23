@@ -40,9 +40,9 @@ export default async function Home() {
           __html: JSON.stringify(buildHomeJsonLd(events)),
         }}
       />
-      <section className="grid overflow-hidden rounded-[1.5rem] border border-emerald-900/15 bg-[#eeeee4] md:grid-cols-[.9fr_1.1fr]">
+      <section className="grid overflow-hidden rounded-[1.5rem] border border-app-line/15 bg-app-surface-subtle md:grid-cols-[.9fr_1.1fr]">
         <div className="flex flex-col justify-center px-6 py-8 sm:p-10 lg:p-12">
-          <h1 className="font-display text-3xl leading-relaxed text-emerald-950 lg:text-4xl">岩手の旅先</h1>
+          <h1 className="font-display text-3xl leading-relaxed text-app-ink-strong lg:text-4xl">岩手の旅先</h1>
           <div className="mt-7">
             <Link href="/search" className="action-link">
               旅先を探す
@@ -59,7 +59,7 @@ export default async function Home() {
             sizes="(max-width: 768px) 100vw, 55vw"
             className="object-cover"
           />
-          <figcaption className="absolute bottom-4 right-4 rounded-full bg-white/95 px-4 py-2 text-xs tracking-wider text-emerald-950">
+          <figcaption className="absolute bottom-4 right-4 rounded-full bg-app-surface/95 px-4 py-2 text-xs tracking-wider text-app-ink-strong">
             宮古市 / 三陸の海
           </figcaption>
         </figure>
@@ -67,7 +67,7 @@ export default async function Home() {
 
       <nav
         aria-label="旅の楽しみ方"
-        className="grid divide-y divide-emerald-900/15 border-y border-emerald-900/15 md:grid-cols-3 md:divide-x md:divide-y-0"
+        className="grid divide-y divide-app-line/15 border-y border-app-line/15 md:grid-cols-3 md:divide-x md:divide-y-0"
       >
         {[
           {
@@ -89,10 +89,10 @@ export default async function Home() {
           <Link
             key={item.href}
             href={item.href}
-            className="group flex items-center gap-4 px-3 py-4 transition-colors hover:bg-emerald-50 sm:px-6"
+            className="group flex items-center gap-4 px-3 py-4 transition-colors hover:bg-app-surface-soft sm:px-6"
           >
             <item.icon
-              className="h-5 w-5 shrink-0 text-emerald-800"
+              className="h-5 w-5 shrink-0 text-app-accent-ink"
               strokeWidth={1.5}
               aria-hidden="true"
             />
@@ -111,7 +111,7 @@ export default async function Home() {
           />
           <Link
             href="/search"
-            className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"
+            className="inline-flex min-h-11 items-center gap-2 text-sm text-app-accent-ink"
           >
             もっと探す
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -133,7 +133,7 @@ export default async function Home() {
           ))}
         </div>
         {featured.length === 0 && (
-          <p className="rounded-xl border border-emerald-900/15 p-6 text-sm">
+          <p className="rounded-xl border border-app-line/15 p-6 text-sm">
             旅先の情報を準備しています。
           </p>
         )}
@@ -145,12 +145,12 @@ export default async function Home() {
           <SectionTitle
             label="イベント"
           />
-          <ul className="divide-y divide-emerald-900/15 border-y border-emerald-900/15">
+          <ul className="divide-y divide-app-line/15 border-y border-app-line/15">
             {events.slice(0, 4).map((event) => (
               <li key={event.id} className="flex items-start gap-5 py-5">
                 <time
                   dateTime={event.start_date ?? undefined}
-                  className="shrink-0 border-l-2 border-[#a14432] pl-3 font-display text-xl tabular-nums text-emerald-800"
+                  className="shrink-0 border-l-2 border-app-highlight pl-3 font-display text-xl tabular-nums text-app-accent-ink"
                 >
                   {event.start_date?.slice(5).replace("-", "/") ?? "未定"}
                 </time>
@@ -158,7 +158,7 @@ export default async function Home() {
                   <h3 className="text-sm font-medium leading-6">
                     {event.title}
                   </h3>
-                  <p className="mt-1 text-xs leading-6 text-emerald-900/75">
+                  <p className="mt-1 text-xs leading-6 text-app-ink/75">
                     {event.location ?? "開催地は確認中"}
                     {event.end_date && event.end_date !== event.start_date
                       ? ` / ${event.end_date}まで`
@@ -169,13 +169,13 @@ export default async function Home() {
             ))}
           </ul>
           {events.length === 0 && (
-            <p className="text-sm text-emerald-900/80">
+            <p className="text-sm text-app-ink/80">
               近日開催予定のイベントはありません
             </p>
           )}
           <Link
             href="/search?tab=event"
-            className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"
+            className="inline-flex min-h-11 items-center gap-2 text-sm text-app-accent-ink"
           >
             イベントを探す
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

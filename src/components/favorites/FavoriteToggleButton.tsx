@@ -57,12 +57,12 @@ export function FavoriteToggleButton({ spotId }: Props) {
         }}
       >
         <Heart
-          className={`h-4 w-4 transition ${active ? "fill-current text-white" : "text-emerald-900"}`}
+          className={`h-4 w-4 transition ${active ? "fill-current text-white" : "text-app-ink"}`}
         />
         {active ? "お気に入り済み" : "お気に入りに残す"}
       </Button>
       {favorites.error && (
-        <p role="alert" className="text-sm text-red-800">
+        <p role="alert" className="text-sm text-app-danger">
           {favorites.error}
         </p>
       )}

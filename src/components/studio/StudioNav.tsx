@@ -30,7 +30,7 @@ export function StudioNav() {
             className={`inline-flex rounded-full px-4 py-2 text-sm font-medium transition ${
               isActive
                 ? "bg-emerald-900 text-white shadow-sm"
-                : "bg-white text-emerald-900 ring-1 ring-emerald-900/10 hover:bg-emerald-50"
+                : "bg-app-surface text-app-ink ring-1 ring-app-line/10 hover:bg-app-surface-soft"
             }`}
           >
             {item.label}

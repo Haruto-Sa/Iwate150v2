@@ -15,12 +15,12 @@ export function SectionTitle({ label, icon: Icon }: Props) {
   return (
     <div className="flex items-center gap-3">
       {Icon && (
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200/60">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-app-surface-tint text-app-ink ring-1 ring-app-line-soft/60">
           <Icon className="h-5 w-5" strokeWidth={1.8} />
         </span>
       )}
       <div>
-        <h2 className="font-display text-2xl leading-relaxed text-emerald-950">{label}</h2>
+        <h2 className="font-display text-2xl leading-relaxed text-app-ink-strong">{label}</h2>
       </div>
     </div>
   );

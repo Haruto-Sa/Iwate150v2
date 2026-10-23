@@ -18,11 +18,11 @@ export function SpotLocation({ spot }: { spot: Spot }) {
 
   return (
     <section aria-label="所在地" className="space-y-3">
-      <h2 className="text-lg font-semibold text-emerald-950">所在地</h2>
+      <h2 className="text-lg font-semibold text-app-ink-strong">所在地</h2>
       {route.ok ? (
         <LeafletMap center={{ lat: spot.lat, lng: spot.lng }} spots={[spot]} showUser={false} showImages={false} showDetailLinks={false} embedded />
       ) : (
-        <p role="status" className="text-sm text-emerald-900">所在地を確認できません。</p>
+        <p role="status" className="text-sm text-app-ink">所在地を確認できません。</p>
       )}
       <div className="flex flex-wrap gap-3">
         {route.ok && (

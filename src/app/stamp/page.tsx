@@ -38,7 +38,7 @@ export default function StampPage() {
         )}
       />
       {collection.privateError && (
-        <div className="space-y-3 rounded-2xl border border-red-200 bg-red-50 p-5">
+        <div className="space-y-3 rounded-2xl border border-app-danger/30 bg-app-danger-surface p-5">
           <p role="alert">{collection.privateError}</p>
           <Button variant="outline" onClick={collection.reload}>
             進捗をもう一度読み込む
@@ -63,7 +63,7 @@ export default function StampPage() {
           {collection.isSample && (
             <div
               role="status"
-              className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-7"
+              className="rounded-2xl border border-app-warning/30 bg-app-warning-surface p-5 text-sm leading-7"
             >
               現在はサンプルの対象を表示しています。収集・保存・詳細表示はできません。
               <Button
@@ -87,7 +87,7 @@ export default function StampPage() {
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={percent}
-                className="h-3 overflow-hidden rounded-full bg-emerald-100"
+                className="h-3 overflow-hidden rounded-full bg-app-surface-tint"
               >
                 <div
                   className="h-full bg-emerald-800"
@@ -127,7 +127,7 @@ export default function StampPage() {
                 stampProgressKnown={personalReady}
               />
             ) : (
-              <p className="rounded-2xl bg-emerald-50 p-5">
+              <p className="rounded-2xl bg-app-surface-soft p-5">
                 表示できる対象スポットがありません。時間をおいて再読み込みしてください。
               </p>
             )}
@@ -148,7 +148,7 @@ export default function StampPage() {
               {collection.busy ? "現在地・保存を確認中…" : "位置情報を取得"}
             </Button>
             {collection.locationError && (
-              <p role="alert" className="mt-3 text-sm text-red-800">
+              <p role="alert" className="mt-3 text-sm text-app-danger">
                 {collection.locationError}
               </p>
             )}
@@ -167,7 +167,7 @@ export default function StampPage() {
               {collection.nearby.map((spot) => (
                 <li
                   key={spot.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-900/15 bg-white p-4"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-app-line/15 bg-app-surface p-4"
                 >
                   <div>
                     {collection.isSample ? (
@@ -212,7 +212,7 @@ export default function StampPage() {
             {collection.message && (
               <p
                 role={collection.message.success ? "status" : "alert"}
-                className={`mt-4 rounded-xl p-3 text-sm ${collection.message.success ? "bg-emerald-50" : "bg-red-50 text-red-800"}`}
+                className={`mt-4 rounded-xl p-3 text-sm ${collection.message.success ? "bg-app-surface-soft" : "bg-app-danger-surface text-app-danger"}`}
               >
                 {collection.message.text}
               </p>
@@ -232,7 +232,7 @@ export default function StampPage() {
               {progress.groups.map(({ city, spots, total, earned }) => (
                 <details
                   key={city.id}
-                  className="rounded-2xl border border-emerald-900/15 bg-white p-4"
+                  className="rounded-2xl border border-app-line/15 bg-app-surface p-4"
                 >
                   <summary className="min-h-11 cursor-pointer py-2">
                     <span className="font-medium">{city.name}</span>
@@ -244,7 +244,7 @@ export default function StampPage() {
                           : `対象 ${total}スポット`}
                     </span>
                   </summary>
-                  <ul className="space-y-3 border-t border-emerald-900/10 pt-3">
+                  <ul className="space-y-3 border-t border-app-line/10 pt-3">
                     {spots.map((spot) => (
                       <li
                         key={spot.id}

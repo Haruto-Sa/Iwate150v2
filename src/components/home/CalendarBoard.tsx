@@ -78,7 +78,7 @@ export function CalendarBoard({ events }: Props) {
   const monthLabel = `${currentMonth.getFullYear()}年 ${String(currentMonth.getMonth() + 1).padStart(2, "0")}月`;
 
   return (
-    <div className="rounded-2xl border border-emerald-900/15 bg-white p-3 sm:p-5">
+    <div className="rounded-2xl border border-app-line/15 bg-app-surface p-3 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex w-full items-center justify-between gap-1 text-sm">
           <Button
@@ -120,7 +120,7 @@ export function CalendarBoard({ events }: Props) {
           </Button>
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-7 text-center text-xs text-emerald-900/70">
+      <div className="mt-4 grid grid-cols-7 text-center text-xs text-app-ink-muted">
         {["日", "月", "火", "水", "木", "金", "土"].map((day) => (
           <span key={day} className="py-2">
             {day}
@@ -147,14 +147,14 @@ export function CalendarBoard({ events }: Props) {
               aria-current={isToday ? "date" : undefined}
               aria-controls="calendar-day-events"
               aria-label={`${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日、イベント${count}件`}
-              className={`flex min-h-14 flex-col items-center justify-center rounded-lg border transition-colors ${isSelected ? "border-emerald-800 bg-emerald-800 text-white" : isToday ? "border-[#a14432] bg-[#fbf5ed] text-emerald-950" : "border-transparent text-emerald-950 hover:bg-emerald-50"}`}
+              className={`flex min-h-14 flex-col items-center justify-center rounded-lg border transition-colors ${isSelected ? "border-emerald-800 bg-emerald-800 text-white" : isToday ? "border-app-highlight bg-app-warning-surface text-app-ink-strong" : "border-transparent text-app-ink-strong hover:bg-app-surface-soft"}`}
             >
               <span className={isToday ? "font-bold" : ""}>
                 {date.getDate()}
               </span>
               <span
                 aria-hidden="true"
-                className={`mt-1 h-1 w-1 rounded-full ${count ? (isSelected ? "bg-white" : "bg-[#a14432]") : "bg-transparent"}`}
+                className={`mt-1 h-1 w-1 rounded-full ${count ? (isSelected ? "bg-app-surface" : "bg-[#a14432]") : "bg-transparent"}`}
               />
             </button>
           );
@@ -162,7 +162,7 @@ export function CalendarBoard({ events }: Props) {
       </div>
       <div
         id="calendar-day-events"
-        className={popupDate ? "mt-4 border-t border-emerald-900/15 pt-4" : undefined}
+        className={popupDate ? "mt-4 border-t border-app-line/15 pt-4" : undefined}
         aria-live="polite"
       >
         {popupDate ? (
@@ -173,11 +173,11 @@ export function CalendarBoard({ events }: Props) {
             {selectedEvents.length ? (
               <ul className="mt-3 space-y-3">
                 {selectedEvents.map((event) => (
-                  <li key={event.id} className="rounded-xl bg-emerald-50 p-3">
+                  <li key={event.id} className="rounded-xl bg-app-surface-soft p-3">
                     <p className="text-sm font-medium leading-6">
                       {event.title}
                     </p>
-                    <p className="mt-1 flex items-center gap-1 text-xs leading-6 text-emerald-900/80">
+                    <p className="mt-1 flex items-center gap-1 text-xs leading-6 text-app-ink/80">
                       <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
                       {event.location ?? "開催地は確認中"}
                     </p>
@@ -185,7 +185,7 @@ export function CalendarBoard({ events }: Props) {
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-sm leading-7 text-emerald-900/75">
+              <p className="mt-2 text-sm leading-7 text-app-ink/75">
                 この日に登録されたイベントはありません。
               </p>
             )}

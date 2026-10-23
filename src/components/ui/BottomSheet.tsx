@@ -56,21 +56,21 @@ export function BottomSheet({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      className="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-[2rem] bg-[#f6f5ef] text-emerald-950 backdrop:bg-black/35"
+      className="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-[2rem] bg-app-canvas text-app-ink-strong backdrop:bg-black/35"
     >
       <section
         className={`px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4 ${className}`}
       >
         <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-emerald-900/15" />
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 id={titleId} className="font-display text-2xl text-[#0f1c1a]">
+          <h2 id={titleId} className="font-display text-2xl text-app-ink-strong">
             {title}
           </h2>
           <Button
             aria-label={closeLabel ?? `${title} を閉じる`}
             variant="ghost"
             size="sm"
-            className="rounded-full border border-emerald-900/10 bg-white/70"
+            className="rounded-full border border-app-line/10 bg-app-surface/70"
             onClick={onClose}
           >
             <X className="h-4 w-4" />

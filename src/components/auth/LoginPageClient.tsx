@@ -85,12 +85,12 @@ export function LoginPageClient() {
       <PageHeading title="ログイン" actions={<Link href="/map" className="action-link action-link-secondary">ログインせずに旅先を探す</Link>} />
 
       <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="rounded-[28px] border border-emerald-900/10 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-[#0f1c1a]">アカウントでログイン</h2>
+        <div className="rounded-[28px] border border-app-line/10 bg-app-surface p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-app-ink-strong">アカウントでログイン</h2>
 
           <div className="mt-5 space-y-3">
             {providers === null ? (
-              <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              <p className="rounded-2xl border border-app-line-soft bg-app-surface-soft px-4 py-3 text-sm text-app-ink">
                 ログイン方法を確認中です...
               </p>
             ) : (
@@ -110,30 +110,30 @@ export function LoginPageClient() {
                 ))
             )}
             {providers !== null && availableProviders.filter((provider) => provider.id !== "nodemailer").length === 0 && (
-              <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="rounded-2xl border border-app-warning/30 bg-app-warning-surface px-4 py-3 text-sm text-app-warning">
                 アカウントでのログインは現在利用できません。
               </p>
             )}
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-emerald-900/10 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-[#0f1c1a]">メールでログイン</h2>
+        <div className="rounded-[28px] border border-app-line/10 bg-app-surface p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-app-ink-strong">メールでログイン</h2>
 
           {providers === null ? (
-            <p className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            <p className="mt-5 rounded-2xl border border-app-line-soft bg-app-surface-soft px-4 py-3 text-sm text-app-ink">
               メールログイン設定を確認中です...
             </p>
           ) : providers?.nodemailer ? (
             <div className="mt-5 space-y-3">
-              <label className="block text-sm font-medium text-zinc-700">
+              <label className="block text-sm font-medium text-app-ink-muted">
                 メールアドレス
                 <input
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   required
-                  className="mt-1 w-full rounded-2xl border border-emerald-900/10 px-4 py-3 text-sm text-zinc-900"
+                  className="mt-1 w-full rounded-2xl border border-app-line/10 px-4 py-3 text-sm text-app-ink-strong"
                   placeholder="you@example.com"
                 />
               </label>
@@ -150,20 +150,20 @@ export function LoginPageClient() {
               </Button>
             </div>
           ) : (
-            <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="mt-5 rounded-2xl border border-app-warning/30 bg-app-warning-surface px-4 py-3 text-sm text-app-warning">
               メールでのログインは現在利用できません。
             </p>
           )}
 
           {infoMessage && (
-            <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            <p className="mt-4 rounded-2xl border border-app-line-soft bg-app-surface-soft px-4 py-3 text-sm text-app-ink">
               {infoMessage}
             </p>
           )}
 
           {status === "authenticated" && user && (
-            <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-              <p className="text-sm text-emerald-900">
+            <div className="mt-5 rounded-2xl border border-app-line-soft bg-app-surface-soft p-4">
+              <p className="text-sm text-app-ink">
                 ログイン中: {user.email ?? user.name ?? "Traveler"}
               </p>
               <div className="mt-3 flex flex-wrap gap-3">

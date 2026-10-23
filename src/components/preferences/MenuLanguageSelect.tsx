@@ -13,7 +13,7 @@ export function MenuLanguageSelect() {
     <label className="flex flex-wrap items-center justify-between gap-3 text-sm">
       <span><span lang="ja">メニューの言語</span>{" "}<span lang="en" className="ml-2">Menu language</span></span>
       <select value={language} onChange={(event) => setMenuLanguage(event.target.value === "en" ? "en" : "ja")}
-        className="min-h-11 rounded-xl border border-emerald-900/20 bg-white px-3 text-emerald-950">
+        className="min-h-11 rounded-xl border border-app-line/20 bg-app-surface px-3 text-app-ink-strong">
         <option lang="ja" value="ja">日本語</option>
         <option lang="en" value="en">English</option>
       </select>

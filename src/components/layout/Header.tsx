@@ -40,13 +40,13 @@ export function Header() {
 
   if (secretWorkspaceRoute) {
     return (
-      <header className="sticky top-0 z-[1200] border-b border-zinc-200 bg-white/90 shadow-sm backdrop-blur-xl">
+      <header className="sticky top-0 z-[1200] border-b border-app-line-soft bg-app-surface/90 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href={SECRET_WORKSPACE_PATH} className="text-sm font-semibold tracking-wide text-zinc-900">
+          <Link href={SECRET_WORKSPACE_PATH} className="text-sm font-semibold tracking-wide text-app-ink-strong">
             Studio Workspace
           </Link>
           <div className="flex items-center gap-2 text-sm">
-            <Link href="/" className="rounded-md border border-zinc-300 px-3 py-1.5 text-zinc-700">
+            <Link href="/" className="rounded-md border border-app-line-soft px-3 py-1.5 text-app-ink-muted">
               Public Site
             </Link>
             <Button variant="outline" size="sm" onClick={() => signOut()}>
@@ -60,9 +60,9 @@ export function Header() {
 
   return (
     <header lang={language} className="glass-nav sticky top-0 z-[1200] border-b">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[1300] focus:rounded-lg focus:bg-white focus:p-3">{messages.skipContent}</a>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[1300] focus:rounded-lg focus:bg-app-surface focus:p-3">{messages.skipContent}</a>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="group flex min-w-0 items-center gap-3 text-[#0f1c1a]">
+        <Link href="/" className="group flex min-w-0 items-center gap-3 text-app-ink-strong">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-800 text-white">
             <Compass className="h-5 w-5 text-white" strokeWidth={1.8} />
           </span>
@@ -72,7 +72,7 @@ export function Header() {
         </Link>
 
         <div className="flex shrink-0 items-center gap-2">
-          <nav aria-label={messages.mainPages} className="hidden items-center gap-2 text-sm font-medium text-[#0f1c1a] md:flex">
+          <nav aria-label={messages.mainPages} className="hidden items-center gap-2 text-sm font-medium text-app-ink-strong md:flex">
             {PUBLIC_NAV_ITEMS.map((item) => {
               const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
               return (
@@ -82,8 +82,8 @@ export function Header() {
                   aria-current={active ? "page" : undefined}
                   className={`tap-feedback inline-flex min-h-11 items-center rounded-full px-3 py-2 transition duration-200 ${
                     active
-                      ? "bg-emerald-100 text-emerald-950"
-                      : "text-emerald-900/70 hover:bg-emerald-50"
+                      ? "bg-app-surface-tint text-app-ink-strong"
+                      : "text-app-ink-muted hover:bg-app-surface-soft"
                   }`}
                 >
                   {messages[item.messageKey]}

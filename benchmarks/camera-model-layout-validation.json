@@ -1,0 +1,158 @@
+{
+  "scope": "macOS Playwright browser profiles with public portrait canvas stream, not physical devices",
+  "sourceSHA256": {
+    "src/lib/cameraModelLayout.ts": "53b63307b027819695854afe5696dbd258ad14f37537bc7d8dc0d5347e107a12",
+    "src/lib/cameraModel.ts": "af42fc6acfc9e2742dd308b539bf684abb8614c2db83e7e05d994242b587bfbe",
+    "src/components/camera/CameraCapture.tsx": "9d6832f7c8fc96c5ad8698262ed93613585f7933dcc98fa9412c90f18c3832ea"
+  },
+  "geometryCases": 240,
+  "unitTests": 229,
+  "cameraE2E": 60,
+  "recoveryE2E": 4,
+  "probes": [
+    {
+      "models": 1,
+      "environment": "iphone",
+      "photo": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      },
+      "recordings": [
+        {
+          "facing": "user",
+          "width": 635,
+          "height": 480,
+          "durationMs": 2370,
+          "bytes": 635737,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "modelPixels": 8807
+        },
+        {
+          "facing": "environment",
+          "width": 635,
+          "height": 480,
+          "durationMs": 2358.3333333333335,
+          "bytes": 594276,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "modelPixels": 8654
+        }
+      ],
+      "note": "Measured before numeric tie tolerance; otherwise same placement algorithm. Final build was rechecked with five models."
+    },
+    {
+      "models": 1,
+      "environment": "android",
+      "photo": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      },
+      "recordings": [
+        {
+          "facing": "user",
+          "width": 640,
+          "height": 480,
+          "durationMs": 2528.467,
+          "bytes": 87157,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "modelPixels": 8936
+        },
+        {
+          "facing": "environment",
+          "width": 640,
+          "height": 480,
+          "durationMs": 2550.933,
+          "bytes": 82683,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "modelPixels": 8773
+        }
+      ],
+      "note": "Measured before numeric tie tolerance; otherwise same placement algorithm. Final build was rechecked with five models."
+    },
+    {
+      "models": 5,
+      "environment": "iphone",
+      "photo": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo",
+          "karin",
+          "kerohira",
+          "goshodon"
+        ]
+      },
+      "recordings": [
+        {
+          "facing": "user",
+          "width": 635,
+          "height": 480,
+          "durationMs": 2351.6666666666665,
+          "bytes": 538506,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "modelPixels": 14856
+        },
+        {
+          "facing": "environment",
+          "width": 635,
+          "height": 480,
+          "durationMs": 2341.666666666667,
+          "bytes": 509940,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "modelPixels": 14733
+        }
+      ]
+    },
+    {
+      "models": 5,
+      "environment": "android",
+      "photo": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo",
+          "karin",
+          "kerohira",
+          "goshodon"
+        ]
+      },
+      "recordings": [
+        {
+          "facing": "user",
+          "width": 640,
+          "height": 480,
+          "durationMs": 3669.433,
+          "bytes": 64665,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "modelPixels": 15085
+        },
+        {
+          "facing": "environment",
+          "width": 640,
+          "height": 480,
+          "durationMs": 3753.3669999999997,
+          "bytes": 54952,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "modelPixels": 14958
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Pixel intersection sampled before recording, not every video frame.",
+    "Portrait fixture motion is not human tracking or device validation.",
+    "Earlier approximately 50-second startup claim was withdrawn: marks were captured after recording and camera restart, and their page-relative timestamps were mistaken for initial elapsed time. See camera-startup-validation.json for the corrected initial snapshot.",
+    "Model orientation, materials, and tracking gaps are separate remaining checks."
+  ]
+}

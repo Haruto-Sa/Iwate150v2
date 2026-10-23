@@ -8,6 +8,27 @@ export const CAMERA_MODEL_TIMEOUT_MS = 20_000;
 const MAX_ASSET_BYTES = 32 * 1024 * 1024;
 
 /**
+ * モデルの中心補正を追従用transformから分離し、最長辺を1に正規化する。
+ * @param object - 読み込んだカメラ専用モデル
+ * @returns 位置・拡大率を変更しても原点の補正を保持する親グループ
+ * @example scene.add(normalizeCameraModel(object));
+ */
+export function normalizeCameraModel(object: THREE.Object3D): THREE.Group {
+  const box = new THREE.Box3().setFromObject(object);
+  const size = box.getSize(new THREE.Vector3());
+  const scale = 1 / (Math.max(size.x, size.y, size.z) || 1);
+  const centered = new THREE.Group();
+  centered.add(object);
+  centered.position.copy(box.getCenter(new THREE.Vector3())).negate();
+  const model = new THREE.Group();
+  model.add(centered);
+  model.scale.setScalar(scale);
+  model.userData.normalizeScale = scale;
+  model.userData.normalizedSize = size.multiplyScalar(scale);
+  return model;
+}
+
+/**
  * カメラ専用モデルのgeometry/material/textureを重複なく解放する。
  * @param object - この画面が所有するモデル
  * @returns なし

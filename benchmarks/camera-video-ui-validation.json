@@ -1,0 +1,67 @@
+{
+  "scope": "macOS Playwright engine/device profiles; public portrait translated during recording; actual UI start/stop/save; not physical devices",
+  "sourceSha256": {
+    "src/components/camera/CameraCapture.tsx": "a9943ccba764f1af19486d46e2b49b47f29514b8d45821bdeeda700f2f126bab",
+    "src/lib/cameraRecording.ts": "e52e3f031c7bb65c426ac3d638d65f9b3be5e4c5b36e53f61bc7b1e94f487990"
+  },
+  "decoded": [
+    {
+      "file": "video-ui-validation.json.android-environment.mp4",
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 640,
+          "height": 480,
+          "avg_frame_rate": "170000/30621",
+          "duration": "3.062100",
+          "nb_read_frames": "17"
+        }
+      ]
+    },
+    {
+      "file": "video-ui-validation.json.android-user.mp4",
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 640,
+          "height": 480,
+          "avg_frame_rate": "20000/3041",
+          "duration": "2.736900",
+          "nb_read_frames": "18"
+        }
+      ]
+    },
+    {
+      "file": "video-ui-validation.json.iphone-environment.mp4",
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 634,
+          "height": 480,
+          "avg_frame_rate": "3960/289",
+          "duration": "2.408333",
+          "nb_read_frames": "33"
+        }
+      ]
+    },
+    {
+      "file": "video-ui-validation.json.iphone-user.mp4",
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 634,
+          "height": 480,
+          "avg_frame_rate": "150/11",
+          "duration": "2.420000",
+          "nb_read_frames": "33"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Single model is clipped at top, inherited preview placement issue.",
+    "Android user-mode frame at 1.5s has no model; continuous tracking is not established.",
+    "Encoded frame rates are below requested 15fps; not a performance target pass.",
+    "WebKit direct blob-URL fetch failed in probe; normal save link successfully downloaded all files."
+  ]
+}

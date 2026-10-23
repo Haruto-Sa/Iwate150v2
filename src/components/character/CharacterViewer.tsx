@@ -949,7 +949,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <Minus className="h-3.5 w-3.5" />
-              <span className="text-[11px]">縮小</span>
+              <span className="text-[11px] whitespace-nowrap">縮小</span>
             </Button>
             <Button
               variant="ghost"
@@ -958,7 +958,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <RotateCw className="h-3.5 w-3.5" />
-              <span className="text-[11px]">{isRotating ? "停止" : "回転"}</span>
+              <span className="text-[11px] whitespace-nowrap">{isRotating ? "停止" : "回転"}</span>
             </Button>
             <Button
               variant="ghost"
@@ -967,7 +967,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span className="text-[11px]">拡大</span>
+              <span className="text-[11px] whitespace-nowrap">拡大</span>
             </Button>
             <Button
               variant="ghost"
@@ -976,7 +976,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span className="text-[11px]">リセット</span>
+              <span className="text-[11px] whitespace-nowrap">リセット</span>
             </Button>
           </div>
         </div>

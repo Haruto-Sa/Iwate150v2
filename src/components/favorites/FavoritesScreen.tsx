@@ -40,6 +40,7 @@ export function FavoritesScreen() {
           </>
         }
       />
+      {favorites.isAuthenticated && <Link href="/account" className="action-link action-link-secondary">保存データを削除</Link>}
       {!favorites.isReady ? (
         <p role="status">お気に入りを読み込んでいます。</p>
       ) : (

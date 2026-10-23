@@ -1,5 +1,7 @@
 "use client";
 
+import { getGuidePath } from "@/lib/pageGuides";
+import { usePageGuideCompleted } from "@/hooks/usePageGuideCompleted";
 import { useMenuLanguage } from "@/lib/menuLanguage";
 
 import { useMemo, useState } from "react";
@@ -21,6 +23,7 @@ import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 export function PwaInstallPrompt() {
   const { language, messages } = useMenuLanguage();
   const pathname = usePathname();
+  const pageGuideCompleted = usePageGuideCompleted(getGuidePath(pathname));
   const isMobileViewport = useIsMobileViewport();
   const onboardingCompleted = useOnboardingCompleted();
   const { dismissForDays, isIosSafari, promptInstall, shouldShow } = useInstallPrompt();
@@ -32,7 +35,7 @@ export function PwaInstallPrompt() {
     [pathname]
   );
 
-  if (!shouldShow || !isOpen || hiddenRoute || (isMobileViewport && !onboardingCompleted)) {
+  if (!pageGuideCompleted || !shouldShow || !isOpen || hiddenRoute || (isMobileViewport && !onboardingCompleted)) {
     return null;
   }
 

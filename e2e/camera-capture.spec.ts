@@ -172,9 +172,9 @@ test.describe("モデルの通信障害", () => {
     const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
     await expect(shutter).toBeEnabled({ timeout: 15000 });
     await page.getByRole("button", { name: "そばっち", exact: true }).click();
-    // 初期化待ちと初回推論を区別する。CIのソフトウェアGPUでは推論単体が約16秒かかる。
-    await expect.poll(() => page.evaluate(() => performance.getEntriesByName("iwate-camera:face:first-send").length), { timeout: 15000 }).toBe(1);
-    await expect(page.getByRole("status").filter({ hasText: "顔をカメラに向ける" })).toBeVisible({ timeout: 20000 });
+    // native初回推論中はmain threadが止まり、開始markのpoll自体も返らない。
+    // 初期化・モデル準備・推論を含むUIの復帰を一つの期限で検証する。
+    await expect(page.getByRole("status").filter({ hasText: "顔をカメラに向ける" })).toBeVisible({ timeout: 30000 });
     expect(await page.evaluate(() => performance.getEntriesByName("iwate-camera:face:worker-unavailable").length)).toBe(1);
     await expect(shutter).toBeDisabled();
     await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();

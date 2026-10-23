@@ -39,6 +39,10 @@ vi.mock("@/components/home/HomeCalendarSwitcher", () => ({
 
 vi.mock("@/lib/storage", () => ({
   getImageUrl: (path: string) => path,
+
+}));
+
+vi.mock("@/lib/storageServer", () => ({
   resolveServerStorageUrls: vi.fn().mockResolvedValue(new Map<string, string>()),
 }));
 

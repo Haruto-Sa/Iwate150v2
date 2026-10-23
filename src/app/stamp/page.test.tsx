@@ -13,7 +13,7 @@ const api = vi.hoisted(() => ({
 vi.mock("@/components/auth/SessionProvider", () => ({
   useAuthSession: () => session(),
 }));
-vi.mock("@/lib/supabaseClient", () => api);
+vi.mock("@/lib/privateUserClient", () => api);
 vi.mock("next/dynamic", () => ({
   default: () => () => <div aria-label="スタンプ地図" />,
 }));

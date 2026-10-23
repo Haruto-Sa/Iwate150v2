@@ -53,4 +53,18 @@ describe("fetchSpots", () => {
 
     expect(spots).toEqual([]);
   });
+  it("公開検索の既定50件とスポット・イベントの2ページ目を維持する", async () => {
+    resetSupabaseEnv();
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { searchSpots, searchEvents } = await import("./supabaseClient");
+    for (const search of [searchSpots, searchEvents]) {
+      const all = await search({});
+      expect(all.pageSize).toBe(50);
+      expect(all.items.length).toBeGreaterThan(1);
+      const second = await search({ page: 2, pageSize: 1 });
+      expect(second.items).toEqual([all.items[1]]);
+      expect(second).toMatchObject({ page: 2, pageSize: 1, total: all.total, hasNext: all.total > 2 });
+    }
+  });
+
 });

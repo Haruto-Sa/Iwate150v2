@@ -24,6 +24,7 @@ export function normalizeCameraModel(object: THREE.Object3D): THREE.Group {
   model.add(centered);
   model.scale.setScalar(scale);
   model.userData.normalizeScale = scale;
+  model.userData.normalizedSize = size.multiplyScalar(scale);
   return model;
 }
 

@@ -392,3 +392,46 @@ test("録画非対応でも写真撮影を利用できる", async ({ page }) => 
   await page.getByRole("button", { name: "写真を撮る", exact: true }).click();
   await expect(page).toHaveURL(/\/camera\/edit$/);
 });
+
+test.describe("モデル配置の余白", () => {
+  test.use({ serviceWorkers: "block" });
+  test("余白がない間は撮影を止め、顔が小さくなるとモデル付きで撮影できる", async ({ page }) => {
+    await page.addInitScript(() => {
+      Reflect.deleteProperty(Navigator.prototype, "serviceWorker");
+      const OriginalWorker = window.Worker;
+      window.Worker = class extends OriginalWorker {
+        /**
+         * 検証用の顔矩形を切り替えるWorker参照だけを保持する。
+         * @param url - Worker URL
+         * @param options - Worker設定
+         * @example new Worker(url);
+         */
+        constructor(url: string | URL, options?: WorkerOptions) {
+          super(url, options);
+          Object.assign(window, { layoutTestWorker: this });
+        }
+      };
+    });
+    await page.route("**/mediapipe/face_mesh/worker.js", (route) => route.fulfill({
+      contentType: "application/javascript",
+      body: `let face = [[0,0],[1,1]];
+        self.onmessage = ({data}) => {
+          if (data.type === 'init') self.postMessage({type:'ready'});
+          else if (data.type === 'resize-fixture') face = [[0.35,0.2],[0.65,0.6]];
+          else { data.image.close(); self.postMessage({type:'result',multiFaceLandmarks:[face.map(([x,y])=>({x,y,z:0}))]}); }
+        };`,
+    }));
+    await page.goto("/camera");
+    const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
+    await expect(shutter).toBeEnabled({ timeout: 15000 });
+    await page.getByRole("button", { name: "そばっち", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "少し離れる" })).toBeVisible({ timeout: 15000 });
+    await expect(shutter).toBeDisabled();
+    await page.evaluate(() => (window as unknown as { layoutTestWorker: Worker }).layoutTestWorker.postMessage({ type: "resize-fixture" }));
+    await expect(shutter).toBeEnabled();
+    await shutter.click();
+    await expect(page).toHaveURL(/\/camera\/edit$/);
+    expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem("capturedModels")!))).toEqual(["sobacchi"]);
+    await expect(page.getByRole("img", { name: "撮影した岩手旅の写真" })).toBeVisible();
+  });
+});

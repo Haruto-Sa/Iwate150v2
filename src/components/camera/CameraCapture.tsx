@@ -16,6 +16,8 @@ import { loadCameraModel, disposeCameraModel, normalizeCameraModel } from "@/lib
 
 import { CAMERA_VIDEO_MAX_EDGE, CAMERA_VIDEO_MAX_MS, getCameraRecordingMime, startCameraRecording, type CameraRecording } from "@/lib/cameraRecording";
 
+import { layoutCameraModels } from "@/lib/cameraModelLayout";
+
 type Detection = { x: number; y: number; width: number; height: number } | null;
 
 type FaceMeshInstance = CameraFaceTracker;
@@ -875,63 +877,28 @@ export function CameraCapture() {
         }
       }
 
+      const loadedModels = models.filter((id) => modelMapRef.current[id]);
+      const sizeMultiplier = models.length <= 2 ? 1 : models.length <= 4 ? 0.85 : 0.7;
+      const slots = hasFace ? layoutCameraModels({
+        x: (det!.x - offsetX) * scaleX, y: (det!.y - offsetY) * scaleY,
+        width: det!.width * scaleX, height: det!.height * scaleY,
+      }, loadedModels.map((id) => {
+        const size = modelMapRef.current[id].userData.normalizedSize as THREE.Vector3;
+        const depth = size.z * sizeMultiplier / (2 * dist);
+        // 前面の頂点は中心より大きく投影される。画面端でも収まる外形を確保する。
+        return {
+          width: (size.x * sizeMultiplier / frustumWidth + depth) / (1 - depth),
+          height: (size.y * sizeMultiplier / frustumHeight + depth) / (1 - depth),
+        };
+      })) : [];
       Object.entries(modelMapRef.current).forEach(([id, obj]) => {
-        const isSelected = models.includes(id);
-        if (isSelected && hasFace) {
-          obj.visible = true;
-          // ビデオ空間での顔中心・サイズ
-          const cx = det!.x + det!.width / 2;
-          const cy = det!.y + det!.height / 2;
-          const w = det!.width;
-          const h = det!.height;
-
-          // ビデオ空間 → 表示空間に変換（object-cover クロップを補正）
-          const displayCx = (cx - offsetX) * scaleX;
-          const displayCy = (cy - offsetY) * scaleY;
-          const faceDW = w * scaleX;
-          const faceDH = h * scaleY;
-
-          const screenMargin = 0.08;
-          const clamp = (v: number) => Math.min(1 - screenMargin, Math.max(screenMargin, v));
-          const n = models.length || 1;
-          const idx = models.indexOf(id);
-          const startAngle = n === 2 ? 0 : -90;
-          const angle = (startAngle + (360 / n) * idx) * (Math.PI / 180);
-
-          // 顔認識の矩形枠線を基準に、その辺のすぐ外側にモデルを配置
-          const hw = faceDW / 2; // 枠の半幅
-          const hh = faceDH / 2; // 枠の半高さ
-          const cosA = Math.cos(angle);
-          const sinA = Math.sin(angle);
-          // 角度方向で矩形の辺に到達する距離を計算
-          const absCos = Math.abs(cosA);
-          const absSin = Math.abs(sinA);
-          let edgeDist: number;
-          if (absCos < 0.001) {
-            edgeDist = hh;
-          } else if (absSin < 0.001) {
-            edgeDist = hw;
-          } else {
-            edgeDist = Math.min(hw / absCos, hh / absSin);
-          }
-          // 枠の辺から少し外側にオフセット
-          const outsideOffset = 0.05 + (n > 2 ? 0.01 * (n - 2) : 0);
-          const slotDist = edgeDist + outsideOffset;
-          const slotX = clamp(displayCx + slotDist * cosA);
-          const slotY = clamp(displayCy + slotDist * sinA);
-
-          // 表示空間 → Three.js ワールド座標（視錐台サイズで正確にマッピング）
-          const targetX = (slotX - 0.5) * frustumWidth;
-          const targetY = -(slotY - 0.5) * frustumHeight;
-          const lerpFactor = 0.25;
-          obj.position.x += (targetX - obj.position.x) * lerpFactor;
-          obj.position.y += (targetY - obj.position.y) * lerpFactor;
-          const sizeMultiplier = n <= 2 ? 1.0 : (n <= 4 ? 0.85 : 0.7);
-          const normalizeScale = obj.userData.normalizeScale || 1;
-          obj.scale.setScalar(normalizeScale * sizeMultiplier);
-        } else {
-          obj.visible = false;
-        }
+        const slot = slots[loadedModels.indexOf(id)];
+        obj.visible = !!slot;
+        if (!slot) return;
+        // 位置と倍率を同じフレームで適用し、移動途中で顔や画面端を横切らせない。
+        obj.position.set((slot.x + slot.width / 2 - 0.5) * frustumWidth,
+          -(slot.y + slot.height / 2 - 0.5) * frustumHeight, 0);
+        obj.scale.setScalar(obj.userData.normalizeScale * sizeMultiplier * slot.scale);
       });
 
       markCameraTiming("renderer:first-submit:start");
@@ -1250,7 +1217,7 @@ export function CameraCapture() {
               : faceError ? "顔検出を開始できませんでした"
               : selectedModelsLoading || !faceHasResult
                 ? "キャラクターを準備中…"
-                : !detection ? "顔をカメラに向ける" : "表示を準備中…"}
+                : !detection ? "顔をカメラに向ける" : "少し離れる"}
           </p>
           {(selectedModelErrors.length > 0 || faceError) && (
             <Button variant="outline" size="sm" className="min-h-11" onClick={() => {

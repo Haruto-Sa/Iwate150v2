@@ -28,7 +28,7 @@ try {
   }
   for (const [environment, engine, device] of [['iphone', webkit, devices['iPhone 13']], ['android', chromium, devices['Pixel 5']]]) {
     browser = await engine.launch({ args: environment === 'android' ? ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--enable-unsafe-swiftshader'] : [] });
-    for (const scenario of ['single', 'multiple', 'delayed-assets']) {
+    for (const scenario of ['single', 'multiple', 'delayed-assets', 'all-models']) {
       const context = await browser.newContext({ ...device, permissions: ['camera'], serviceWorkers: scenario === 'delayed-assets' ? 'block' : 'allow' });
       if (scenario === 'delayed-assets') await context.addInitScript(() => { Reflect.deleteProperty(Navigator.prototype, 'serviceWorker'); });
       let assetDelayCount = 0;
@@ -61,7 +61,7 @@ try {
         };
       }, portrait);
       // 通常条件はSW有効。障害注入だけSW非対応とし、迂回を防ぐ。1秒の応答遅延であり帯域制限ではない。
-      if (scenario === 'delayed-assets') await context.route(/\/(models|mediapipe)\//, async (route) => {
+      if (scenario === 'delayed-assets') await context.route(/\/(?:models|mediapipe|assets\/characters)\//, async (route) => {
         assetDelayCount += 1;
         await new Promise((done) => setTimeout(done, 1000));
         await route.continue();
@@ -83,29 +83,38 @@ try {
         const fixture = await page.evaluate(() => ({ ...window.cameraFixture, videoWidth: document.querySelector('video').videoWidth }));
         if (fixture.videoWidth !== 640 || fixture.width !== 640) throw new Error(`Unexpected camera input: ${JSON.stringify(fixture)}`);
         await page.getByRole('button', { name: 'そばっち', exact: true }).click();
-        if (scenario === 'multiple') await page.getByRole('button', { name: 'えんぞー', exact: true }).click();
+        const selectedIds = ['sobacchi'];
+        if (scenario === 'multiple' || scenario === 'all-models') {
+          await page.getByRole('button', { name: 'えんぞー', exact: true }).click(); selectedIds.push('enzo');
+        }
+        if (scenario === 'all-models') {
+          for (const [id, name] of [['karin', 'カリンちゃん'], ['kerohira', 'ケロ平'], ['goshodon', 'ごしょどん']]) {
+            await page.getByRole('button', { name, exact: true }).click(); selectedIds.push(id);
+          }
+        }
         let visible = true;
         try {
-          await page.waitForFunction((multiple) => {
+          await page.waitForFunction((ids) => {
             const marks = performance.getEntriesByType('mark').map((m) => m.name);
-            return marks.includes('iwate-camera:sobacchi:visible-submit:end') && (!multiple || marks.includes('iwate-camera:enzo:visible-submit:end'));
-          }, scenario === 'multiple', { timeout: 30000 });
+            return ids.every((id) => marks.includes(`iwate-camera:${id}:visible-submit:end`));
+          }, selectedIds, { timeout: 30000 });
         } catch { visible = false; }
         const measured = await page.evaluate(() => ({
           marks: performance.getEntriesByType('mark').filter((m) => m.name.startsWith('iwate-camera:')).map((m) => ({ name: m.name.slice(13), time: m.startTime })),
-          resources: performance.getEntriesByType('resource').filter((r) => /\/(models|mediapipe)\//.test(r.name)).map((r) => ({ name: new URL(r.name).pathname, start: r.startTime, duration: r.duration, transferSize: r.transferSize, decodedBodySize: r.decodedBodySize })),
+          resources: performance.getEntriesByType('resource').filter((r) => /\/(?:models|mediapipe|assets\/characters)\//.test(r.name)).map((r) => ({ name: new URL(r.name).pathname, start: r.startTime, duration: r.duration, transferSize: r.transferSize, decodedBodySize: r.decodedBodySize })),
         }));
         if (scenario === "delayed-assets" && assetDelayCount === delaysBefore) throw new Error("Asset delay was not applied");
         results.push({ environment, scenario, visit, serviceWorker: scenario !== "delayed-assets", delayedRequests: assetDelayCount - delaysBefore, firstVideoObserved, fixture, visible, ...measured });
         console.log(environment, scenario, visit, visible, measured.marks);
-        await page.screenshot({ path: `${outputPath}.${environment}-${scenario}-${visit}.png`, fullPage: true });
+        await page.locator("video").scrollIntoViewIfNeeded();
+        await page.screenshot({ path: `${outputPath}.${environment}-${scenario}-${visit}.png` });
         if (visible) {
           await expect(page.getByRole('button', { name: '写真を撮る', exact: true })).toBeEnabled();
           await page.getByRole('button', { name: '写真を撮る', exact: true }).click();
           await page.waitForURL(baseURL + '/camera/edit');
           const capture = await page.evaluate(() => ({ png: sessionStorage.getItem('capturedPhoto')?.startsWith('data:image/png;base64,'), models: JSON.parse(sessionStorage.getItem('capturedModels') ?? '[]') }));
           expect(capture.png).toBe(true);
-          expect(capture.models).toEqual(scenario === 'multiple' ? ['sobacchi', 'enzo'] : ['sobacchi']);
+          expect(capture.models).toEqual(selectedIds);
           results.at(-1).capture = capture;
         }
       }

@@ -6,22 +6,20 @@ import { Sparkles, Camera as CameraIcon, RefreshCw, Check, SwitchCamera, Timer, 
 import { Button } from "@/components/ui/Button";
 import { characterModelCatalog, characters } from "@/lib/characters";
 import { useCaptureTimer, type CaptureDelay } from "@/hooks/useCaptureTimer";
-import { markCameraTiming, measureCameraWork, resetCameraTimings } from "@/lib/cameraTimings";
+import { markCameraTiming, resetCameraTimings } from "@/lib/cameraTimings";
+import { createCameraFaceWorker, type CameraFaceTracker, type CameraFaceResults } from "@/lib/cameraFaceWorker";
 import { createCameraStream } from "@/lib/cameraStream";
 import { getModelUrl } from "@/lib/storage";
 import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
 import * as THREE from "three";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
-import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { loadCameraModel, disposeCameraModel } from "@/lib/cameraModel";
 
 type Detection = { x: number; y: number; width: number; height: number } | null;
 
-type FaceMeshInstance = import("@mediapipe/face_mesh").FaceMesh;
-type FaceMeshResults = import("@mediapipe/face_mesh").Results;
+type FaceMeshInstance = CameraFaceTracker;
+type FaceMeshResults = CameraFaceResults;
 type CameraStream = ReturnType<typeof createCameraStream>;
 type FaceResultsHandler = (results: FaceMeshResults) => void;
-type ModelFormat = "obj" | "fbx";
 type ModelLoadStatus = "idle" | "loading" | "ready" | "error";
 type ModelSource = { modelUrl: string; mtlUrl: string | null };
 type FaceMeshConstructor = typeof import("@mediapipe/face_mesh").FaceMesh;
@@ -160,19 +158,6 @@ function resolveActiveFacingMode(
 }
 
 /**
- * モデルURLから読み込みフォーマットを判定する。
- *
- * @param modelPath - モデルパス
- * @returns `obj` または `fbx`
- * @example
- * const format = resolveModelFormat("/models/goshodon.obj");
- */
-function resolveModelFormat(modelPath: string): ModelFormat {
-  const stripped = modelPath.split("?")[0]?.split("#")[0] ?? modelPath;
-  return stripped.toLowerCase().endsWith(".fbx") ? "fbx" : "obj";
-}
-
-/**
  * Storage相対パスからローカルpublic参照URLを作成する。
  *
  * @param path - `models/...` 形式のパス
@@ -222,6 +207,9 @@ function isFaceMeshModuleArgumentsError(error: unknown): boolean {
  * const faceMesh = await createFaceMeshInstance();
  */
 async function createFaceMeshInstance(): Promise<FaceMeshInstance> {
+  if (typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined" && typeof createImageBitmap !== "undefined") {
+    return createCameraFaceWorker(MEDIAPIPE_FACE_MESH_ASSET_BASE);
+  }
   markCameraTiming("face:import:start");
   resetMediaPipeSolutionGlobals();
   const moduleNamespace = await import("@mediapipe/face_mesh");
@@ -305,7 +293,7 @@ export function CameraCapture() {
   const modelMapRef = useRef<Record<string, THREE.Object3D>>({});
   const modelSourceMapRef = useRef<Record<string, ModelSource>>({});
   const detectionRef = useRef<Detection>(null);
-  const loadingSetRef = useRef<Set<string>>(new Set());
+  const modelLoadsRef = useRef(new Map<string, AbortController>());
   const lastDetStateUpdateRef = useRef(0);
   const startInProgressRef = useRef(false);
   const startAttemptRef = useRef(0);
@@ -319,6 +307,7 @@ export function CameraCapture() {
   const [renderedModels, setRenderedModels] = useState<string[]>([]);
   const renderedModelsRef = useRef<string[]>([]);
   const [faceHasResult, setFaceHasResult] = useState(false);
+  const [faceError, setFaceError] = useState(false);
   const faceHasResultRef = useRef(false);
   const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied" | "captured">("idle");
   // status を ref でも保持する。reactCompiler 有効下では useCallback のクロージャが
@@ -398,94 +387,54 @@ export function CameraCapture() {
     scene.add(directionalLight);
   }, []);
 
-  // Load 3D model（二重ロード防止: ロード中・既にロード済みは skip）
+  /**
+   * 選択モデルの読み込みを一つだけ開始し、終了した世代だけを反映する。
+   * @param id - キャラクターID
+   * @param modelPath - モデルURL
+   * @param mtlPath - 任意の材質URL
+   * @returns なし
+   * @example loadModel(id, source.modelUrl, source.mtlUrl);
+   */
   const loadModel = useCallback((id: string, modelPath: string, mtlPath?: string | null) => {
-    if (!sceneRef.current) return;
+    if (!sceneRef.current || modelLoadsRef.current.has(id)) return;
     if (modelMapRef.current[id]) {
-      setModelStatusMap((prev) => (prev[id] === "ready" ? prev : { ...prev, [id]: "ready" }));
+      setModelStatusMap((prev) => ({ ...prev, [id]: "ready" }));
       return;
     }
-    if (loadingSetRef.current.has(id)) return;
-
+    const controller = new AbortController();
+    modelLoadsRef.current.set(id, controller);
     markCameraTiming(`${id}:load:start`);
-    loadingSetRef.current.add(id);
     setModelStatusMap((prev) => ({ ...prev, [id]: "loading" }));
-    const modelFormat = resolveModelFormat(modelPath);
-
-    const onModelLoaded = (object: THREE.Object3D) => {
+    void loadCameraModel(id, modelPath, mtlPath ?? null, controller.signal).then((object) => {
+      if (unmountedRef.current || controller.signal.aborted || modelLoadsRef.current.get(id) !== controller) {
+        disposeCameraModel(object);
+        return;
+      }
       markCameraTiming(`${id}:object-ready`);
-      loadingSetRef.current.delete(id);
       const box = new THREE.Box3().setFromObject(object);
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      // 極端に大きい/小さいモデルでも顔追従時に視認しやすいよう下限スケールを持たせる
       const normalizeScale = Math.max(0.012, 1.0 / maxDim);
       object.scale.setScalar(normalizeScale);
-
       box.setFromObject(object);
-      const center = box.getCenter(new THREE.Vector3());
-      object.position.sub(center);
-
+      object.position.sub(box.getCenter(new THREE.Vector3()));
       object.visible = false;
       object.userData.normalizeScale = normalizeScale;
-
       modelMapRef.current[id] = object;
       sceneRef.current?.add(object);
       setModelStatusMap((prev) => ({ ...prev, [id]: "ready" }));
-    };
-
-    let retryCount = 0;
-    const maxRetries = 2;
-    const loadOnce = () => {
-      const onLoadError = () => {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          loadOnce();
-          return;
-        }
-        loadingSetRef.current.delete(id);
+    }).catch(() => {
+      if (!unmountedRef.current && !controller.signal.aborted) {
         setModelStatusMap((prev) => ({ ...prev, [id]: "error" }));
-        console.warn(`[loadModel] ${id} のロードに失敗しました`, { modelPath, modelFormat });
-      };
-
-      if (modelFormat === "fbx") {
-        const fbxLoader = new FBXLoader();
-        const parse = fbxLoader.parse.bind(fbxLoader);
-        fbxLoader.parse = (buffer, path) => measureCameraWork(`${id}:parse`, () => parse(buffer, path));
-        fbxLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
-        return;
       }
-
-      const objLoader = new OBJLoader();
-      const parse = objLoader.parse.bind(objLoader);
-      objLoader.parse = (text) => measureCameraWork(`${id}:parse`, () => parse(text));
-      if (mtlPath) {
-        const mtlLoader = new MTLLoader();
-        const parseMtl = mtlLoader.parse.bind(mtlLoader);
-        mtlLoader.parse = (text, path) => measureCameraWork(`${id}:material-parse`, () => parseMtl(text, path));
-        mtlLoader.load(
-          mtlPath,
-          (materials) => {
-            materials.preload();
-            objLoader.setMaterials(materials);
-            objLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
-          },
-          undefined,
-          () => {
-            objLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
-          }
-        );
-        return;
-      }
-
-      objLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
-    };
-
-    loadOnce();
+    }).finally(() => {
+      if (modelLoadsRef.current.get(id) === controller) modelLoadsRef.current.delete(id);
+    });
   }, []);
 
   // FaceMesh result handler（detectionRefは毎フレーム更新、setDetectionは100msスロットル）
   const onFaceResults = useCallback((results: FaceMeshResults) => {
+    if (unmountedRef.current) return;
     markCameraTiming("face:first-result");
     if (!faceHasResultRef.current) {
       faceHasResultRef.current = true;
@@ -526,8 +475,10 @@ export function CameraCapture() {
 
   // Start camera + mediapipe
   const stopStream = useCallback(() => {
+    faceMeshRef.current?.onResults(() => undefined);
     faceHasResultRef.current = false;
     setFaceHasResult(false);
+    setFaceError(false);
     renderedModelsRef.current = [];
     setRenderedModels([]);
     if (cameraStreamRef.current) {
@@ -598,13 +549,17 @@ export function CameraCapture() {
         onFrame: async () => {
           try {
             if (faceMeshRef.current && videoRef.current) {
+              markCameraTiming("face:first-send");
               await faceMeshRef.current.send({ image: videoRef.current });
+              markCameraTiming("face:first-send-end");
             }
           } catch (err) {
+            if (unmountedRef.current || attempt !== startAttemptRef.current) return;
             if (isFaceMeshModuleArgumentsError(err) && !recoveringFaceMeshRef.current) {
               recoveringFaceMeshRef.current = true;
               try {
                 const recovered = await recreateFaceMeshInstance();
+                if (unmountedRef.current || attempt !== startAttemptRef.current) return;
                 recovered.onResults((results) => faceResultHandlerRef.current(results));
                 faceMeshRef.current = recovered;
               } catch (recoverError) {
@@ -614,6 +569,17 @@ export function CameraCapture() {
               }
               return;
             }
+            if (sharedFaceMesh === faceMeshRef.current) {
+              sharedFaceMesh = null;
+              sharedFaceMeshPromise = null;
+            }
+            void faceMeshRef.current?.close();
+            faceMeshRef.current = null;
+            detectionRef.current = null;
+            setDetection(null);
+            faceHasResultRef.current = false;
+            setFaceHasResult(false);
+            setFaceError(true);
             console.warn("faceMesh onFrame error", err);
           }
         },
@@ -684,13 +650,17 @@ export function CameraCapture() {
           faceMeshRef.current = faceMesh;
           markCameraTiming("face:ready");
         } catch (error) {
-          if (!isFaceMeshModuleArgumentsError(error)) throw error;
+          if (!isFaceMeshModuleArgumentsError(error)) {
+            if (!unmountedRef.current && attempt === startAttemptRef.current) setFaceError(true);
+            return;
+          }
           const recovered = await recreateFaceMeshInstance();
           if (unmountedRef.current || attempt !== startAttemptRef.current) return;
           recovered.onResults((results) => faceResultHandlerRef.current(results));
           faceMeshRef.current = recovered;
         }
       }
+      faceMeshRef.current?.onResults((results) => faceResultHandlerRef.current(results));
     } catch (e) {
       if (unmountedRef.current || attempt !== startAttemptRef.current) return;
       stopStream();
@@ -776,6 +746,13 @@ export function CameraCapture() {
 
   // 選択モデルを優先して読み込む（初回表示の遅延/失敗を軽減）
   useEffect(() => {
+    for (const [id, controller] of modelLoadsRef.current) {
+      if (!selectedModels.includes(id)) {
+        controller.abort();
+        modelLoadsRef.current.delete(id);
+        setModelStatusMap((prev) => ({ ...prev, [id]: "idle" }));
+      }
+    }
     if (status !== "ready") return;
 
     selectedModels.forEach((id) => {
@@ -928,6 +905,7 @@ export function CameraCapture() {
 
   // Cleanup
   useEffect(() => {
+    const pendingLoads = modelLoadsRef.current;
     return () => {
       unmountedRef.current = true;
       startAttemptRef.current += 1;
@@ -935,7 +913,14 @@ export function CameraCapture() {
       // stopStream は useCallback([]) なので参照は固定だが、依存配列サイズ警告を避けるためここで直接呼ぶ
       stopStream();
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      for (const controller of pendingLoads.values()) controller.abort();
+      pendingLoads.clear();
+      for (const object of Object.values(modelMapRef.current)) disposeCameraModel(object);
+      modelMapRef.current = {};
+      sceneRef.current?.clear();
       rendererRef.current?.dispose();
+      rendererRef.current?.forceContextLoss();
+      faceMeshRef.current?.onResults(() => undefined);
       faceMeshRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1063,19 +1048,6 @@ export function CameraCapture() {
           </div>
         )}
 
-        {status === "ready" && detection && selectedModelsReady && selectedModels.length > 0 && (
-          <div
-            className="absolute rounded-full bg-gradient-to-br from-emerald-300 to-amber-200 px-3 py-1 text-xs font-semibold text-[#0f1c1a] shadow-lg transition"
-            style={{
-              left: `${(detection.x + detection.width / 2) * 100}%`,
-              top: `${detection.y * 100 - 4}%`,
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            {selectedModels.map((id) => getCharacterNameById(id)).join(" / ")}
-          </div>
-        )}
-
         <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-4">
           <div className="flex items-center gap-3">
             {(status === "idle" || status === "denied") && (
@@ -1115,16 +1087,28 @@ export function CameraCapture() {
 
       {status === "ready" && selectedModels.length > 0 && !canCapture && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-900/10 bg-white p-3">
-          <p role={selectedModelErrors.length > 0 ? "alert" : "status"} className="mr-auto text-sm text-[#0f3a3a]">
+          <p role={selectedModelErrors.length > 0 || faceError ? "alert" : "status"} className="mr-auto text-sm text-[#0f3a3a]">
             {selectedModelErrors.length > 0
               ? `${selectedModelErrors.map(getCharacterNameById).join("・")}を読み込めませんでした`
+              : faceError ? "顔検出を開始できませんでした"
               : selectedModelsLoading || !faceHasResult
                 ? "キャラクターを準備中…"
                 : !detection ? "顔をカメラに向ける" : "表示を準備中…"}
           </p>
-          {selectedModelErrors.length > 0 && (
+          {(selectedModelErrors.length > 0 || faceError) && (
             <Button variant="outline" size="sm" className="min-h-11" onClick={() => {
               cancelCapture();
+              if (faceError) {
+                setFaceError(false);
+                const attempt = startAttemptRef.current;
+                void recreateFaceMeshInstance().then((tracker) => {
+                  if (unmountedRef.current || attempt !== startAttemptRef.current) return;
+                  tracker.onResults((results) => faceResultHandlerRef.current(results));
+                  faceMeshRef.current = tracker;
+                }).catch(() => {
+                  if (!unmountedRef.current && attempt === startAttemptRef.current) setFaceError(true);
+                });
+              }
               setModelStatusMap((prev) => ({ ...prev, ...Object.fromEntries(selectedModelErrors.map((id) => [id, "idle" as const])) }));
             }}>読み込み直す</Button>
           )}
@@ -1134,7 +1118,7 @@ export function CameraCapture() {
         </div>
       )}
 
-      <div className="glass flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-900/10 p-3 ring-1 ring-emerald-900/10">
+      <div className="glass flex items-center gap-2 overflow-x-auto rounded-2xl border border-emerald-900/10 p-3 ring-1 ring-emerald-900/10 sm:flex-wrap">
         {characters.map((c) => {
           const active = selectedModels.includes(c.id);
           const isDisabled = !active && selectedModels.length >= 5;
@@ -1155,14 +1139,14 @@ export function CameraCapture() {
               }}
               disabled={isDisabled}
               aria-pressed={active}
-              className="gap-2"
+              className="min-h-11 shrink-0 gap-2 whitespace-nowrap"
             >
               {active ? <Check className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
               {c.name}
             </Button>
           );
         })}
-        <span className="text-xs text-emerald-900/70">最大5体</span>
+        <span className="shrink-0 text-xs text-emerald-900/70">最大5体</span>
       </div>
 
       <fieldset className="flex flex-wrap items-center gap-2" disabled={busy && remaining === null}>

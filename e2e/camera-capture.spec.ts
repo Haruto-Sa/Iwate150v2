@@ -8,6 +8,19 @@ const test = base.extend({
 
 test.use({ permissions: ["camera"] });
 
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status === testInfo.expectedStatus || page.isClosed()) return;
+  const diagnostics = await page.evaluate(() => {
+    const video = document.querySelector("video");
+    return {
+      marks: performance.getEntriesByType("mark").filter((mark) => mark.name.startsWith("iwate-camera:")).map((mark) => ({ name: mark.name, time: mark.startTime })),
+      video: video ? { readyState: video.readyState, currentTime: video.currentTime, paused: video.paused, width: video.videoWidth } : null,
+    };
+  }).catch(() => ({ unavailable: true }));
+  await testInfo.attach("camera-diagnostics", { body: JSON.stringify(diagnostics, null, 2), contentType: "application/json" });
+});
+
+
 test("カメラ映像を撮影して編集・PNG保存へ進める", async ({ page }) => {
   await page.goto("/camera");
   const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
@@ -136,6 +149,72 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
 test.describe("モデルの通信障害", () => {
   // 通常の撮影/PWAはSW有効。HTTP障害注入のみSW非対応環境で検証する。
   test.use({ serviceWorkers: "block" });
+  test("顔検出の停止中も操作でき、期限切れ後に通常撮影できる", async ({ page }) => {
+    test.setTimeout(45000);
+    await page.addInitScript(() => { Reflect.deleteProperty(Navigator.prototype, "serviceWorker"); });
+    await page.route("**/mediapipe/face_mesh/worker.js", (route) => route.fulfill({
+      contentType: "application/javascript",
+      body: "self.onmessage = ({data}) => { if (data.type === 'init') self.postMessage({type:'ready'}); else data.image.close(); };",
+    }));
+    await page.goto("/camera");
+    const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
+    await expect(shutter).toBeEnabled({ timeout: 15000 });
+    await page.waitForFunction(() => performance.getEntriesByName("iwate-camera:face:first-send").length > 0);
+    await page.getByRole("button", { name: "そばっち", exact: true }).click();
+    await expect(shutter).toBeDisabled();
+    await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();
+    await expect(shutter).toBeEnabled();
+    await page.getByRole("button", { name: "そばっち", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "顔検出を開始できませんでした" })).toBeVisible({ timeout: 25000 });
+    await page.unroute("**/mediapipe/face_mesh/worker.js");
+    await page.getByRole("button", { name: "読み込み直す", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "顔をカメラに向ける" })).toBeVisible({ timeout: 15000 });
+    await expect(shutter).toBeDisabled();
+    await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();
+    await shutter.click();
+    await expect(page).toHaveURL(/\/camera\/edit$/);
+  });
+
+  test("モデル通信の停止は20秒で再試行できる状態になる", async ({ page }) => {
+    test.setTimeout(45000);
+    await page.addInitScript(() => { Reflect.deleteProperty(Navigator.prototype, "serviceWorker"); });
+    let requested = false;
+    await page.route("**/models/wanko1.obj", () => { requested = true; });
+    await page.goto("/camera");
+    const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
+    await expect(shutter).toBeEnabled({ timeout: 15000 });
+    await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+    await page.clock.pauseAt(new Date("2026-01-01T00:01:00Z"));
+    await page.getByRole("button", { name: "そばっち", exact: true }).click();
+    await expect.poll(() => requested).toBe(true);
+    await page.clock.fastForward(20000);
+    await expect(page.getByRole("alert").filter({ hasText: "そばっちを読み込めませんでした" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "読み込み直す", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();
+    await expect(shutter).toBeEnabled();
+  });
+
+  test("選択解除と離脱でモデルの通信を中止する", async ({ page }) => {
+    await page.addInitScript(() => { Reflect.deleteProperty(Navigator.prototype, "serviceWorker"); });
+    let requested = 0;
+    let cancelled = 0;
+    page.on("requestfailed", (request) => { if (request.url().endsWith("/models/wanko1.obj")) cancelled += 1; });
+    await page.route("**/models/wanko1.obj", () => { requested += 1; });
+    await page.goto("/camera");
+    const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
+    await expect(shutter).toBeEnabled({ timeout: 15000 });
+    await page.getByRole("button", { name: "そばっち", exact: true }).click();
+    await expect.poll(() => requested).toBe(1);
+    await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();
+    await expect.poll(() => cancelled).toBe(1);
+    await expect(shutter).toBeEnabled();
+    await page.getByRole("button", { name: "そばっち", exact: true }).click();
+    await expect.poll(() => requested).toBe(2);
+    await page.getByRole("link", { name: "ホーム", exact: true }).first().click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect.poll(() => cancelled).toBe(2);
+  });
+
   test("モデルの読込失敗を再試行し、選択解除で撮影できる", async ({ page }) => {
     await page.addInitScript(() => { Reflect.deleteProperty(Navigator.prototype, "serviceWorker"); });
     await page.route("**/models/wanko1.obj", (route) => route.fulfill({ status: 503, body: "Model unavailable" }));

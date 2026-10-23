@@ -33,6 +33,17 @@ Runtime timing records contain stage names/timestamps only, retain at most 64 ma
 
 ## Remaining comparisons
 
-Target a 20% reduction in median first selection-to-display time in the same controlled profiles, without adding over 100ms to median video startup. Physical-device targets require physical-device baselines. These targets have not been achieved. Actual low-bandwidth conditions, moving faces, model-load deadlines/cancellation, and GPU cleanup remain to be verified/implemented.
+Target a 20% reduction in median first selection-to-display time in the same controlled profiles, without adding over 100ms to median video startup. Physical-device targets require physical-device baselines. These targets have not been achieved. Actual low-bandwidth conditions, moving faces and sustained GPU memory usage still require device validation. Model-load deadlines/cancellation and resource disposal are now covered by automated tests.
 
 Disabling `refineLandmarks` was tried but not retained: one 12-condition run still took about 4.9 seconds to first display for the Android first/single case. This is an inconclusive single-run comparison, not proof that the option can never improve performance. The current setting is preserved.
+
+
+## Worker and bounded-loader validation (2026-10-24)
+
+`camera-worker-validation.json` records one run of each of 16 conditions on the working tree based on `b4fd526`. All conditions produced detected-face model renders and captured PNGs, including all five models (OBJ/MTL and FBX). This is functional validation, not a statistically established speedup. The runner now includes the all-models scenario after the original scenarios.
+
+OBJ and MTL requests start together. Assets have a 32 MiB response limit and a shared 20-second deadline; selecting away aborts pending fetches. External MTL textures participate in cancellation; FBX embedded-image loading is tracked for completion. Synchronous Three.js parsing is not interruptible. A one-second injected response delay is still not a low-bandwidth experiment.
+
+Face inference uses one shared Worker where supported, with a 20-second initialization deadline and a 20-second frame deadline. This keeps the UI available during inference rather than promising faster inference. The generated vendor script retains the upstream license, applies three version-checked corrections to the legacy Worker branch, and preserves the existing inference settings and iOS CPU preference. Unsupported Worker/OffscreenCanvas environments retain the previous main-thread path; the Worker deadline does not apply to that path. The shared Worker is retained for revisit, while page-owned Three.js objects are disposed on leave.
+
+Tests cover stalled inference with ordinary-photo fallback, stalled model loads, retry, cancellation, and stale-subscriber isolation. Physical device rendering, moving-face tracking, sustained memory/power usage and the original performance targets remain open.

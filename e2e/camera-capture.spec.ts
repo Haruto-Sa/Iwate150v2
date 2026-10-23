@@ -1,3 +1,4 @@
+import type { Page, TestInfo } from "@playwright/test";
 import { test as base, expect } from "./fixtures";
 
 const test = base.extend({
@@ -284,6 +285,33 @@ test("顔が映らない間はキャラクターなしの誤撮影を防ぎ、�
 });
 
 
+
+/**
+ * ブラウザの録画APIと形式を記録し、非対応環境では写真への復帰を検証する。
+ * @param page - カメラ画面を表示したページ
+ * @param testInfo - 対応状況を保存するテスト情報
+ * @returns 録画対応時は継続、非対応時は写真撮影を確認して録画部分をskip
+ * @example await requireRecordingSupport(page, testInfo);
+ */
+async function requireRecordingSupport(page: Page, testInfo: TestInfo): Promise<void> {
+  const capability = await page.evaluate(() => ({
+    recorder: typeof MediaRecorder !== "undefined",
+    captureStream: typeof HTMLCanvasElement.prototype.captureStream === "function",
+    formats: ["video/mp4;codecs=avc1.42E01E", "video/mp4", "video/webm;codecs=vp8", "video/webm"]
+      .map((mime) => ({ mime, supported: typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(mime) })),
+  }));
+  await testInfo.attach("recording-capability", { body: JSON.stringify(capability, null, 2), contentType: "application/json" });
+  const supported = capability.recorder && capability.captureStream && capability.formats.some((format) => format.supported);
+  if (!supported) {
+    await expect(page.getByRole("button", { name: "動画", exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "写真を撮る", exact: true }).click();
+    await expect(page).toHaveURL(/\/camera\/edit$/);
+    await expect(page.getByRole("img", { name: "撮影した岩手旅の写真" })).toBeVisible();
+    test.skip(true, `録画API/形式非対応。写真撮影成功: ${JSON.stringify(capability)}`);
+  }
+}
+
+
 test("動画を録画・再生・保存し、写真撮影に戻れる", async ({ page }, testInfo) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "canShare", { configurable: true, value: () => true });
@@ -294,6 +322,7 @@ test("動画を録画・再生・保存し、写真撮影に戻れる", async ({
   });
   await page.goto("/camera");
   await expect(page.getByRole("button", { name: "写真を撮る", exact: true })).toBeEnabled({ timeout: 15000 });
+  await requireRecordingSupport(page, testInfo);
   await page.getByRole("button", { name: "動画", exact: true }).click();
   await expect(page.getByRole("group", { name: "撮影タイマー" })).toHaveCount(0);
   await page.getByRole("button", { name: "録画を開始", exact: true }).click();
@@ -331,9 +360,10 @@ test("動画を録画・再生・保存し、写真撮影に戻れる", async ({
   await expect(page).toHaveURL(/\/camera\/edit$/);
 });
 
-test("バックグラウンド移行で未完成の動画を破棄し、再録画できる", async ({ page }) => {
+test("バックグラウンド移行で未完成の動画を破棄し、再録画できる", async ({ page }, testInfo) => {
   await page.goto("/camera");
   await expect(page.getByRole("button", { name: "写真を撮る", exact: true })).toBeEnabled({ timeout: 15000 });
+  await requireRecordingSupport(page, testInfo);
   await page.getByRole("button", { name: "動画", exact: true }).click();
   await page.getByRole("button", { name: "録画を開始", exact: true }).click();
   await page.evaluate(() => {

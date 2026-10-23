@@ -103,6 +103,8 @@ type Props = {
   zoom?: number;
   spots: Spot[];
   showUser?: boolean;
+  /** 詳細内ではページのスクロールを優先し、地図操作は全画面へ委ねる。 */
+  embedded?: boolean;
   showImages?: boolean;
   showDetailLinks?: boolean;
   visitedSpotIds?: number[];
@@ -123,6 +125,7 @@ type Props = {
  * @param props.center - 地図中心座標
  * @param props.zoom - ズームレベル
  * @param props.spots - マーカー表示するスポット配列
+ * @param props.embedded - 詳細ページ用の操作しないコンパクト地図
  * @param props.showUser - ユーザー現在地マーカーの表示有無
  * @param props.showImages - ポップアップ画像の取得・表示有無
  * @param props.showDetailLinks - 実スポット詳細へのリンク表示有無
@@ -138,6 +141,7 @@ export function LeafletMap({
   zoom = 8,
   spots,
   showUser = true,
+  embedded = false,
   showImages = true,
   showDetailLinks = true,
   userPosition,
@@ -145,6 +149,7 @@ export function LeafletMap({
   visitedSpotIds,
   stampProgressKnown = false,
 }: Props) {
+  const [tileFailed, setTileFailed] = useState(false);
   const markers = useMemo(() => spots ?? [], [spots]);
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(
     null,
@@ -254,16 +259,22 @@ export function LeafletMap({
   }, [fitUserPos, markers, showUser]);
 
   return (
-    <div className="relative z-0 isolate h-[60vh] w-full overflow-hidden rounded-2xl border border-white/10 shadow-xl ring-1 ring-white/10">
+    <div className={`relative z-0 isolate w-full overflow-hidden rounded-2xl border border-emerald-900/10 ${embedded ? "h-64" : "h-[60vh] shadow-xl ring-1 ring-white/10"}`}>
       <MapContainer
         key={centerKey}
         center={[center.lat, center.lng]}
         zoom={zoom}
         className="h-full w-full"
         style={{ height: "100%", width: "100%" }}
-        scrollWheelZoom
+        scrollWheelZoom={!embedded}
+        dragging={!embedded}
+        touchZoom={!embedded}
+        doubleClickZoom={!embedded}
+        boxZoom={!embedded}
+        keyboard={!embedded}
+        zoomControl={!embedded}
       >
-        <TileLayer url={MAP_TILE_URL} attribution={MAP_TILE_ATTRIBUTION} />
+        <TileLayer url={MAP_TILE_URL} attribution={MAP_TILE_ATTRIBUTION} eventHandlers={embedded ? { tileerror: () => setTileFailed(true) } : undefined} />
         <AutoFitMapView points={fitPoints} fitKey={fitKey} />
         {markers.map((spot) => {
           const imagePath = showImages
@@ -345,6 +356,9 @@ export function LeafletMap({
           </MapMarker>
         )}
       </MapContainer>
+      {embedded && tileFailed && (
+        <p role="status" className="absolute inset-x-3 top-3 z-[1000] rounded-lg bg-white px-3 py-2 text-sm text-emerald-950 shadow-sm">地図を読み込めません。ルート検索をご利用ください。</p>
+      )}
     </div>
   );
 }

@@ -2,13 +2,14 @@ import { TravelImage } from "@/components/ui/TravelImage";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { MapPin, Camera } from "lucide-react";
+import { Camera } from "lucide-react";
 import { fetchCities, fetchGenres, fetchSpots } from "@/lib/supabaseClient";
 import { buildSpotMetadata, buildSpotJsonLd } from "@/lib/seo";
 import { extractSpotIdFromSlug, getSpotHref } from "@/lib/spotRoutes";
 import { getImageUrl } from "@/lib/storage";
 import { FavoriteToggleButton } from "@/components/favorites/FavoriteToggleButton";
 import { ShareButton } from "@/components/ui/ShareButton";
+import { SpotLocation } from "@/components/spot/SpotLocation";
 import { SITE_URL } from "@/lib/config";
 
 type PageProps = {
@@ -97,51 +98,21 @@ export default async function SpotDetailPage({ params }: PageProps) {
 
       <section className="overflow-hidden rounded-[32px] border border-emerald-900/10 bg-white shadow-sm">
         <div className="relative aspect-[3/2] max-h-[32rem] bg-emerald-100"><TravelImage src={imageUrl} alt={spot.name} sizes="(max-width: 1152px) 100vw, 1152px" /></div>
-        <div className="px-5 pt-6 sm:px-8">
-          <p className="text-xs tracking-wider text-emerald-700">{city?.name ?? "岩手県"}</p>
-          <h1 className="mt-3 font-display text-3xl leading-relaxed text-emerald-950 sm:text-4xl">{spot.name}</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-8 text-emerald-900/85">{spot.description}</p>
-        </div>
-
-        <div className="grid gap-5 p-6 sm:grid-cols-[1.2fr_0.8fr] sm:p-8">
-          <div className="space-y-5">
-            <div className="flex flex-wrap gap-2 text-sm">
-              <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-900">{city?.name ?? "Iwate"}</span>
-              <span className="rounded-full bg-sky-50 px-3 py-1.5 text-sky-900">{genre?.name ?? "Spot"}</span>
+        <div className="space-y-5 p-5 sm:p-8">
+          <div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-emerald-700">
+              <span>{city?.name ?? "岩手県"}</span>
+              {genre && <span>{genre.name}</span>}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Link href={`/map?focus=${spot.id}`} className="action-link"><MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />地図で場所を見る</Link>
-              <Link href="/camera" className="action-link action-link-secondary"><Camera className="h-4 w-4 shrink-0" aria-hidden="true" />カメラで旅を記録</Link>
-            </div>
+            <h1 className="mt-2 font-display text-3xl leading-relaxed text-emerald-950 sm:text-4xl">{spot.name}</h1>
           </div>
-
-          <div className="rounded-[24px] border border-emerald-900/10 bg-emerald-50/70 p-5">
-            <h2 className="text-lg font-semibold text-[#0f1c1a]">旅先のメモ</h2>
-            <dl className="mt-4 space-y-3 text-sm text-emerald-900/75">
-              <div>
-                <dt className="font-medium text-[#0f1c1a]">エリア</dt>
-                <dd>{city?.name ?? "Iwate"}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-[#0f1c1a]">ジャンル</dt>
-                <dd>{genre?.name ?? "Spot"}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-[#0f1c1a]">位置</dt>
-                <dd>
-                  {spot.lat.toFixed(4)}, {spot.lng.toFixed(4)}
-                </dd>
-              </div>
-            </dl>
+          <p className="max-w-3xl text-sm leading-8 text-emerald-900/85">{spot.description}</p>
+          <div className="flex flex-wrap items-center gap-3 [&>a]:mt-0 [&>button]:mt-0">
             <FavoriteToggleButton spotId={spot.id} />
-            <div className="mt-4 border-t border-emerald-900/10 pt-4">
-              <ShareButton
-                title={spot.name}
-                text={`${spot.name}を発見！`}
-                url={`${SITE_URL}${getSpotHref(spot)}`}
-              />
-            </div>
+            <ShareButton title={spot.name} text={`${spot.name}を発見！`} url={`${SITE_URL}${getSpotHref(spot)}`} />
+            <Link href="/camera" className="action-link action-link-secondary"><Camera className="h-4 w-4 shrink-0" aria-hidden="true" />写真を撮る</Link>
           </div>
+          <SpotLocation spot={spot} />
         </div>
       </section>
 

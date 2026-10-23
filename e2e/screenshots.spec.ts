@@ -26,6 +26,9 @@ for (const width of [320, 390, 1440]) {
       await expect(
         page.getByRole("main").getByRole("heading").first(),
       ).toBeVisible();
+      if (path === "/spots/1") {
+        await expect(page.getByTitle("盛岡城跡公園", { exact: true })).toBeVisible();
+      }
       // 公開スタンプはデータと地図が揃ってから画面全体を検証する。
       if (path === "/stamps") {
         await expect(

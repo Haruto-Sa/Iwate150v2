@@ -317,6 +317,7 @@ async function requireRecordingSupport(page: Page, testInfo: TestInfo): Promise<
 
 test("動画を録画・再生・保存し、写真撮影に戻れる", async ({ page }, testInfo) => {
   await page.addInitScript(() => {
+    localStorage.setItem("voja_color_theme", "dark");
     Object.defineProperty(navigator, "canShare", { configurable: true, value: () => true });
     Object.defineProperty(navigator, "share", { configurable: true, value: async (data: ShareData) => {
       const file = data.files![0];
@@ -331,7 +332,10 @@ test("動画を録画・再生・保存し、写真撮影に戻れる", async ({
   await page.getByRole("button", { name: "録画を開始", exact: true }).click();
   await expect(page.getByRole("button", { name: "写真", exact: true })).toBeDisabled();
   await expect(page.getByRole("status").filter({ hasText: "1秒 / 10秒" })).toBeVisible();
-  await page.getByRole("button", { name: "録画を停止", exact: true }).click();
+  const stop = page.getByRole("button", { name: "録画を停止", exact: true });
+  await expect(stop.locator("svg")).toHaveCSS("color", "rgb(255, 200, 196)");
+  await page.screenshot({ path: testInfo.outputPath("video-dark-recording.png"), animations: "disabled" });
+  await stop.click();
   const preview = page.getByLabel("撮影した動画", { exact: true });
   await expect(preview).toBeVisible();
   await expect.poll(() => preview.evaluate((element) => (element as HTMLVideoElement).readyState)).toBeGreaterThanOrEqual(2);

@@ -67,6 +67,25 @@ beforeEach(() => {
 });
 
 describe("本人の保存データを全削除", () => {
+  it("削除本文のサイズ超過とタイムアウトで記録を変更しない", async () => {
+    expect((await deleteOwnData(request("DELETE", { confirmation: "x".repeat(8192) }))).status).toBe(413);
+    vi.useFakeTimers();
+    try {
+      const cancel = vi.fn();
+      const stalled = {
+        url: "https://app.test/api/me", method: "DELETE",
+        headers: new Headers({ origin: "https://app.test", "content-type": "application/json", "x-session-user": "oauth:google:A" }),
+        body: new ReadableStream<Uint8Array>({ cancel }),
+      } as Request;
+      const response = deleteOwnData(stalled);
+      await vi.advanceTimersByTimeAsync(5000);
+      expect((await response).status).toBe(408);
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(records.users).toHaveLength(2);
+      expect(records.favorites).toHaveLength(2);
+    } finally { vi.useRealTimers(); }
+  });
+
   it("Aの登録と記録だけを削除し、Bを保持して再送も成功する", async () => {
     records.stamps.push({ id: 2, user_id: 1, spot_id: 30 });
     for (let attempt = 0; attempt < 2; attempt++) {

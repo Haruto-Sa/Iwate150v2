@@ -75,10 +75,10 @@ function DeleteDataForm({ identity, signOut }: { identity: string; signOut: () =
   }
 
   return (
-    <section className="space-y-4 rounded-2xl border border-red-200 p-5">
+    <section className="space-y-4 rounded-2xl border border-app-danger/30 p-5">
       <h2 className="font-display text-xl">保存データを削除</h2>
       <p className="text-sm">スタンプ・お気に入りを削除すると元に戻せません。</p>
-      {error && <p role="alert" className="text-sm text-red-800">{error}</p>}
+      {error && <p role="alert" className="text-sm text-app-danger">{error}</p>}
       <Button variant="outline" disabled={busy} onClick={() => { void removeData(); }}>
         {busy ? "処理中…" : deleted ? "ログアウトを再試行" : "削除してログアウト"}
       </Button>

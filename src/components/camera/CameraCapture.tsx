@@ -1192,7 +1192,7 @@ export function CameraCapture() {
               disabled={captureMode === "video" ? recordingPhase === "stopping" || (!videoBusy && !canCapture) : remaining === null && (!canCapture || busy)}
               className="pointer-events-auto grid h-16 w-16 place-items-center rounded-full border-4 border-app-line-soft/80 bg-app-surface/90 text-app-ink-strong shadow-xl shadow-emerald-200/50 transition active:scale-95 disabled:opacity-60"
             >
-              {captureMode === "video" ? (videoBusy ? <Square className="h-7 w-7 fill-red-700 text-red-700" aria-hidden="true" /> : <Video className="h-7 w-7" aria-hidden="true" />) : remaining !== null ? <X className="h-7 w-7" aria-hidden="true" /> : <CameraIcon className="h-7 w-7" aria-hidden="true" />}
+              {captureMode === "video" ? (videoBusy ? <Square className="h-7 w-7 fill-current text-app-danger" aria-hidden="true" /> : <Video className="h-7 w-7" aria-hidden="true" />) : remaining !== null ? <X className="h-7 w-7" aria-hidden="true" /> : <CameraIcon className="h-7 w-7" aria-hidden="true" />}
             </button>
             {/* 内カメ/外カメ切替ボタン（モバイルのみ表示） */}
             {status === "ready" && (

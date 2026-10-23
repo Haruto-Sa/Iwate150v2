@@ -18,6 +18,7 @@ for (const character of characters) test(`${character.name}のプレビュー・
     await expect(dialog.getByRole("link", { name: "外部サイトを開く" })).toHaveAttribute("href", character.source_url!);
     await dialog.getByRole("button", { name: "キャンセル" }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.getByText("リセット", { exact: true }).evaluate(element => element.getBoundingClientRect().height <= Number.parseFloat(getComputedStyle(element).lineHeight) + 1)).toBe(true);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: info.outputPath("character-previews.png"), fullPage: true });
 });

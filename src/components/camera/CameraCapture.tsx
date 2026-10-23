@@ -311,7 +311,7 @@ export function CameraCapture() {
 
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [detection, setDetection] = useState<Detection>(null);
-  const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied">("idle");
+  const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied" | "captured">("idle");
   // status を ref でも保持する。reactCompiler 有効下では useCallback のクロージャが
   // 古い status を掴んだままになり得るため、ガード判定は常に最新値を見る ref で行う。
   const statusRef = useRef(status);
@@ -962,7 +962,7 @@ export function CameraCapture() {
     // ページ遷移前にカメラ・FaceMeshを明示的に停止（許可状態はブラウザが保持）
     stopStream();
     faceMeshRef.current = null;
-    setStatus("idle");
+    setStatus("captured");
 
     router.push("/camera/edit");
     return true;

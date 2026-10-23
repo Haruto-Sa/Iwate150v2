@@ -24,7 +24,8 @@ test("3秒後に撮影し、10秒予約は取り消せる", async ({ page }) => 
   const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
   await expect(shutter).toHaveCount(1);
   await expect(shutter).toBeEnabled({ timeout: 15000 });
-  await page.clock.install();
+  await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-01-01T00:01:00Z"));
   await page.getByRole("button", { name: "10秒", exact: true }).click();
   await shutter.click();
   await expect(page.getByRole("status", { name: "10秒後に撮影" })).toBeVisible();
@@ -48,12 +49,17 @@ test("カメラ切替と映像の終了で予約を取り消す", async ({ page 
   await page.goto("/camera");
   const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
   await expect(shutter).toBeEnabled({ timeout: 15000 });
+  await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-01-01T00:01:00Z"));
   await page.getByRole("button", { name: "3秒", exact: true }).click();
   await shutter.click();
   await page.getByRole("button", { name: "カメラ切替" }).click();
+  // 再起動中は映像の準備に使うタイマーも通常どおり進める。
+  await page.clock.resume();
   await expect(shutter).toBeEnabled({ timeout: 15000 });
-  await page.waitForTimeout(3500);
+  await page.clock.fastForward(3500);
   await expect(page).toHaveURL(/\/camera$/);
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60000));
   await shutter.click();
   await page.evaluate(() => {
     const video = document.querySelector("video")!;
@@ -62,7 +68,7 @@ test("カメラ切替と映像の終了で予約を取り消す", async ({ page 
     track.dispatchEvent(new Event("ended"));
   });
   await expect(page.getByRole("main").getByRole("alert")).toContainText("カメラが停止しました");
-  await page.waitForTimeout(3500);
+  await page.clock.fastForward(3500);
   await expect(page).toHaveURL(/\/camera$/);
   await expect(shutter).toBeDisabled();
   expect(await page.evaluate(() => sessionStorage.getItem("capturedPhoto"))).toBeNull();
@@ -72,7 +78,8 @@ test("キャラクター変更と画面離脱で予約を取り消す", async ({
   await page.goto("/camera");
   const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
   await expect(shutter).toBeEnabled({ timeout: 15000 });
-  await page.clock.install();
+  await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-01-01T00:01:00Z"));
   await page.getByRole("button", { name: "10秒", exact: true }).click();
   await shutter.click();
   const character = page.getByRole("button", { name: "そばっち", exact: true });
@@ -94,6 +101,9 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
     await page.goto("/camera");
     const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
     await expect(shutter).toBeEnabled({ timeout: 15000 });
+    // 画面保存の所要時間によって撮影予約が満了しないようにする。
+    await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+    await page.clock.pauseAt(new Date("2026-01-01T00:01:00Z"));
     await page.getByRole("button", { name: "10秒", exact: true }).click();
     await page.locator("video").scrollIntoViewIfNeeded();
     await shutter.click();

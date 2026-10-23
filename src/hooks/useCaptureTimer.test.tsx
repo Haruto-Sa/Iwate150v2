@@ -91,3 +91,14 @@ it.each(["link", "popstate"])("%sの遷移開始で、画面が残っていて�
   });
   expect(capture).not.toHaveBeenCalled();
 });
+
+it("保存成功後は準備状態の変化や取消で連打ロックを解除しない", () => {
+  const capture = vi.fn(() => true);
+  const { result, rerender } = renderHook(({ ready }) => useCaptureTimer(ready, capture), { initialProps: { ready: true } });
+  act(() => result.current.start(0));
+  rerender({ ready: false });
+  rerender({ ready: true });
+  act(() => { result.current.cancel(); result.current.start(0); });
+  expect(capture).toHaveBeenCalledTimes(1);
+  expect(result.current.busy).toBe(true);
+});

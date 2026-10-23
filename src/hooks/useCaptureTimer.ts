@@ -14,7 +14,7 @@ export type CaptureDelay = 0 | 3 | 10;
 export function useCaptureTimer(ready: boolean, onCapture: () => boolean) {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
-  const locked = useRef(false);
+  const phase = useRef<"idle" | "pending" | "captured">("idle");
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef({ ready, onCapture });
 
@@ -24,9 +24,10 @@ export function useCaptureTimer(ready: boolean, onCapture: () => boolean) {
    * @example timer.cancel();
    */
   const cancel = useCallback(() => {
+    if (phase.current === "captured") return;
     if (timeout.current !== null) clearTimeout(timeout.current);
     timeout.current = null;
-    locked.current = false;
+    phase.current = "idle";
     setRemaining(null);
     setBusy(false);
   }, []);
@@ -76,8 +77,8 @@ export function useCaptureTimer(ready: boolean, onCapture: () => boolean) {
    * @example timer.start(10);
    */
   const start = useCallback((delay: CaptureDelay) => {
-    if (locked.current || !latest.current.ready || document.visibilityState !== "visible") return;
-    locked.current = true;
+    if (phase.current !== "idle" || !latest.current.ready || document.visibilityState !== "visible") return;
+    phase.current = "pending";
     setBusy(true);
     const deadline = performance.now() + delay * 1000;
     /**
@@ -95,7 +96,9 @@ export function useCaptureTimer(ready: boolean, onCapture: () => boolean) {
       setRemaining(seconds || null);
       if (seconds > 0) {
         timeout.current = setTimeout(tick, 1000);
-      } else if (!latest.current.onCapture()) {
+      } else if (latest.current.onCapture()) {
+        phase.current = "captured";
+      } else {
         cancel();
       }
     }

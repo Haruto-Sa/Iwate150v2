@@ -1,0 +1,196 @@
+{
+  "dataDate": "2026-01-01",
+  "retrievedOn": "2026-10-24",
+  "source": "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2026.html",
+  "archive": "https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2026/N03-20260101_03_GML.zip",
+  "archiveSha256": "871e3010f40d79db706cd2c686eda1c5fb0d13437e64ec36618cb8cc355a1265",
+  "dataSha256": "ee20545e8a992dd49e6afa31b961a6e4febfaefc9fd5164ef2380897db7e48c1",
+  "license": "CC-BY-4.0",
+  "crs": "EPSG:6668 (JGD2011)",
+  "attribution": "国土数値情報（行政区域データ）（国土交通省）を加工して作成。市町村別に整理し、座標・島・穴は保持。",
+  "provisionalBoundarySource": "https://nlftp.mlit.go.jp/ksj/gml/datalist/N03_Boundary_undetermined.pdf",
+  "featureCount": 8224,
+  "vertexCount": 937242,
+  "municipalities": [
+    {
+      "code": "03201",
+      "name": "盛岡市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03202",
+      "name": "宮古市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03203",
+      "name": "大船渡市",
+      "provisionalNeighbors": [
+        "03211"
+      ]
+    },
+    {
+      "code": "03205",
+      "name": "花巻市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03206",
+      "name": "北上市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03207",
+      "name": "久慈市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03208",
+      "name": "遠野市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03209",
+      "name": "一関市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03210",
+      "name": "陸前高田市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03211",
+      "name": "釜石市",
+      "provisionalNeighbors": [
+        "03203"
+      ]
+    },
+    {
+      "code": "03213",
+      "name": "二戸市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03214",
+      "name": "八幡平市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03215",
+      "name": "奥州市",
+      "provisionalNeighbors": [
+        "03381",
+        "03402"
+      ]
+    },
+    {
+      "code": "03216",
+      "name": "滝沢市",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03301",
+      "name": "雫石町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03302",
+      "name": "葛巻町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03303",
+      "name": "岩手町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03321",
+      "name": "紫波町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03322",
+      "name": "矢巾町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03366",
+      "name": "西和賀町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03381",
+      "name": "金ケ崎町",
+      "provisionalNeighbors": [
+        "03215"
+      ]
+    },
+    {
+      "code": "03402",
+      "name": "平泉町",
+      "provisionalNeighbors": [
+        "03215"
+      ]
+    },
+    {
+      "code": "03441",
+      "name": "住田町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03461",
+      "name": "大槌町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03482",
+      "name": "山田町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03483",
+      "name": "岩泉町",
+      "provisionalNeighbors": [
+        "03503"
+      ]
+    },
+    {
+      "code": "03484",
+      "name": "田野畑村",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03485",
+      "name": "普代村",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03501",
+      "name": "軽米町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03503",
+      "name": "野田村",
+      "provisionalNeighbors": [
+        "03483"
+      ]
+    },
+    {
+      "code": "03506",
+      "name": "九戸村",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03507",
+      "name": "洋野町",
+      "provisionalNeighbors": []
+    },
+    {
+      "code": "03524",
+      "name": "一戸町",
+      "provisionalNeighbors": []
+    }
+  ]
+}

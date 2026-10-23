@@ -1,0 +1,228 @@
+{
+  "scope": "Desktop engine/device profiles; public still-image canvas stream; CPU render submission, not GPU completion or physical device. One sample per condition.",
+  "recordedAt": "2026-10-23T19:55:05.272Z",
+  "refineLandmarks": false,
+  "sourceSHA256": {
+    "src/components/camera/CameraCapture.tsx": "12cdc6c512f508fa89944d96c53e897e214489c4a4e57f5058460d9bb910d583",
+    "public/mediapipe/face_mesh/worker.js": "0c3db68bc7b5709045d493437994046f026a5f14dbded7985369f4bbb8cff347"
+  },
+  "comparisonBaseline": "camera-startup-validation.json",
+  "results": [
+    {
+      "environment": "iphone",
+      "allFiveVisibleSubmissionElapsedMs": 1985,
+      "firstInferenceElapsedMs": 1086,
+      "photo": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo",
+          "karin",
+          "kerohira",
+          "goshodon"
+        ]
+      },
+      "recordings": [
+        {
+          "facing": "user",
+          "bytes": 521625,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "decoded": {
+            "programs": [],
+            "stream_groups": [],
+            "streams": [
+              {
+                "codec_name": "h264",
+                "width": 634,
+                "height": 480,
+                "avg_frame_rate": "2100/143",
+                "nb_read_frames": "35"
+              }
+            ],
+            "format": {
+              "duration": "2.383333"
+            }
+          }
+        },
+        {
+          "facing": "environment",
+          "bytes": 507522,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "decoded": {
+            "programs": [],
+            "stream_groups": [],
+            "streams": [
+              {
+                "codec_name": "h264",
+                "width": 634,
+                "height": 480,
+                "avg_frame_rate": "3500/239",
+                "nb_read_frames": "35"
+              }
+            ],
+            "format": {
+              "duration": "2.390000"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "environment": "android",
+      "allFiveVisibleSubmissionElapsedMs": 12848.5,
+      "firstInferenceElapsedMs": 5070.7,
+      "photo": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo",
+          "karin",
+          "kerohira",
+          "goshodon"
+        ]
+      },
+      "recordings": [
+        {
+          "facing": "user",
+          "bytes": 62653,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "decoded": {
+            "programs": [],
+            "stream_groups": [],
+            "streams": [
+              {
+                "codec_name": "h264",
+                "width": 640,
+                "height": 480,
+                "avg_frame_rate": "3750/2089",
+                "nb_read_frames": "6"
+              }
+            ],
+            "format": {
+              "duration": "3.342400"
+            }
+          }
+        },
+        {
+          "facing": "environment",
+          "bytes": 60339,
+          "edgePixels": 0,
+          "facePixels": 0,
+          "decoded": {
+            "programs": [],
+            "stream_groups": [],
+            "streams": [
+              {
+                "codec_name": "h264",
+                "width": 640,
+                "height": 480,
+                "avg_frame_rate": "6250/3991",
+                "nb_read_frames": "5"
+              }
+            ],
+            "format": {
+              "duration": "3.192800"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "One sample per setting and engine; overall startup speed improvement is not established.",
+    "Configuration retains face bounding-box tracking but disables unused eye/lip/iris refinement.",
+    "Pixel intersection was sampled before recording, not on every video frame.",
+    "Real-person tracking and physical-device verification remain outstanding."
+  ],
+  "previousFiveModelRecordings": {
+    "refineLandmarks": true,
+    "source": "previous retained model-layout-final-five recordings; separate earlier run, not controlled paired samples",
+    "results": [
+      {
+        "environment": "iphone",
+        "facing": "user",
+        "decoded": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "avg_frame_rate": "21600/1411",
+              "nb_read_frames": "36"
+            }
+          ],
+          "format": {
+            "duration": "2.351667"
+          }
+        }
+      },
+      {
+        "environment": "iphone",
+        "facing": "environment",
+        "decoded": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "avg_frame_rate": "4200/281",
+              "nb_read_frames": "35"
+            }
+          ],
+          "format": {
+            "duration": "2.341667"
+          }
+        }
+      },
+      {
+        "environment": "android",
+        "facing": "user",
+        "decoded": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "avg_frame_rate": "210000/110083",
+              "nb_read_frames": "7"
+            }
+          ],
+          "format": {
+            "duration": "3.669433"
+          }
+        }
+      },
+      {
+        "environment": "android",
+        "facing": "environment",
+        "decoded": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "avg_frame_rate": "180000/112601",
+              "nb_read_frames": "6"
+            }
+          ],
+          "format": {
+            "duration": "3.753367"
+          }
+        }
+      }
+    ]
+  },
+  "validation": {
+    "unitTests": 229,
+    "cameraE2E": 64,
+    "profiles": [
+      "iphone",
+      "android",
+      "chromium",
+      "webkit-ui"
+    ],
+    "productionBuild": true,
+    "typecheck": true,
+    "targetLintErrors": 0,
+    "existingTargetLintWarnings": 1
+  }
+}

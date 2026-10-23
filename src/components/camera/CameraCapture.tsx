@@ -237,7 +237,7 @@ async function createFaceMeshInstance(): Promise<FaceMeshInstance> {
   }
   faceMesh.setOptions({
     maxNumFaces: 1,
-    refineLandmarks: true,
+    refineLandmarks: false,
     minDetectionConfidence: 0.5,
     minTrackingConfidence: 0.5,
   });

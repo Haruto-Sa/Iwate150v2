@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 test("メニュー言語を切り替え、移動と再読み込み後も維持する", async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem("onboarding_completed", "true");
+      for (const path of ["/", "/camera", "/search", "/map", "/stamps", "/character", "/favorites"]) localStorage.setItem(`voja_page_guide:${path}`, "true");
     localStorage.setItem("voja_install_prompt_dismiss_until", String(Date.now() + 86400000));
   });
   await page.goto("/");
@@ -36,6 +37,7 @@ test("初回案内で英語を選び、操作とインストール案内を英�
   await page.screenshot({ path: `test-results/language-${test.info().project.name}-onboarding.png` });
   await page.getByRole("link", { name: "Find places", exact: true }).click();
   await expect(page).toHaveURL(/\/search$/);
+  await page.getByRole("dialog", { name: "Using search" }).getByRole("button", { name: "Start searching", exact: true }).click();
   await expect(page.getByRole("navigation", { name: "Mobile main pages" }).getByRole("link", { name: "Search", exact: true })).toHaveAttribute("aria-current", "page");
   await page.evaluate(() => localStorage.setItem("voja_install_prompt_visits", "2"));
   await page.reload();
@@ -55,6 +57,7 @@ test("初回案内で英語を選び、操作とインストール案内を英�
 test("別タブの言語変更を反映する", async ({ page, context }) => {
   await context.addInitScript(() => {
     localStorage.setItem("onboarding_completed", "true");
+      for (const path of ["/", "/camera", "/search", "/map", "/stamps", "/character", "/favorites"]) localStorage.setItem(`voja_page_guide:${path}`, "true");
     localStorage.setItem("voja_install_prompt_dismiss_until", String(Date.now() + 86400000));
   });
   await page.goto("/");

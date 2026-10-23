@@ -1,5 +1,6 @@
 "use client";
 
+import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
 import { useMenuLanguage } from "@/lib/menuLanguage";
 
 import Link from "next/link";
@@ -91,6 +92,7 @@ export function Header() {
             })}
           </nav>
 
+          <OnboardingOverlay />
           <MoreMenu />
         </div>
       </div>

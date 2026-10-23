@@ -12,7 +12,6 @@ import { Footer } from "@/components/layout/Footer";
 import { DevelopmentServiceWorkerReset } from "@/components/layout/DevelopmentServiceWorkerReset";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { PwaInstallPrompt } from "@/components/layout/PwaInstallPrompt";
-import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
 import { SessionProvider } from "@/components/auth/SessionProvider";
 import { buildPageMetadata } from "@/lib/seo";
 import { APP_THEME_COLOR } from "@/lib/config";
@@ -69,7 +68,6 @@ export default function RootLayout({
             <MobileNav />
             <Footer />
             <PwaInstallPrompt />
-            <OnboardingOverlay />
             <SpeedInsights />
             <Analytics />
           </div>

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Event } from "@/lib/types";
-import { CalendarDays, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 type Props = {
@@ -80,11 +80,7 @@ export function CalendarBoard({ events }: Props) {
   return (
     <div className="rounded-2xl border border-emerald-900/15 bg-white p-3 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 text-sm font-medium">
-          <CalendarDays className="h-4 w-4" aria-hidden="true" />
-          イベントカレンダー
-        </h3>
-        <div className="flex items-center gap-1 text-sm">
+        <div className="flex w-full items-center justify-between gap-1 text-sm">
           <Button
             variant="ghost"
             aria-label="前の月"
@@ -166,14 +162,14 @@ export function CalendarBoard({ events }: Props) {
       </div>
       <div
         id="calendar-day-events"
-        className="mt-4 border-t border-emerald-900/15 pt-4"
+        className={popupDate ? "mt-4 border-t border-emerald-900/15 pt-4" : undefined}
         aria-live="polite"
       >
         {popupDate ? (
           <>
-            <h4 className="text-sm font-medium">
+            <h3 className="text-sm font-medium">
               {popupDate.getMonth() + 1}月{popupDate.getDate()}日のイベント
-            </h4>
+            </h3>
             {selectedEvents.length ? (
               <ul className="mt-3 space-y-3">
                 {selectedEvents.map((event) => (
@@ -194,11 +190,7 @@ export function CalendarBoard({ events }: Props) {
               </p>
             )}
           </>
-        ) : (
-          <p className="text-xs leading-6 text-emerald-900/75">
-            日付を選ぶと、その日の予定が表示されます。朱色の点はイベントのある日です。
-          </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

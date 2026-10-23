@@ -152,7 +152,7 @@
   "limits": [
     "Pixel intersection sampled before recording, not every video frame.",
     "Portrait fixture motion is not human tracking or device validation.",
-    "Chromium five-model first visible submission was about 50 seconds; startup performance remains unresolved.",
+    "Earlier approximately 50-second startup claim was withdrawn: marks were captured after recording and camera restart, and their page-relative timestamps were mistaken for initial elapsed time. See camera-startup-validation.json for the corrected initial snapshot.",
     "Model orientation, materials, and tracking gaps are separate remaining checks."
   ]
 }

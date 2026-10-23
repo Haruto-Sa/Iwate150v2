@@ -37,7 +37,7 @@ export default function ErrorPage({ error, reset }: Props) {
         </div>
 
         {/* タイトル */}
-        <h1 className="font-display mb-2 text-2xl text-[#0f1c1a]">エラーが発生しました</h1>
+        <h1 className="text-balance font-display mb-2 text-2xl leading-relaxed text-[#0f1c1a]">エラーが発生しました</h1>
         <p className="mb-6 text-sm leading-7 text-emerald-900/70">
           申し訳ありません。予期しないエラーが発生しました。
           <br />

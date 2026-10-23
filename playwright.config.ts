@@ -39,6 +39,16 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "iphone",
+      testMatch: ["**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts"],
+      use: { ...devices["iPhone 13"] },
+    },
+    {
+      name: "android",
+      testMatch: ["**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts"],
+      use: { ...devices["Pixel 5"] },
+    },
+    {
       name: "chromium",
       testIgnore: "**/screenshots.spec.ts",
       use: { ...devices["Desktop Chrome"] },
@@ -47,6 +57,11 @@ export default defineConfig({
       name: "screenshots",
       testMatch: "**/screenshots.spec.ts",
       use: { ...devices["Desktop Chrome"], viewport: { width: 414, height: 896 } },
+    },
+    {
+      name: "webkit-ui",
+      testMatch: ["**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/spot-detail.spec.ts"],
+      use: { ...devices["Desktop Safari"] },
     },
   ],
 });

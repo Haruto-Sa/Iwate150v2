@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.use({ launchOptions: { args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] } });
+test.use({ permissions: ["camera"], launchOptions: { args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--enable-unsafe-swiftshader"] } });
 
 test("カメラ映像を撮影して編集・PNG保存へ進める", async ({ page }) => {
   await page.goto("/camera");

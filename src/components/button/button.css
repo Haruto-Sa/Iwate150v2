@@ -16,8 +16,10 @@
   border-radius: 100em;
   position: relative;
   text-decoration: none;
-  white-space: pre;
-  word-break: keep-all;
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
   overflow: hidden;
   padding: var(--button-padY) 1em;
   font-weight: 500;
@@ -54,6 +56,7 @@
 /* CONTENT WRAPPER */
 [data-lk-button-content-wrap="true"] {
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: var(--button-gap);
 }

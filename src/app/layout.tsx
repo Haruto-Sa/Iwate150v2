@@ -1,10 +1,7 @@
 /*
-UI Concept: 「透明な地図の温室」
-- liquid / frosted glass と深い森のトーンを重ねたポストモダンな観光ダッシュボード
-- 触感のある余白とガラス面、ノイズレイヤーで静かな空気感を演出し、アクセントに夕暮れオレンジ
-- タイポはディスプレイに Cormorant Garamond、本文に Noto Sans JP で温かみと可読性を両立
-- モバイル優先の下部ガラスナビと、指の届く大きめタップ領域
-- 1〜2箇所のフェード/スライドのみで軽やかなモーション、Lucideアイコンで文脈を補強
+UI Concept: 「いわての旅帖」
+温白の紙、松葉色の文字、朱色の目印。岩手の写真と余白で旅を案内する。
+ナビゲーションだけに透過を使い、本文はコントラストと読みやすさを優先する。
 */
 
 import type { Metadata, Viewport } from "next";
@@ -23,7 +20,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
 const display = Cormorant_Garamond({
-  variable: "--font-display",
+  variable: "--font-editorial",
   subsets: ["latin"],
   weight: ["600", "700"],
 });
@@ -45,8 +42,15 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: APP_THEME_COLOR,
+  viewportFit: "cover",
 };
 
+/**
+ * 共通ナビゲーションと旅帖の表示基盤を提供する。
+ * @param props - ページ内容
+ * @returns アプリ全体のHTML
+ * @example <RootLayout><Home /></RootLayout>
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,10 +61,9 @@ export default function RootLayout({
       <body suppressHydrationWarning className={`${display.variable} ${body.variable} antialiased`}>
         <SessionProvider>
           <DevelopmentServiceWorkerReset />
-          <div className="grain" />
           <div className="flex min-h-screen flex-col bg-transparent text-[#0f1c1a]">
             <Header />
-            <main className="page-shell mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-8 sm:px-6 sm:pt-12 sm:pb-16">
+            <main id="main-content" className="page-shell mx-auto w-full max-w-6xl flex-1 px-4 pb-12 pt-6 sm:px-6 sm:pt-10 md:pb-16">
               {children}
             </main>
             <MobileNav />

@@ -970,7 +970,7 @@ export function CameraCapture() {
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-[4/3] max-h-[calc(100dvh-8rem)] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white sm:aspect-[16/10]">
+      <div className="relative aspect-[4/3] w-full max-h-[calc(100dvh-8rem)] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white sm:aspect-[16/10]">
         <video
           ref={videoRef}
           className="h-full w-full object-cover"

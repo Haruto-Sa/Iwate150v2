@@ -99,6 +99,11 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
     await shutter.click();
     const cancel = page.getByRole("button", { name: "タイマーを取り消す" });
     await expect(cancel).toBeVisible();
+    const previewWidth = await page.locator("video").evaluate((video) => ({
+      width: video.getBoundingClientRect().width,
+      available: video.parentElement!.parentElement!.getBoundingClientRect().width,
+    }));
+    expect(previewWidth.width).toBeGreaterThan(previewWidth.available - 4);
     const countdown = await page.getByRole("status", { name: /秒後に撮影$/ }).locator("span").boundingBox();
     const header = await page.getByRole("banner").boundingBox();
     expect(countdown!.y).toBeGreaterThanOrEqual(header!.y + header!.height);

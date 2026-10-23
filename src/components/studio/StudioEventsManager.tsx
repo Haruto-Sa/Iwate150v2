@@ -1,5 +1,6 @@
 "use client";
 
+import { buildStudioPageHref, readStudioErrorMessage } from "./studioClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useTransition } from "react";
@@ -58,43 +59,6 @@ function createEventFormValues(event: Event): EventFormValues {
     end_date: event.end_date ?? "",
     city_id: event.city_id ? String(event.city_id) : "",
   };
-}
-
-/**
- * イベント管理画面の URL を構築する。
- *
- * @param page - 現在ページ
- * @param editId - 編集対象 ID
- * @returns href
- * @example
- * buildEventsPageHref(2, 9);
- */
-function buildEventsPageHref(page: number, editId?: number): string {
-  const params = new URLSearchParams();
-  params.set("page", String(page));
-  if (editId) params.set("edit", String(editId));
-  const query = params.toString();
-  return query ? `/studio/events?${query}` : "/studio/events";
-}
-
-/**
- * API エラーメッセージを抽出する。
- *
- * @param response - fetch response
- * @returns エラーメッセージ
- * @example
- * const message = await readErrorMessage(response);
- */
-async function readErrorMessage(response: Response): Promise<string> {
-  try {
-    const payload = (await response.json()) as { error?: string };
-    if (typeof payload.error === "string" && payload.error.trim()) {
-      return payload.error;
-    }
-  } catch {
-    return `Request failed with status ${response.status}.`;
-  }
-  return `Request failed with status ${response.status}.`;
 }
 
 /**
@@ -188,7 +152,7 @@ export function StudioEventsManager({
         });
 
         if (!response.ok) {
-          setErrorMessage(await readErrorMessage(response));
+          setErrorMessage(await readStudioErrorMessage(response));
           return;
         }
 
@@ -197,7 +161,7 @@ export function StudioEventsManager({
         }
 
         startTransition(() => {
-          router.push(buildEventsPageHref(page));
+          router.push(buildStudioPageHref("/studio/events", page));
           router.refresh();
         });
       } catch (error) {
@@ -230,12 +194,12 @@ export function StudioEventsManager({
         });
 
         if (!response.ok) {
-          setErrorMessage(await readErrorMessage(response));
+          setErrorMessage(await readStudioErrorMessage(response));
           return;
         }
 
         startTransition(() => {
-          router.push(buildEventsPageHref(page));
+          router.push(buildStudioPageHref("/studio/events", page));
           router.refresh();
         });
       } catch (error) {
@@ -264,7 +228,7 @@ export function StudioEventsManager({
           </div>
           {editingEvent ? (
             <Link
-              href={buildEventsPageHref(page)}
+              href={buildStudioPageHref("/studio/events", page)}
               className="rounded-full px-3 py-2 text-sm font-medium text-app-ink-muted ring-1 ring-app-line-soft transition hover:bg-app-surface-soft"
             >
               編集をやめる
@@ -410,7 +374,7 @@ export function StudioEventsManager({
 
                     <div className="flex flex-wrap gap-2">
                       <Link
-                        href={buildEventsPageHref(page, eventItem.id)}
+                        href={buildStudioPageHref("/studio/events", page, eventItem.id)}
                         className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-app-ink ring-1 ring-app-line/10 transition hover:bg-app-surface-soft"
                       >
                         <PencilLine className="h-4 w-4" />
@@ -441,7 +405,7 @@ export function StudioEventsManager({
           <div className="flex gap-2">
             {page > 1 ? (
               <Link
-                href={buildEventsPageHref(page - 1)}
+                href={buildStudioPageHref("/studio/events", page - 1)}
                 className="inline-flex rounded-full px-4 py-2 text-sm font-medium text-app-ink-muted ring-1 ring-app-line-soft transition hover:bg-app-surface-soft"
               >
                 前へ
@@ -453,7 +417,7 @@ export function StudioEventsManager({
             )}
             {hasNext ? (
               <Link
-                href={buildEventsPageHref(page + 1)}
+                href={buildStudioPageHref("/studio/events", page + 1)}
                 className="inline-flex rounded-full px-4 py-2 text-sm font-medium text-app-ink-muted ring-1 ring-app-line-soft transition hover:bg-app-surface-soft"
               >
                 次へ

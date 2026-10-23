@@ -1,5 +1,6 @@
 "use client";
 
+import { buildStudioPageHref, readStudioErrorMessage } from "./studioClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useTransition } from "react";
@@ -74,43 +75,6 @@ function createSpotFormValues(spot: Spot): SpotFormValues {
     model_path: spot.model_path ?? "",
     reference_url: spot.reference_url ?? "",
   };
-}
-
-/**
- * スポット管理画面の URL を構築する。
- *
- * @param page - 現在ページ
- * @param editId - 編集対象 ID
- * @returns href
- * @example
- * buildSpotsPageHref(2, 15);
- */
-function buildSpotsPageHref(page: number, editId?: number): string {
-  const params = new URLSearchParams();
-  params.set("page", String(page));
-  if (editId) params.set("edit", String(editId));
-  const query = params.toString();
-  return query ? `/studio/spots?${query}` : "/studio/spots";
-}
-
-/**
- * API エラーメッセージを抽出する。
- *
- * @param response - fetch response
- * @returns エラーメッセージ
- * @example
- * const message = await readErrorMessage(response);
- */
-async function readErrorMessage(response: Response): Promise<string> {
-  try {
-    const payload = (await response.json()) as { error?: string };
-    if (typeof payload.error === "string" && payload.error.trim()) {
-      return payload.error;
-    }
-  } catch {
-    return `Request failed with status ${response.status}.`;
-  }
-  return `Request failed with status ${response.status}.`;
 }
 
 /**
@@ -207,7 +171,7 @@ export function StudioSpotsManager({
         });
 
         if (!response.ok) {
-          setErrorMessage(await readErrorMessage(response));
+          setErrorMessage(await readStudioErrorMessage(response));
           return;
         }
 
@@ -216,7 +180,7 @@ export function StudioSpotsManager({
         }
 
         startTransition(() => {
-          router.push(buildSpotsPageHref(page));
+          router.push(buildStudioPageHref("/studio/spots", page));
           router.refresh();
         });
       } catch (error) {
@@ -249,12 +213,12 @@ export function StudioSpotsManager({
         });
 
         if (!response.ok) {
-          setErrorMessage(await readErrorMessage(response));
+          setErrorMessage(await readStudioErrorMessage(response));
           return;
         }
 
         startTransition(() => {
-          router.push(buildSpotsPageHref(page));
+          router.push(buildStudioPageHref("/studio/spots", page));
           router.refresh();
         });
       } catch (error) {
@@ -283,7 +247,7 @@ export function StudioSpotsManager({
           </div>
           {editingSpot ? (
             <Link
-              href={buildSpotsPageHref(page)}
+              href={buildStudioPageHref("/studio/spots", page)}
               className="rounded-full px-3 py-2 text-sm font-medium text-app-ink-muted ring-1 ring-app-line-soft transition hover:bg-app-surface-soft"
             >
               編集をやめる
@@ -502,7 +466,7 @@ export function StudioSpotsManager({
 
                     <div className="flex flex-wrap gap-2">
                       <Link
-                        href={buildSpotsPageHref(page, spot.id)}
+                        href={buildStudioPageHref("/studio/spots", page, spot.id)}
                         className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-app-ink ring-1 ring-app-line/10 transition hover:bg-app-surface-soft"
                       >
                         <PencilLine className="h-4 w-4" />
@@ -533,7 +497,7 @@ export function StudioSpotsManager({
           <div className="flex gap-2">
             {page > 1 ? (
               <Link
-                href={buildSpotsPageHref(page - 1)}
+                href={buildStudioPageHref("/studio/spots", page - 1)}
                 className="inline-flex rounded-full px-4 py-2 text-sm font-medium text-app-ink-muted ring-1 ring-app-line-soft transition hover:bg-app-surface-soft"
               >
                 前へ
@@ -545,7 +509,7 @@ export function StudioSpotsManager({
             )}
             {hasNext ? (
               <Link
-                href={buildSpotsPageHref(page + 1)}
+                href={buildStudioPageHref("/studio/spots", page + 1)}
                 className="inline-flex rounded-full px-4 py-2 text-sm font-medium text-app-ink-muted ring-1 ring-app-line-soft transition hover:bg-app-surface-soft"
               >
                 次へ

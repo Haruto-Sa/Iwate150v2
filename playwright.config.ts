@@ -40,12 +40,12 @@ export default defineConfig({
   projects: [
     {
       name: "iphone",
-      testMatch: ["**/menu-language.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts"],
+      testMatch: ["**/spot-statistics.spec.ts", "**/menu-language.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts"],
       use: { ...devices["iPhone 13"] },
     },
     {
       name: "android",
-      testMatch: ["**/menu-language.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts"],
+      testMatch: ["**/spot-statistics.spec.ts", "**/menu-language.spec.ts", "**/spot-detail.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/public-routes.spec.ts", "**/dialogs.spec.ts"],
       use: { ...devices["Pixel 5"] },
     },
     {
@@ -60,7 +60,7 @@ export default defineConfig({
     },
     {
       name: "webkit-ui",
-      testMatch: ["**/menu-language.spec.ts", "**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/spot-detail.spec.ts"],
+      testMatch: ["**/spot-statistics.spec.ts", "**/menu-language.spec.ts", "**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/spot-detail.spec.ts"],
       use: { ...devices["Desktop Safari"] },
     },
   ],

@@ -12,17 +12,35 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const BUCKET_NAME =
-  process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ??
-  process.env.SUPABASE_STORAGE_BUCKET ??
-  "iwate150data";
+const BUCKET_NAME = getStorageBucket();
 const STORAGE_PREFIXES = ["/images/", "/models/", "images/", "models/"] as const;
 const ASCII_SAFE_SEGMENT = /^[A-Za-z0-9._-]+$/;
 const SIGNED_MODE = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_MODE === "signed";
-const SIGNED_TTL_SECONDS = Number(process.env.NEXT_PUBLIC_SUPABASE_SIGNED_URL_EXPIRES_IN ?? "21600");
+const SIGNED_TTL_SECONDS = getSignedTtlSeconds();
 const SIGNED_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 const serverSignedUrlCache = new Map<string, { url: string; expiresAt: number }>();
 let serverStorageClient: SupabaseClient | null | undefined;
+
+/**
+ * 公開設定、サーバー設定、既定値の順でStorageバケット名を解決する。
+ * @returns バケット名。既存互換のため空文字も設定値として扱う
+ * @example const bucket = getStorageBucket();
+ */
+export function getStorageBucket(): string {
+  return process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ??
+    process.env.SUPABASE_STORAGE_BUCKET ?? "iwate150data";
+}
+
+/**
+ * signed URLの有効期限を整数化し、既存の上下限に収める。
+ * @returns 3600〜86400秒。非有限値は21600秒
+ * @example const expiresIn = getSignedTtlSeconds();
+ */
+export function getSignedTtlSeconds(): number {
+  const raw = Number(process.env.NEXT_PUBLIC_SUPABASE_SIGNED_URL_EXPIRES_IN ?? "21600");
+  if (!Number.isFinite(raw)) return 21600;
+  return Math.min(86400, Math.max(3600, Math.floor(raw)));
+}
 
 /**
  * 既存の legacy/public 互換パスを Storage 相対パスへ正規化する。
@@ -210,9 +228,7 @@ export async function resolveServerStorageUrl(
   const client = getServerStorageClient();
   if (!client) return publicUrl;
 
-  const expiresIn = Number.isFinite(SIGNED_TTL_SECONDS)
-    ? Math.min(86400, Math.max(3600, Math.floor(SIGNED_TTL_SECONDS)))
-    : 21600;
+  const expiresIn = SIGNED_TTL_SECONDS;
 
   const { data, error } = await client.storage.from(BUCKET_NAME).createSignedUrl(objectPath, expiresIn);
   if (error || !data?.signedUrl) return publicUrl;

@@ -36,6 +36,6 @@ describe("管理ダッシュボードの認可と表示", () => {
     expect(screen.getAllByText("取得できません")).toHaveLength(2);
     expect(screen.getByText("0")).toBeVisible();
     expect(screen.getByText("4")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "管理", exact: true })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "管理" })).toBeVisible();
   });
 });

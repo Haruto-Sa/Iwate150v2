@@ -97,7 +97,7 @@ export default async function SpotDetailPage({ params }: PageProps) {
       />
 
       <section className="overflow-hidden rounded-[32px] border border-emerald-900/10 bg-white shadow-sm">
-        <div className="relative aspect-[3/2] max-h-[32rem] bg-emerald-100"><TravelImage src={imageUrl} alt={spot.name} sizes="(max-width: 1152px) 100vw, 1152px" /></div>
+        <div className="relative aspect-[3/2] max-h-[32rem] w-full bg-emerald-100"><TravelImage src={imageUrl} alt={spot.name} sizes="(max-width: 1152px) 100vw, 1152px" /></div>
         <div className="space-y-5 p-5 sm:p-8">
           <div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-emerald-700">

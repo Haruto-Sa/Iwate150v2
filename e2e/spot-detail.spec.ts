@@ -26,15 +26,15 @@ test("所在地・保存・共有を表示し、現在地を要求せずルー�
 test.describe("地図の通信障害", () => {
   // SWキャッシュで障害注入を迂回しない。SWはpwa.specで別途検証。
   test.use({ serviceWorkers: "block" });
-test("タイル障害時も所在地の代替操作を利用できる", async ({ page }) => {
-  // 登録APIだけを遮断するとSerwistの登録が中途半端になるため、非対応環境として検証する。
-  await page.addInitScript(() => { delete (Navigator.prototype as Partial<Navigator>).serviceWorker; });
-  await page.route("**/*.tile.openstreetmap.org/**", (route) => route.fulfill({ status: 503, contentType: "text/plain", body: "Tile unavailable" }));
-  await page.goto("/spots/1");
-  await expect(page.getByRole("status").filter({ hasText: "地図を読み込めません" })).toBeVisible();
-  await page.getByRole("button", { name: "ルート検索", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-});
+  test("タイル障害時も所在地の代替操作を利用できる", async ({ page }) => {
+    // 登録APIだけを遮断するとSerwistの登録が中途半端になるため、非対応環境として検証する。
+    await page.addInitScript(() => { Reflect.deleteProperty(Navigator.prototype, "serviceWorker"); });
+    await page.route("**/*.tile.openstreetmap.org/**", (route) => route.fulfill({ status: 503, contentType: "text/plain", body: "Tile unavailable" }));
+    await page.goto("/spots/1");
+    await expect(page.getByRole("status").filter({ hasText: "地図を読み込めません" })).toBeVisible();
+    await page.getByRole("button", { name: "ルート検索", exact: true }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+  });
 
 });
 
@@ -48,6 +48,13 @@ for (const width of [320, 390, 844, 1440]) {
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button", { name: "キャンセル", exact: true }).click();
     await page.evaluate(() => window.scrollTo(0, 0));
+    const photo = page.getByRole("img", { name: "盛岡城跡公園", exact: true });
+    await expect.poll(() => photo.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    const widths = await photo.evaluate((image) => ({
+      photo: image.getBoundingClientRect().width,
+      card: image.closest("section")!.getBoundingClientRect().width,
+    }));
+    expect(widths.photo).toBeGreaterThan(widths.card - 4);
     await page.screenshot({ path: testInfo.outputPath(`detail-${width}.png`), fullPage: true });
   });
 }

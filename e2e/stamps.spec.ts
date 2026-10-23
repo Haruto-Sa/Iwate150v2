@@ -50,12 +50,27 @@ test("未ログインで県内の対象を閲覧し、位置情報拒否後も�
     fullPage: true,
     animations: "disabled",
   });
-  await page.setViewportSize({ width: 320, height: 800 });
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const locationButton = page.getByRole("button", { name: "位置情報を取得" });
+    const mapHeading = page.getByRole("heading", { name: "岩手のスタンプマップ" });
+    expect(await locationButton.evaluate((button, heading) => Boolean(button.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING), await mapHeading.elementHandle())).toBe(true);
+    await page.getByRole("link", { name: "市町村から探す", exact: true }).click();
+    await expect(page).toHaveURL(/#stamp-cities-title$/);
+    await expect(page.locator("#stamp-cities-title")).toBeInViewport();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    // リサイズ後に追加される端のタイルまで待ち、読み込み途中を比較画像にしない。
+    await expect.poll(() => page.locator(".leaflet-container").evaluate(map => {
+      const bounds = map.getBoundingClientRect();
+      const tiles = Array.from(map.querySelectorAll<HTMLImageElement>(".leaflet-tile-loaded"))
+        .filter(tile => tile.complete && tile.naturalWidth > 0).map(tile => tile.getBoundingClientRect());
+      return [[bounds.left + 1, bounds.top + 1], [bounds.right - 1, bounds.top + 1],
+        [bounds.left + 1, bounds.bottom - 1], [bounds.right - 1, bounds.bottom - 1]]
+        .every(([x, y]) => tiles.some(tile => x >= tile.left && x <= tile.right && y >= tile.top && y <= tile.bottom));
+    }), { timeout: 15_000 }).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`stamps-guest-${width}.png`), fullPage: true, animations: "disabled" });
+  }
 });
 
 test("本人の訪問スポットが地図と市町村進捗に反映され、再読込しても保持される", async ({
@@ -213,7 +228,7 @@ test("ログイン後もサンプル対象は本人の進捗と混ぜず収集�
     });
   });
   await page.goto("/stamps");
-  await expect(page.getByText(/現在はサンプルの対象/)).toBeVisible();
+  await expect(page.getByText(/サンプル表示中/)).toBeVisible();
   await expect(page.getByRole("progressbar")).toHaveCount(0);
   await page.getByRole("button", { name: "位置情報を取得" }).click();
   await expect(

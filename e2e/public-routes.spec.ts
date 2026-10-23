@@ -26,7 +26,7 @@ test("イベントを探す導線と再読み込みでイベントタブを開�
   await expect(page).toHaveURL(/\/search\?tab=event$/);
   await expect(page.getByRole("button", { name: "イベント", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("もうすぐ開催", { exact: true })).toBeVisible();
-  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.reload();
   await expect(page.getByRole("button", { name: "イベント", exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.goto("/search?tab=unknown");
   await expect(page.getByRole("button", { name: "スポット", exact: true })).toHaveAttribute("aria-pressed", "true");

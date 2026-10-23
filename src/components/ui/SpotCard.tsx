@@ -24,9 +24,11 @@ export function SpotCard({
 }) {
   return (
     <article className="group min-w-0 overflow-hidden rounded-2xl border border-emerald-900/15 bg-white">
-      <div className="relative aspect-[3/2] overflow-hidden">
-        <TravelImage src={imageUrl} alt={spot.name} />
-      </div>
+      {imageUrl && (
+        <div className="relative aspect-[3/2] overflow-hidden">
+          <TravelImage src={imageUrl} alt={spot.name} />
+        </div>
+      )}
       <div className="p-5">
         <p className="mb-2 text-xs tracking-wider text-emerald-700">
           {cityName ?? "岩手県"}

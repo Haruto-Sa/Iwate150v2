@@ -7,7 +7,7 @@ import type { Spot } from "@/lib/types";
 const session = vi.fn();
 const api = vi.hoisted(() => ({
   addFavorite: vi.fn(),
-  fetchSpots: vi.fn(),
+  fetchStampCatalog: vi.fn(),
   fetchUserFavorites: vi.fn(),
   mergeFavorites: vi.fn(),
   removeFavorite: vi.fn(),
@@ -31,7 +31,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   window.localStorage.clear();
   session.mockReturnValue({ user: null, status: "unauthenticated" });
-  api.fetchSpots.mockResolvedValue(spots);
+  api.fetchStampCatalog.mockResolvedValue({ spots, cities: [], isSample: false });
   api.fetchUserFavorites.mockResolvedValue([]);
   api.addFavorite.mockResolvedValue({ spot_id: 1 });
   api.removeFavorite.mockResolvedValue(true);
@@ -205,7 +205,7 @@ describe("useFavoritesのサンプルと本人データの分離", () => {
       ...spots[0],
       id: index + 1,
     }));
-    api.fetchSpots.mockResolvedValue(many);
+    api.fetchStampCatalog.mockResolvedValue({ spots: many, cities: [], isSample: false });
     localStorage.setItem(
       GUEST_FAVORITES_KEY,
       JSON.stringify(many.map((spot) => spot.id)),
@@ -326,4 +326,20 @@ describe("useFavoritesのサンプルと本人データの分離", () => {
     expect(api.removeFavorite).toHaveBeenCalledTimes(1);
     expect(result.current.favoriteIds).toEqual([1]);
   });
+  it("公開カタログがサンプルなら本人記録と旧保存に結び付けない", async () => {
+    session.mockReturnValue({ user: { id: "A" }, status: "authenticated" });
+    localStorage.setItem(GUEST_FAVORITES_KEY, "[2]");
+    api.fetchUserFavorites.mockResolvedValue([{ spot_id: 1 }]);
+    api.fetchStampCatalog.mockResolvedValue({ spots: spots.map(spot => ({ ...spot, isSample: true })), cities: [], isSample: true });
+    const { result } = renderHook(() => useFavorites());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    expect(result.current.loadFailed).toBe(true);
+    expect(result.current.favoriteSpots).toEqual([]);
+    expect(result.current.legacySpots).toEqual([]);
+    await act(async () => { await result.current.toggleFavorite(1); await result.current.importLegacyFavorites(); });
+    expect(api.addFavorite).not.toHaveBeenCalled();
+    expect(api.mergeFavorites).not.toHaveBeenCalled();
+    expect(localStorage.getItem(GUEST_FAVORITES_KEY)).toBe("[2]");
+  });
+
 });

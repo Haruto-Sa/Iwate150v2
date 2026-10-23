@@ -74,3 +74,12 @@ The runner now includes `limited-bandwidth`: a local HTTP proxy applies one shar
 The first-display target is not met by this evidence. Significant Android-profile UI stalls remain despite moving inference to a Worker. Host scheduling and shared GPU work are potential contributors, not established causes. The earlier isolated Worker timer experiment must not be used to claim responsiveness of the complete camera screen. These profile measurements are separate from Android-emulator and physical-iPhone checks.
 
 Linux CI for `7ae7293` passed 229 E2E tests with two skips after the WebGL registration fix. This establishes the covered browser behaviors, not physical camera behavior, OAuth, live database policies or performance targets.
+
+
+## GPU wait diagnosis
+
+A Chromium trace of the same 8Mbps cold case recorded main-thread `Commit` events lasting 5,286ms and 2,292ms, overlapping GPU tasks of about 5,240ms and 2,292ms. Individual instrumented main-thread WebGL/Canvas2D calls, bitmap creation and Worker message transfer did not exceed 100ms. `camera-gpu-stall-summary.json` retains the long-event summary; the full local trace is ignored under `documents/camera-performance/`. This locates the observed stall in compositor/GPU waiting rather than synchronous application parsing or message transfer.
+
+In a diagnostic run forcing the existing `useCpuInference` option on Worker initialization, the Android-profile cold first inference took 467ms and the maximum 100ms-timer gap was 297ms. Revisit took 90ms for first inference with a 387ms maximum timer gap. Both model renders and PNG captures passed (`camera-cpu-inference-probe.json`). Application backend selection was **not changed** by this experiment.
+
+The Chromium runner explicitly uses SwiftShader, a software GPU. These results support GPU contention as the cause of the measured stalls in this environment, but do not establish the preferred CPU/GPU backend, sustained frame rate, energy use or first-start performance on Android hardware. Do not use vendor-specific detection or a test-only backend shortcut to claim a production improvement.

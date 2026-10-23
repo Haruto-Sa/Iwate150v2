@@ -1,0 +1,351 @@
+{
+  "run": "https://github.com/Haruto-Sa/Iwate150v2/actions/runs/40003155639",
+  "commit": "2133726",
+  "results": {
+    "passed": 236,
+    "skipped": 6,
+    "failed": 1
+  },
+  "notes": [
+    "Linux WebKit has no MediaRecorder. Recording scenarios first verify photo fallback, then skip only recording.",
+    "Failure is native FaceMesh fallback: first result at 20386ms, first send at 4475ms; the test waited only 15s from selection at 3080ms. This is not proof of acceptable performance."
+  ],
+  "diagnostics": [
+    {
+      "project": "iphone",
+      "title": "動画を録画・再生・保存し、写真撮影に戻れる",
+      "outcome": "skipped",
+      "diagnostic": "recording-capability",
+      "data": {
+        "recorder": false,
+        "captureStream": true,
+        "formats": [
+          {
+            "mime": "video/mp4;codecs=avc1.42E01E",
+            "supported": false
+          },
+          {
+            "mime": "video/mp4",
+            "supported": false
+          },
+          {
+            "mime": "video/webm;codecs=vp8",
+            "supported": false
+          },
+          {
+            "mime": "video/webm",
+            "supported": false
+          }
+        ]
+      }
+    },
+    {
+      "project": "iphone",
+      "title": "バックグラウンド移行で未完成の動画を破棄し、再録画できる",
+      "outcome": "skipped",
+      "diagnostic": "recording-capability",
+      "data": {
+        "recorder": false,
+        "captureStream": true,
+        "formats": [
+          {
+            "mime": "video/mp4;codecs=avc1.42E01E",
+            "supported": false
+          },
+          {
+            "mime": "video/mp4",
+            "supported": false
+          },
+          {
+            "mime": "video/webm;codecs=vp8",
+            "supported": false
+          },
+          {
+            "mime": "video/webm",
+            "supported": false
+          }
+        ]
+      }
+    },
+    {
+      "project": "android",
+      "title": "動画を録画・再生・保存し、写真撮影に戻れる",
+      "outcome": "expected",
+      "diagnostic": "recording-capability",
+      "data": {
+        "recorder": true,
+        "captureStream": true,
+        "formats": [
+          {
+            "mime": "video/mp4;codecs=avc1.42E01E",
+            "supported": true
+          },
+          {
+            "mime": "video/mp4",
+            "supported": true
+          },
+          {
+            "mime": "video/webm;codecs=vp8",
+            "supported": true
+          },
+          {
+            "mime": "video/webm",
+            "supported": true
+          }
+        ]
+      }
+    },
+    {
+      "project": "android",
+      "title": "バックグラウンド移行で未完成の動画を破棄し、再録画できる",
+      "outcome": "expected",
+      "diagnostic": "recording-capability",
+      "data": {
+        "recorder": true,
+        "captureStream": true,
+        "formats": [
+          {
+            "mime": "video/mp4;codecs=avc1.42E01E",
+            "supported": true
+          },
+          {
+            "mime": "video/mp4",
+            "supported": true
+          },
+          {
+            "mime": "video/webm;codecs=vp8",
+            "supported": true
+          },
+          {
+            "mime": "video/webm",
+            "supported": true
+          }
+        ]
+      }
+    },
+    {
+      "project": "chromium",
+      "title": "動画を録画・再生・保存し、写真撮影に戻れる",
+      "outcome": "expected",
+      "diagnostic": "recording-capability",
+      "data": {
+        "recorder": true,
+        "captureStream": true,
+        "formats": [
+          {
+            "mime": "video/mp4;codecs=avc1.42E01E",
+            "supported": true
+          },
+          {
+            "mime": "video/mp4",
+            "supported": true
+          },
+          {
+            "mime": "video/webm;codecs=vp8",
+            "supported": true
+          },
+          {
+            "mime": "video/webm",
+            "supported": true
+          }
+        ]
+      }
+    },
+    {
+      "project": "chromium",
+      "title": "バックグラウンド移行で未完成の動画を破棄し、再録画できる",
+      "outcome": "expected",
+      "diagnostic": "recording-capability",
+      "data": {
+        "recorder": true,
+        "captureStream": true,
+        "formats": [
+          {
+            "mime": "video/mp4;codecs=avc1.42E01E",
+            "supported": true
+          },
+          {
+            "mime": "video/mp4",
+            "supported": true
+          },
+          {
+            "mime": "video/webm;codecs=vp8",
+            "supported": true
+          },
+          {
+            "mime": "video/webm",
+            "supported": true
+          }
+        ]
+      }
+    },
+    {
+      "project": "webkit-ui",
+      "title": "WorkerでWebGLを使えない場合も既存の顔検出で撮影できる",
+      "outcome": "unexpected",
+      "diagnostic": "camera-diagnostics",
+      "data": {
+        "marks": [
+          {
+            "name": "iwate-camera:camera:start",
+            "time": 1043
+          },
+          {
+            "name": "iwate-camera:camera:playing",
+            "time": 1481
+          },
+          {
+            "name": "iwate-camera:renderer:initialize:start",
+            "time": 1481
+          },
+          {
+            "name": "iwate-camera:renderer:initialize:end",
+            "time": 1736
+          },
+          {
+            "name": "iwate-camera:urls:start",
+            "time": 1736
+          },
+          {
+            "name": "iwate-camera:urls:end",
+            "time": 1740
+          },
+          {
+            "name": "iwate-camera:face:initialize:start",
+            "time": 1741
+          },
+          {
+            "name": "iwate-camera:renderer:first-submit:start",
+            "time": 1765
+          },
+          {
+            "name": "iwate-camera:renderer:first-submit:end",
+            "time": 1779
+          },
+          {
+            "name": "iwate-camera:face:worker-unavailable",
+            "time": 2729
+          },
+          {
+            "name": "iwate-camera:face:import:start",
+            "time": 2729
+          },
+          {
+            "name": "iwate-camera:face:import:end",
+            "time": 2983
+          },
+          {
+            "name": "iwate-camera:sobacchi:selected",
+            "time": 3080
+          },
+          {
+            "name": "iwate-camera:sobacchi:load:start",
+            "time": 3088
+          },
+          {
+            "name": "iwate-camera:sobacchi:material-parse:start",
+            "time": 3280
+          },
+          {
+            "name": "iwate-camera:sobacchi:material-parse:end",
+            "time": 3282
+          },
+          {
+            "name": "iwate-camera:sobacchi:parse:start",
+            "time": 3283
+          },
+          {
+            "name": "iwate-camera:sobacchi:parse:end",
+            "time": 3711
+          },
+          {
+            "name": "iwate-camera:sobacchi:object-ready",
+            "time": 3712
+          },
+          {
+            "name": "iwate-camera:face:initialize:end",
+            "time": 4474
+          },
+          {
+            "name": "iwate-camera:face:ready",
+            "time": 4475
+          },
+          {
+            "name": "iwate-camera:face:first-send",
+            "time": 4475
+          },
+          {
+            "name": "iwate-camera:face:first-result",
+            "time": 20386
+          },
+          {
+            "name": "iwate-camera:face:first-send-end",
+            "time": 20387
+          }
+        ],
+        "video": {
+          "readyState": 3,
+          "currentTime": 20.878792999999973,
+          "paused": false,
+          "width": 1280
+        }
+      }
+    },
+    {
+      "project": "webkit-ui",
+      "title": "動画を録画・再生・保存し、写真撮影に戻れる",
+      "outcome": "skipped",
+      "diagnostic": "recording-capability",
+      "data": {
+        "recorder": false,
+        "captureStream": true,
+        "formats": [
+          {
+            "mime": "video/mp4;codecs=avc1.42E01E",
+            "supported": false
+          },
+          {
+            "mime": "video/mp4",
+            "supported": false
+          },
+          {
+            "mime": "video/webm;codecs=vp8",
+            "supported": false
+          },
+          {
+            "mime": "video/webm",
+            "supported": false
+          }
+        ]
+      }
+    },
+    {
+      "project": "webkit-ui",
+      "title": "バックグラウンド移行で未完成の動画を破棄し、再録画できる",
+      "outcome": "skipped",
+      "diagnostic": "recording-capability",
+      "data": {
+        "recorder": false,
+        "captureStream": true,
+        "formats": [
+          {
+            "mime": "video/mp4;codecs=avc1.42E01E",
+            "supported": false
+          },
+          {
+            "mime": "video/mp4",
+            "supported": false
+          },
+          {
+            "mime": "video/webm;codecs=vp8",
+            "supported": false
+          },
+          {
+            "mime": "video/webm",
+            "supported": false
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -208,7 +208,12 @@ function isFaceMeshModuleArgumentsError(error: unknown): boolean {
  */
 async function createFaceMeshInstance(): Promise<FaceMeshInstance> {
   if (typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined" && typeof createImageBitmap !== "undefined") {
-    return createCameraFaceWorker(MEDIAPIPE_FACE_MESH_ASSET_BASE);
+    try {
+      return await createCameraFaceWorker(MEDIAPIPE_FACE_MESH_ASSET_BASE);
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "NotSupportedError")) throw error;
+      markCameraTiming("face:worker-unavailable");
+    }
   }
   markCameraTiming("face:import:start");
   resetMediaPipeSolutionGlobals();

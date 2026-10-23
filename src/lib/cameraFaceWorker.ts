@@ -55,10 +55,12 @@ export async function createCameraFaceWorker(assetBase: string): Promise<CameraF
 
   worker.onerror = (event) => fail(new Error(`Face worker failed: ${event?.message?.slice(0, 512) ?? "unknown error"}`));
   worker.onmessageerror = () => fail(new Error("Face worker response could not be read"));
-  worker.onmessage = ({ data }: MessageEvent<{ type: string; message?: string; stage?: string; multiFaceLandmarks: NormalizedLandmarkListList }>) => {
+  worker.onmessage = ({ data }: MessageEvent<{ type: string; message?: string; stage?: string; name?: string; multiFaceLandmarks: NormalizedLandmarkListList }>) => {
     if (closed || !pending) return;
     if (data.type === "error") {
-      fail(new Error(`Face inference failed (${data.stage ?? "unknown"}): ${data.message?.slice(0, 512) ?? "unknown error"}`));
+      const message = `Face inference failed (${data.stage ?? "unknown"}): ${data.message?.slice(0, 512) ?? "unknown error"}`;
+      fail(data.stage === "initialize" && data.name === "NotSupportedError"
+        ? new DOMException(message, "NotSupportedError") : new Error(message));
       return;
     }
     if (data.type !== "ready" && data.type !== "result") return;

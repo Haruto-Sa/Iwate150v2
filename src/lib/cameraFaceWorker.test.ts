@@ -115,6 +115,14 @@ describe("camera face worker", () => {
     expect(worker.terminate).toHaveBeenCalledOnce();
   });
 
+  it("allows an unsupported Worker context to select the existing native path", async () => {
+    const ready = createCameraFaceWorker("/mediapipe/face_mesh");
+    const assertion = expect(ready).rejects.toMatchObject({ name: "NotSupportedError" });
+    worker.onmessage({ data: { type: "error", stage: "initialize", name: "NotSupportedError", message: "Worker WebGL is unavailable" } });
+    await assertion;
+    expect(worker.terminate).toHaveBeenCalledOnce();
+  });
+
   it("surfaces worker errors and terminates the failed worker", async () => {
     const ready = createCameraFaceWorker("/mediapipe/face_mesh");
     const assertion = expect(ready).rejects.toThrow("failed");

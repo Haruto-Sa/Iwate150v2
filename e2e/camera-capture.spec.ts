@@ -160,6 +160,24 @@ for (const [width, height] of [[390, 844], [844, 390]]) {
 test.describe("モデルの通信障害", () => {
   // 通常の撮影/PWAはSW有効。HTTP障害注入のみSW非対応環境で検証する。
   test.use({ serviceWorkers: "block" });
+  test("WorkerでWebGLを使えない場合も既存の顔検出で撮影できる", async ({ page }) => {
+    await page.addInitScript(() => { Reflect.deleteProperty(Navigator.prototype, "serviceWorker"); });
+    await page.route("**/mediapipe/face_mesh/worker-context.js", (route) => route.fulfill({
+      contentType: "application/javascript",
+      body: "self.initializeFaceWorkerContext = () => { throw new DOMException('Worker WebGL is unavailable', 'NotSupportedError'); };",
+    }));
+    await page.goto("/camera");
+    const shutter = page.getByRole("button", { name: "写真を撮る", exact: true });
+    await expect(shutter).toBeEnabled({ timeout: 15000 });
+    await page.getByRole("button", { name: "そばっち", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "顔をカメラに向ける" })).toBeVisible({ timeout: 15000 });
+    expect(await page.evaluate(() => performance.getEntriesByName("iwate-camera:face:worker-unavailable").length)).toBe(1);
+    await expect(shutter).toBeDisabled();
+    await page.getByRole("button", { name: "キャラクターを外す", exact: true }).click();
+    await shutter.click();
+    await expect(page).toHaveURL(/\/camera\/edit$/);
+  });
+
   test("顔検出の停止中も操作でき、期限切れ後に通常撮影できる", async ({ page }) => {
     test.setTimeout(45000);
     await page.addInitScript(() => { Reflect.deleteProperty(Navigator.prototype, "serviceWorker"); });

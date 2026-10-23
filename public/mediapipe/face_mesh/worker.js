@@ -1,5 +1,5 @@
 /* global importScripts, FaceMesh */
-importScripts('./face_mesh.js');
+importScripts('./worker-context.js', './face_mesh.js');
 let tracker;
 let canvas;
 let landmarks = [];
@@ -38,6 +38,6 @@ self.onmessage = async ({ data }) => {
       self.postMessage({ type: 'result', multiFaceLandmarks: landmarks });
     }
   } catch (error) {
-    self.postMessage({ type: 'error', stage, message: String(error).slice(0, 512) });
+    self.postMessage({ type: 'error', stage, name: error?.name, message: String(error).slice(0, 512) });
   }
 };

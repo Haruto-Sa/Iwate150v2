@@ -5,7 +5,7 @@ import { useAuthSession } from "@/components/auth/SessionProvider";
 import { GUEST_FAVORITES_KEY } from "@/lib/config";
 import {
   addFavorite,
-  fetchSpots,
+  fetchStampCatalog,
   fetchUserFavorites,
   mergeFavorites,
   removeFavorite,
@@ -151,11 +151,13 @@ export function useFavorites(): FavoritesState {
     async function load(): Promise<void> {
       if (status === "loading") return;
       try {
-        const [records, publicSpots] = await Promise.all([
+        const [records, catalog] = await Promise.all([
           identity ? fetchUserFavorites(identity) : Promise.resolve([]),
-          fetchSpots(),
+          fetchStampCatalog(),
         ]);
         if (cancelled) return;
+        if (identity && catalog.isSample) throw new Error("Public catalog unavailable");
+        const publicSpots = catalog.spots;
         setFavoriteIds([...new Set(records.map((record) => record.spot_id))]);
         setSpots(publicSpots);
         if (identity) {

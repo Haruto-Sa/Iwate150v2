@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { mockStampCatalog } from "../src/lib/mockData";
 
 // 認証済みUIのテストはsession/本人APIを差し替える。実サーバーの認可はprivate-apiと単体テストで検証。
 // 再読込後もPlaywrightのAPI差替えを適用するため、SWはこのUI検証だけ無効化する。
@@ -33,9 +34,7 @@ test("ゲストはサンプルを閲覧し、旧保存を残したままログ�
     page.getByRole("link", { name: "ログインして保存" }),
   ).toHaveAttribute("href", "/login?next=%2Ffavorites");
   await page.goto("/spots/1");
-  await expect(
-    page.getByRole("link", { name: "ログインして保存" }),
-  ).toHaveAttribute("href", "/login?next=%2Fspots%2F1");
+  await expect(page.getByRole("button", { name: "サンプル（保存対象外）" })).toBeDisabled();
   expect(
     await page.evaluate(() => localStorage.getItem("voja_guest_favorites")),
   ).toBe("[2]");
@@ -49,6 +48,9 @@ test("本人の空一覧には自動追加せず、確認した旧保存だけ�
   await page.addInitScript(() =>
     localStorage.setItem("voja_guest_favorites", "[1]"),
   );
+  await page.route("**/api/stamps/catalog", route => route.fulfill({ json: {
+    ...mockStampCatalog, isSample: false, spots: mockStampCatalog.spots.map(spot => ({ ...spot, isSample: false })),
+  } }));
   await page.route("**/api/auth/session", (route) =>
     route.fulfill({
       json: {
@@ -134,20 +136,17 @@ test("本人の空一覧には自動追加せず、確認した旧保存だけ�
     await page.evaluate(() => localStorage.getItem("voja_guest_favorites")),
   ).toBe("[1]");
   await page.goto("/spots/3");
-  await page.getByRole("button", { name: "お気に入りに残す" }).click();
-  await expect(
-    page.getByRole("button", { name: "お気に入り済み" }),
-  ).toBeVisible();
-  expect(writes[2]).toEqual({ method: "PUT", body: { spotId: 3 } });
-  await page.goto("/favorites");
-  await expect(
-    page.getByRole("button", { name: "龍泉洞をお気に入りから削除" }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "サンプル（保存対象外）" })).toBeDisabled();
+  expect(writes).toHaveLength(2);
+
 });
 
 test("本人APIが失敗したらサンプルや空表示にせず再取得できる", async ({
   page,
 }) => {
+  await page.route("**/api/stamps/catalog", route => route.fulfill({ json: {
+    ...mockStampCatalog, isSample: false, spots: mockStampCatalog.spots.map(spot => ({ ...spot, isSample: false })),
+  } }));
   await page.route("**/api/auth/session", (route) =>
     route.fulfill({
       json: {
@@ -175,4 +174,21 @@ test("本人APIが失敗したらサンプルや空表示にせず再取得で�
   failing = false;
   await page.getByRole("button", { name: "もう一度読み込む" }).click();
   await expect(page.getByRole("link", { name: "最初の旅先を探す" })).toBeVisible();
+});
+
+test("公開カタログ障害時はサンプルを本人の保存・移行候補に使わない", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("voja_guest_favorites", "[2]"));
+  await page.route("**/api/auth/session", route => route.fulfill({ json: { user: { id: "traveler-A", role: "user" }, expires: "2099-01-01T00:00:00Z" } }));
+  const writes: string[] = [];
+  await page.route("**/api/me/favorites**", route => {
+    if (route.request().method() !== "GET") writes.push(route.request().method());
+    return route.fulfill({ json: { items: [{ id: 1, spot_id: 1, user_id: 1 }], nextOffset: null } });
+  });
+  await page.route("**/api/stamps/catalog", route => route.fulfill({ status: 503, json: { error: "unavailable" } }));
+  await page.goto("/favorites");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("お気に入りを読み込めませんでした");
+  await expect(page.getByText("盛岡城跡公園", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/追加する内容を確認/)).toHaveCount(0);
+  expect(writes).toEqual([]);
+  expect(await page.evaluate(() => localStorage.getItem("voja_guest_favorites"))).toBe("[2]");
 });

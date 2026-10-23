@@ -2,22 +2,10 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getServerAdminClient } from "@/lib/authServer";
+import { ApiError, assertSameOrigin, readLimitedJson } from "@/lib/apiGuards";
 
-const MAX_BODY_BYTES = 8192;
 export const MAX_MERGE_ITEMS = 100;
 const PAGE_SIZE = 100;
-
-/**
- * APIの既知の失敗。
- */
-class ApiError extends Error {
-  /**
-   * @param status - HTTP status
-   * @param message - 公開可能な説明
-   * @example new ApiError(400, "Invalid input");
-   */
-  constructor(readonly status: number, message: string) { super(message); }
-}
 
 /**
  * キャッシュ禁止のJSON応答を作る。
@@ -31,43 +19,32 @@ export function privateJson(body: unknown, status = 200): NextResponse {
 }
 
 /**
- * 本文をサイズ・時間制限付きで読み、許可済みフィールドのみ受け付ける。
- * @param request - HTTP request
- * @param fields - 許可するキー
- * @returns JSON object
- * @example await readBody(request, ["spotId"]);
+ * 確認した本人の利用者行を削除し、外部キーで保存記録も一括削除する。
+ * @param request - 本人確認ヘッダーと明示確認を含むDELETEリクエスト
+ * @returns キャッシュ禁止の削除結果
+ * @example await deleteOwnData(request);
  */
-async function readBody(request: Request, fields: string[]): Promise<Record<string, unknown>> {
-  if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json") {
-    throw new ApiError(415, "JSONが必要です。");
-  }
-  const reader = request.body?.getReader();
-  if (!reader) throw new ApiError(400, "本文が必要です。");
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => { void reader.cancel(); reject(new ApiError(408, "送信がタイムアウトしました。")); }, 5000);
-  });
+export async function deleteOwnData(request: Request): Promise<NextResponse> {
   try {
-    while (true) {
-      const { done, value } = await Promise.race([reader.read(), timeout]);
-      if (done) break;
-      size += value.byteLength;
-      if (size > MAX_BODY_BYTES) throw new ApiError(413, "本文が大きすぎます。");
-      chunks.push(value);
+    const session = await auth();
+    const identity = session?.user?.id;
+    if (!identity) throw new ApiError(401, "ログインが必要です。");
+    if (request.headers.get("x-session-user") !== identity) {
+      throw new ApiError(409, "利用者が変更されました。再読み込みしてください。");
     }
-    const bytes = new Uint8Array(size);
-    let offset = 0;
-    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-    let body: unknown;
-    try { body = JSON.parse(new TextDecoder().decode(bytes)); }
-    catch { throw new ApiError(400, "JSONが不正です。"); }
-    if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some((key) => !fields.includes(key))) {
-      throw new ApiError(400, "入力項目が不正です。");
-    }
-    return body as Record<string, unknown>;
-  } finally { clearTimeout(timer); void reader.cancel(); }
+    assertSameOrigin(request);
+    if (new URL(request.url).search) throw new ApiError(400, "検索条件が不正です。");
+    const body = await readLimitedJson(request, ["confirmation"]);
+    if (body.confirmation !== "delete") throw new ApiError(400, "削除の確認が必要です。");
+    const client = getServerAdminClient();
+    if (!client) throw new ApiError(503, "保存サービスを利用できません。");
+    // users.auth_idは一意。stamps/favoritesのON DELETE CASCADEと同じトランザクションで処理する。
+    const { error } = await client.from("users").delete().eq("auth_id", identity);
+    if (error) throw new ApiError(503, "削除できませんでした。再試行してください。");
+    return privateJson({ success: true });
+  } catch (error) {
+    return privateJson({ error: error instanceof ApiError ? error.message : "削除を確認できませんでした。再試行してください。" }, error instanceof ApiError ? error.status : 503);
+  }
 }
 
 /**
@@ -99,8 +76,7 @@ export async function handlePrivateRecords(request: Request, table: "favorites" 
     const expectedIdentity = request.headers.get("x-session-user");
     if (expectedIdentity && expectedIdentity !== identity) throw new ApiError(409, "利用者が変更されました。再読み込みしてください。");
     if (request.method !== "GET") {
-      const expectedOrigin = process.env.AUTH_URL ? new URL(process.env.AUTH_URL).origin : new URL(request.url).origin;
-      if (request.headers.get("origin") !== expectedOrigin) throw new ApiError(403, "送信元を確認できません。");
+      assertSameOrigin(request);
     }
     const url = new URL(request.url);
     if ([...url.searchParams.keys()].some((key) => key !== "offset")) throw new ApiError(400, "検索条件が不正です。");
@@ -119,7 +95,7 @@ export async function handlePrivateRecords(request: Request, table: "favorites" 
       const rows = data ?? [];
       return privateJson({ items: rows.slice(0, PAGE_SIZE), nextOffset: rows.length > PAGE_SIZE ? offset + PAGE_SIZE : null });
     }
-    const body = await readBody(request, request.method === "POST" && table === "favorites" ? ["spotIds"] : ["spotId"]);
+    const body = await readLimitedJson(request, request.method === "POST" && table === "favorites" ? ["spotIds"] : ["spotId"]);
     if (request.method === "DELETE" && table === "favorites") {
       const id = spotId(body.spotId);
       const { error } = await client.from(table).delete().eq("user_id", owner.id).eq("spot_id", id);

@@ -19,6 +19,8 @@ export type AdminCitySummary = Pick<City, "id" | "name">;
 export type AdminGenreSummary = Pick<Genre, "id" | "name">;
 
 export type Spot = {
+  /** DB取得値には付かない、閲覧用フォールバックの識別。 */
+  isSample?: boolean;
   id: number;
   name: string;
   description: string;
@@ -95,6 +97,8 @@ export type Character = {
   model_path?: string | null;
   mtl_path?: string | null;
   thumbnail?: string | null;
+  /** 紹介内容を確認できる自治体等の公開資料。モデル利用許諾とは別。 */
+  source_url?: string;
   tags?: string[];
   renderProfile?: CharacterRenderProfile;
 };
@@ -108,16 +112,15 @@ export type AdminDashboardEventSummary = Pick<Event, "id" | "title" | "city_id" 
 };
 
 export type AdminDashboardStats = {
-  totalUsers: number;
-  newUsersLast7Days: number;
-  totalSpots: number;
-  totalEvents: number;
-  totalAdmins: number;
+  totalUsers: number | null;
+  totalSpots: number | null;
+  totalEvents: number | null;
+  totalAdmins: number | null;
   latestSpots: AdminDashboardSpotSummary[];
   latestEvents: AdminDashboardEventSummary[];
 };
 
-export type AdminUserSummary = Pick<User, "id" | "auth_id" | "email" | "display_name" | "role" | "created_at">;
+export type AdminUserSummary = Pick<User, "id" | "auth_id" | "email" | "display_name" | "role">;
 
 export type AdminSpotCreateInput = Omit<Spot, "id">;
 

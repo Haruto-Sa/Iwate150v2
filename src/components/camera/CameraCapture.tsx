@@ -2,24 +2,28 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Camera as CameraIcon, RefreshCw, Check, SwitchCamera } from "lucide-react";
+import { Sparkles, Camera as CameraIcon, RefreshCw, Check, SwitchCamera, Timer, X, Video, Square, Download, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { characterModelCatalog, characters } from "@/lib/characters";
+import { useCaptureTimer, type CaptureDelay } from "@/hooks/useCaptureTimer";
+import { markCameraTiming, resetCameraTimings } from "@/lib/cameraTimings";
+import { createCameraFaceWorker, type CameraFaceTracker, type CameraFaceResults } from "@/lib/cameraFaceWorker";
 import { createCameraStream } from "@/lib/cameraStream";
 import { getModelUrl } from "@/lib/storage";
 import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
 import * as THREE from "three";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
-import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { loadCameraModel, disposeCameraModel, normalizeCameraModel } from "@/lib/cameraModel";
+
+import { CAMERA_VIDEO_MAX_EDGE, CAMERA_VIDEO_MAX_MS, getCameraRecordingMime, startCameraRecording, type CameraRecording } from "@/lib/cameraRecording";
+
+import { layoutCameraModels } from "@/lib/cameraModelLayout";
 
 type Detection = { x: number; y: number; width: number; height: number } | null;
 
-type FaceMeshInstance = import("@mediapipe/face_mesh").FaceMesh;
-type FaceMeshResults = import("@mediapipe/face_mesh").Results;
+type FaceMeshInstance = CameraFaceTracker;
+type FaceMeshResults = CameraFaceResults;
 type CameraStream = ReturnType<typeof createCameraStream>;
 type FaceResultsHandler = (results: FaceMeshResults) => void;
-type ModelFormat = "obj" | "fbx";
 type ModelLoadStatus = "idle" | "loading" | "ready" | "error";
 type ModelSource = { modelUrl: string; mtlUrl: string | null };
 type FaceMeshConstructor = typeof import("@mediapipe/face_mesh").FaceMesh;
@@ -158,19 +162,6 @@ function resolveActiveFacingMode(
 }
 
 /**
- * モデルURLから読み込みフォーマットを判定する。
- *
- * @param modelPath - モデルパス
- * @returns `obj` または `fbx`
- * @example
- * const format = resolveModelFormat("/models/goshodon.obj");
- */
-function resolveModelFormat(modelPath: string): ModelFormat {
-  const stripped = modelPath.split("?")[0]?.split("#")[0] ?? modelPath;
-  return stripped.toLowerCase().endsWith(".fbx") ? "fbx" : "obj";
-}
-
-/**
  * Storage相対パスからローカルpublic参照URLを作成する。
  *
  * @param path - `models/...` 形式のパス
@@ -220,8 +211,18 @@ function isFaceMeshModuleArgumentsError(error: unknown): boolean {
  * const faceMesh = await createFaceMeshInstance();
  */
 async function createFaceMeshInstance(): Promise<FaceMeshInstance> {
+  if (typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined" && typeof createImageBitmap !== "undefined") {
+    try {
+      return await createCameraFaceWorker(MEDIAPIPE_FACE_MESH_ASSET_BASE);
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "NotSupportedError")) throw error;
+      markCameraTiming("face:worker-unavailable");
+    }
+  }
+  markCameraTiming("face:import:start");
   resetMediaPipeSolutionGlobals();
   const moduleNamespace = await import("@mediapipe/face_mesh");
+  markCameraTiming("face:import:end");
   const FaceMesh = resolveMediaPipeExport<FaceMeshConstructor>(moduleNamespace, "FaceMesh");
   if (!FaceMesh) {
     throw new Error("FaceMesh constructor is unavailable in @mediapipe/face_mesh");
@@ -230,11 +231,13 @@ async function createFaceMeshInstance(): Promise<FaceMeshInstance> {
     locateFile: (file) => resolveFaceMeshAssetUrl(file),
   });
   if (typeof faceMesh.initialize === "function") {
+    markCameraTiming("face:initialize:start");
     await faceMesh.initialize();
+    markCameraTiming("face:initialize:end");
   }
   faceMesh.setOptions({
     maxNumFaces: 1,
-    refineLandmarks: true,
+    refineLandmarks: false,
     minDetectionConfidence: 0.5,
     minTrackingConfidence: 0.5,
   });
@@ -299,7 +302,7 @@ export function CameraCapture() {
   const modelMapRef = useRef<Record<string, THREE.Object3D>>({});
   const modelSourceMapRef = useRef<Record<string, ModelSource>>({});
   const detectionRef = useRef<Detection>(null);
-  const loadingSetRef = useRef<Set<string>>(new Set());
+  const modelLoadsRef = useRef(new Map<string, AbortController>());
   const lastDetStateUpdateRef = useRef(0);
   const startInProgressRef = useRef(false);
   const startAttemptRef = useRef(0);
@@ -310,7 +313,12 @@ export function CameraCapture() {
 
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [detection, setDetection] = useState<Detection>(null);
-  const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied">("idle");
+  const [renderedModels, setRenderedModels] = useState<string[]>([]);
+  const renderedModelsRef = useRef<string[]>([]);
+  const [faceHasResult, setFaceHasResult] = useState(false);
+  const [faceError, setFaceError] = useState(false);
+  const faceHasResultRef = useRef(false);
+  const [status, setStatus] = useState<"idle" | "starting" | "ready" | "denied" | "captured">("idle");
   // status を ref でも保持する。reactCompiler 有効下では useCallback のクロージャが
   // 古い status を掴んだままになり得るため、ガード判定は常に最新値を見る ref で行う。
   const statusRef = useRef(status);
@@ -319,6 +327,46 @@ export function CameraCapture() {
   const [activeFacingMode, setActiveFacingMode] = useState<CameraFacingMode>("user");
   const facingModeRef = useRef<CameraFacingMode>("user");
   const router = useRouter();
+  const [captureMode, setCaptureMode] = useState<"photo" | "video">("photo");
+  const [videoSupported, setVideoSupported] = useState(false);
+  const [recordingPhase, setRecordingPhase] = useState<"idle" | "recording" | "stopping">("idle");
+  const [recordedMilliseconds, setRecordedMilliseconds] = useState(0);
+  const [recordedClip, setRecordedClip] = useState<{ file: File; url: string } | null>(null);
+  const [sharingVideo, setSharingVideo] = useState(false);
+  const recordingRef = useRef<CameraRecording | null>(null);
+  const recordedUrlRef = useRef<string | null>(null);
+  const sharingVideoRef = useRef(false);
+  const videoBusy = recordingPhase !== "idle";
+
+  /**
+   * 録画中の未完成データを破棄する。
+   * @returns なし
+   * @example cancelRecording();
+   */
+  const cancelRecording = useCallback(() => {
+    const recording = recordingRef.current;
+    recordingRef.current = null;
+    recording?.cancel();
+    if (recording && !unmountedRef.current) {
+      setRecordingPhase("idle");
+      setErrorMessage("録画を中断しました。もう一度録画してください。");
+    }
+  }, []);
+
+  useEffect(() => {
+    setVideoSupported(getCameraRecordingMime() !== null);
+    /** バックグラウンドの未完成動画を破棄する。@returns なし @example onHidden(); */
+    function onHidden() { if (document.hidden) cancelRecording(); }
+    document.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("orientationchange", cancelRecording);
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("orientationchange", cancelRecording);
+      cancelRecording();
+      if (recordedUrlRef.current) URL.revokeObjectURL(recordedUrlRef.current);
+    };
+  }, [cancelRecording]);
+
 
   // StrictModeでeffectが再実行されても、起動前にマウント状態を復帰する。
   useEffect(() => {
@@ -350,6 +398,11 @@ export function CameraCapture() {
     }),
     [modelStatusMap, selectedModels]
   );
+
+  const [captureDelay, setCaptureDelay] = useState<CaptureDelay>(0);
+  const canCapture = status === "ready" && (selectedModels.length === 0 ||
+    (selectedModelsReady && detection !== null && selectedModels.every((id) => renderedModels.includes(id))));
+  const { remaining, busy, start: startCapture, cancel: cancelCapture } = useCaptureTimer(canCapture, handleCapture);
 
   // Initialize Three.js scene
   const initThreeScene = useCallback(() => {
@@ -383,86 +436,52 @@ export function CameraCapture() {
     scene.add(directionalLight);
   }, []);
 
-  // Load 3D model（二重ロード防止: ロード中・既にロード済みは skip）
+  /**
+   * 選択モデルの読み込みを一つだけ開始し、終了した世代だけを反映する。
+   * @param id - キャラクターID
+   * @param modelPath - モデルURL
+   * @param mtlPath - 任意の材質URL
+   * @returns なし
+   * @example loadModel(id, source.modelUrl, source.mtlUrl);
+   */
   const loadModel = useCallback((id: string, modelPath: string, mtlPath?: string | null) => {
-    if (!sceneRef.current) return;
+    if (!sceneRef.current || modelLoadsRef.current.has(id)) return;
     if (modelMapRef.current[id]) {
-      setModelStatusMap((prev) => (prev[id] === "ready" ? prev : { ...prev, [id]: "ready" }));
+      setModelStatusMap((prev) => ({ ...prev, [id]: "ready" }));
       return;
     }
-    if (loadingSetRef.current.has(id)) return;
-
-    loadingSetRef.current.add(id);
+    const controller = new AbortController();
+    modelLoadsRef.current.set(id, controller);
+    markCameraTiming(`${id}:load:start`);
     setModelStatusMap((prev) => ({ ...prev, [id]: "loading" }));
-    const modelFormat = resolveModelFormat(modelPath);
-
-    const onModelLoaded = (object: THREE.Object3D) => {
-      loadingSetRef.current.delete(id);
-      const box = new THREE.Box3().setFromObject(object);
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      // 極端に大きい/小さいモデルでも顔追従時に視認しやすいよう下限スケールを持たせる
-      const normalizeScale = Math.max(0.012, 1.0 / maxDim);
-      object.scale.setScalar(normalizeScale);
-
-      box.setFromObject(object);
-      const center = box.getCenter(new THREE.Vector3());
-      object.position.sub(center);
-
-      object.visible = false;
-      object.userData.normalizeScale = normalizeScale;
-
-      modelMapRef.current[id] = object;
-      sceneRef.current?.add(object);
+    void loadCameraModel(id, modelPath, mtlPath ?? null, controller.signal).then((object) => {
+      if (unmountedRef.current || controller.signal.aborted || modelLoadsRef.current.get(id) !== controller) {
+        disposeCameraModel(object);
+        return;
+      }
+      markCameraTiming(`${id}:object-ready`);
+      const model = normalizeCameraModel(object);
+      model.visible = false;
+      modelMapRef.current[id] = model;
+      sceneRef.current?.add(model);
       setModelStatusMap((prev) => ({ ...prev, [id]: "ready" }));
-    };
-
-    let retryCount = 0;
-    const maxRetries = 2;
-    const loadOnce = () => {
-      const onLoadError = () => {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          loadOnce();
-          return;
-        }
-        loadingSetRef.current.delete(id);
+    }).catch(() => {
+      if (!unmountedRef.current && !controller.signal.aborted) {
         setModelStatusMap((prev) => ({ ...prev, [id]: "error" }));
-        console.warn(`[loadModel] ${id} のロードに失敗しました`, { modelPath, modelFormat });
-      };
-
-      if (modelFormat === "fbx") {
-        const fbxLoader = new FBXLoader();
-        fbxLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
-        return;
       }
-
-      const objLoader = new OBJLoader();
-      if (mtlPath) {
-        const mtlLoader = new MTLLoader();
-        mtlLoader.load(
-          mtlPath,
-          (materials) => {
-            materials.preload();
-            objLoader.setMaterials(materials);
-            objLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
-          },
-          undefined,
-          () => {
-            objLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
-          }
-        );
-        return;
-      }
-
-      objLoader.load(modelPath, onModelLoaded, undefined, onLoadError);
-    };
-
-    loadOnce();
+    }).finally(() => {
+      if (modelLoadsRef.current.get(id) === controller) modelLoadsRef.current.delete(id);
+    });
   }, []);
 
   // FaceMesh result handler（detectionRefは毎フレーム更新、setDetectionは100msスロットル）
   const onFaceResults = useCallback((results: FaceMeshResults) => {
+    if (unmountedRef.current || selectedModelsRef.current.length === 0) return;
+    markCameraTiming("face:first-result");
+    if (!faceHasResultRef.current) {
+      faceHasResultRef.current = true;
+      setFaceHasResult(true);
+    }
     if (!results.multiFaceLandmarks || !results.multiFaceLandmarks[0]) {
       detectionRef.current = null;
       setDetection(null);
@@ -483,6 +502,7 @@ export function CameraCapture() {
       width: maxX - minX,
       height: maxY - minY,
     };
+    markCameraTiming("face:first-detected");
     detectionRef.current = newDetection;
     const now = performance.now();
     if (now - lastDetStateUpdateRef.current > 100) {
@@ -497,6 +517,15 @@ export function CameraCapture() {
 
   // Start camera + mediapipe
   const stopStream = useCallback(() => {
+    cancelRecording();
+    faceMeshRef.current?.onResults(() => undefined);
+    detectionRef.current = null;
+    setDetection(null);
+    faceHasResultRef.current = false;
+    setFaceHasResult(false);
+    setFaceError(false);
+    renderedModelsRef.current = [];
+    setRenderedModels([]);
     if (cameraStreamRef.current) {
       cameraStreamRef.current.stop();
       cameraStreamRef.current = null;
@@ -516,7 +545,7 @@ export function CameraCapture() {
     }
     detectionRef.current = null;
     setDetection(null);
-  }, []);
+  }, [cancelRecording]);
 
   /**
    * 指定した facingMode でカメラ起動を行う。
@@ -530,6 +559,8 @@ export function CameraCapture() {
     if (startInProgressRef.current || statusRef.current === "starting" || statusRef.current === "ready") return;
     startInProgressRef.current = true;
     const attempt = ++startAttemptRef.current;
+    resetCameraTimings();
+    markCameraTiming("camera:start");
 
     if (!window.isSecureContext) {
       setErrorMessage(
@@ -562,14 +593,18 @@ export function CameraCapture() {
         },
         onFrame: async () => {
           try {
-            if (faceMeshRef.current && videoRef.current) {
+            if (selectedModelsRef.current.length > 0 && faceMeshRef.current && videoRef.current) {
+              markCameraTiming("face:first-send");
               await faceMeshRef.current.send({ image: videoRef.current });
+              markCameraTiming("face:first-send-end");
             }
           } catch (err) {
+            if (unmountedRef.current || attempt !== startAttemptRef.current) return;
             if (isFaceMeshModuleArgumentsError(err) && !recoveringFaceMeshRef.current) {
               recoveringFaceMeshRef.current = true;
               try {
                 const recovered = await recreateFaceMeshInstance();
+                if (unmountedRef.current || attempt !== startAttemptRef.current) return;
                 recovered.onResults((results) => faceResultHandlerRef.current(results));
                 faceMeshRef.current = recovered;
               } catch (recoverError) {
@@ -579,6 +614,17 @@ export function CameraCapture() {
               }
               return;
             }
+            if (sharedFaceMesh === faceMeshRef.current) {
+              sharedFaceMesh = null;
+              sharedFaceMeshPromise = null;
+            }
+            void faceMeshRef.current?.close();
+            faceMeshRef.current = null;
+            detectionRef.current = null;
+            setDetection(null);
+            faceHasResultRef.current = false;
+            setFaceHasResult(false);
+            setFaceError(true);
             console.warn("faceMesh onFrame error", err);
           }
         },
@@ -598,7 +644,11 @@ export function CameraCapture() {
       setActiveFacingMode(resolvedFacingMode);
       setStatus("ready");
 
+      markCameraTiming("camera:playing");
+      markCameraTiming("renderer:initialize:start");
       initThreeScene();
+      markCameraTiming("renderer:initialize:end");
+      markCameraTiming("urls:start");
       const resolvedCatalog = await Promise.all(
         characterModelCatalog.map(async (modelInfo) => {
           const [signedModelUrl, signedMtlUrl] = await Promise.all([
@@ -621,6 +671,7 @@ export function CameraCapture() {
         })
       );
       if (unmountedRef.current || attempt !== startAttemptRef.current) return;
+      markCameraTiming("urls:end");
       const nextSourceMap: Record<string, ModelSource> = {};
       const nextStatusMap: Record<string, ModelLoadStatus> = {};
       resolvedCatalog.forEach((item) => {
@@ -642,14 +693,19 @@ export function CameraCapture() {
           if (unmountedRef.current || attempt !== startAttemptRef.current) return;
           faceMesh.onResults((results) => faceResultHandlerRef.current(results));
           faceMeshRef.current = faceMesh;
+          markCameraTiming("face:ready");
         } catch (error) {
-          if (!isFaceMeshModuleArgumentsError(error)) throw error;
+          if (!isFaceMeshModuleArgumentsError(error)) {
+            if (!unmountedRef.current && attempt === startAttemptRef.current) setFaceError(true);
+            return;
+          }
           const recovered = await recreateFaceMeshInstance();
           if (unmountedRef.current || attempt !== startAttemptRef.current) return;
           recovered.onResults((results) => faceResultHandlerRef.current(results));
           faceMeshRef.current = recovered;
         }
       }
+      faceMeshRef.current?.onResults((results) => faceResultHandlerRef.current(results));
     } catch (e) {
       if (unmountedRef.current || attempt !== startAttemptRef.current) return;
       stopStream();
@@ -691,6 +747,7 @@ export function CameraCapture() {
    * switchCamera();
    */
   const switchCamera = useCallback(() => {
+    cancelCapture();
     startAttemptRef.current += 1;
     startInProgressRef.current = false;
     const newMode = facingModeRef.current === "user" ? "environment" : "user";
@@ -698,7 +755,34 @@ export function CameraCapture() {
     setErrorMessage(null);
     stopStream();
     setStatus("idle");
-  }, [stopStream]);
+  }, [stopStream, cancelCapture]);
+
+  // 権限喪失・他アプリによる映像中断では予約を破棄し、再試行を表示する。
+  useEffect(() => {
+    if (status !== "ready") return;
+    const stream = videoRef.current?.srcObject;
+    if (!(stream instanceof MediaStream)) return;
+    const tracks = stream.getVideoTracks();
+    /**
+     * 映像の終了・中断時に予約とストリームを停止する。
+     * @returns なし
+     * @example track.addEventListener("ended", onUnavailable);
+     */
+    function onUnavailable() {
+      cancelCapture();
+      stopStream();
+      setErrorMessage("カメラが停止しました。もう一度お試しください。");
+      setStatus("denied");
+    }
+    tracks.forEach((track) => {
+      track.addEventListener("ended", onUnavailable);
+      track.addEventListener("mute", onUnavailable);
+    });
+    return () => tracks.forEach((track) => {
+      track.removeEventListener("ended", onUnavailable);
+      track.removeEventListener("mute", onUnavailable);
+    });
+  }, [status, stopStream, cancelCapture]);
 
   // Auto start camera on mount
   useEffect(() => {
@@ -707,6 +791,13 @@ export function CameraCapture() {
 
   // 選択モデルを優先して読み込む（初回表示の遅延/失敗を軽減）
   useEffect(() => {
+    for (const [id, controller] of modelLoadsRef.current) {
+      if (!selectedModels.includes(id)) {
+        controller.abort();
+        modelLoadsRef.current.delete(id);
+        setModelStatusMap((prev) => ({ ...prev, [id]: "idle" }));
+      }
+    }
     if (status !== "ready") return;
 
     selectedModels.forEach((id) => {
@@ -737,6 +828,12 @@ export function CameraCapture() {
   const selectedModelsRef = useRef<string[]>(selectedModels);
   useEffect(() => {
     selectedModelsRef.current = selectedModels;
+    if (selectedModels.length === 0) {
+      detectionRef.current = null;
+      setDetection(null);
+      faceHasResultRef.current = false;
+      setFaceHasResult(false);
+    }
   }, [selectedModels]);
 
   // Three.js render loop（可視性はここで一元管理）
@@ -780,66 +877,40 @@ export function CameraCapture() {
         }
       }
 
+      const loadedModels = models.filter((id) => modelMapRef.current[id]);
+      const sizeMultiplier = models.length <= 2 ? 1 : models.length <= 4 ? 0.85 : 0.7;
+      const slots = hasFace ? layoutCameraModels({
+        x: (det!.x - offsetX) * scaleX, y: (det!.y - offsetY) * scaleY,
+        width: det!.width * scaleX, height: det!.height * scaleY,
+      }, loadedModels.map((id) => {
+        const size = modelMapRef.current[id].userData.normalizedSize as THREE.Vector3;
+        const depth = size.z * sizeMultiplier / (2 * dist);
+        // 前面の頂点は中心より大きく投影される。画面端でも収まる外形を確保する。
+        return {
+          width: (size.x * sizeMultiplier / frustumWidth + depth) / (1 - depth),
+          height: (size.y * sizeMultiplier / frustumHeight + depth) / (1 - depth),
+        };
+      })) : [];
       Object.entries(modelMapRef.current).forEach(([id, obj]) => {
-        const isSelected = models.includes(id);
-        if (isSelected && hasFace) {
-          obj.visible = true;
-          // ビデオ空間での顔中心・サイズ
-          const cx = det!.x + det!.width / 2;
-          const cy = det!.y + det!.height / 2;
-          const w = det!.width;
-          const h = det!.height;
-
-          // ビデオ空間 → 表示空間に変換（object-cover クロップを補正）
-          const displayCx = (cx - offsetX) * scaleX;
-          const displayCy = (cy - offsetY) * scaleY;
-          const faceDW = w * scaleX;
-          const faceDH = h * scaleY;
-
-          const screenMargin = 0.08;
-          const clamp = (v: number) => Math.min(1 - screenMargin, Math.max(screenMargin, v));
-          const n = models.length || 1;
-          const idx = models.indexOf(id);
-          const startAngle = n === 2 ? 0 : -90;
-          const angle = (startAngle + (360 / n) * idx) * (Math.PI / 180);
-
-          // 顔認識の矩形枠線を基準に、その辺のすぐ外側にモデルを配置
-          const hw = faceDW / 2; // 枠の半幅
-          const hh = faceDH / 2; // 枠の半高さ
-          const cosA = Math.cos(angle);
-          const sinA = Math.sin(angle);
-          // 角度方向で矩形の辺に到達する距離を計算
-          const absCos = Math.abs(cosA);
-          const absSin = Math.abs(sinA);
-          let edgeDist: number;
-          if (absCos < 0.001) {
-            edgeDist = hh;
-          } else if (absSin < 0.001) {
-            edgeDist = hw;
-          } else {
-            edgeDist = Math.min(hw / absCos, hh / absSin);
-          }
-          // 枠の辺から少し外側にオフセット
-          const outsideOffset = 0.05 + (n > 2 ? 0.01 * (n - 2) : 0);
-          const slotDist = edgeDist + outsideOffset;
-          const slotX = clamp(displayCx + slotDist * cosA);
-          const slotY = clamp(displayCy + slotDist * sinA);
-
-          // 表示空間 → Three.js ワールド座標（視錐台サイズで正確にマッピング）
-          const targetX = (slotX - 0.5) * frustumWidth;
-          const targetY = -(slotY - 0.5) * frustumHeight;
-          const lerpFactor = 0.25;
-          obj.position.x += (targetX - obj.position.x) * lerpFactor;
-          obj.position.y += (targetY - obj.position.y) * lerpFactor;
-          const sizeMultiplier = n <= 2 ? 1.0 : (n <= 4 ? 0.85 : 0.7);
-          const normalizeScale = obj.userData.normalizeScale || 1;
-          obj.scale.setScalar(normalizeScale * sizeMultiplier);
-        } else {
-          obj.visible = false;
-        }
+        const slot = slots[loadedModels.indexOf(id)];
+        obj.visible = !!slot;
+        if (!slot) return;
+        // 位置と倍率を同じフレームで適用し、移動途中で顔や画面端を横切らせない。
+        obj.position.set((slot.x + slot.width / 2 - 0.5) * frustumWidth,
+          -(slot.y + slot.height / 2 - 0.5) * frustumHeight, 0);
+        obj.scale.setScalar(obj.userData.normalizeScale * sizeMultiplier * slot.scale);
       });
 
+      markCameraTiming("renderer:first-submit:start");
+      const firstVisible = models.filter((id) => modelMapRef.current[id]?.visible);
+      for (const id of firstVisible) markCameraTiming(`${id}:visible-submit:start`);
       rendererRef.current?.render(sceneRef.current!, cameraRef.current!);
+      markCameraTiming("renderer:first-submit:end");
+      for (const id of firstVisible) markCameraTiming(`${id}:visible-submit:end`);
+      if (firstVisible.join(",") !== renderedModelsRef.current.join(",")) {
+        renderedModelsRef.current = firstVisible;
+        setRenderedModels(firstVisible);
+      }
     };
     animate();
 
@@ -850,32 +921,42 @@ export function CameraCapture() {
 
   // Cleanup
   useEffect(() => {
+    const pendingLoads = modelLoadsRef.current;
     return () => {
       unmountedRef.current = true;
       startAttemptRef.current += 1;
       startInProgressRef.current = false;
-      // stopStream は useCallback([]) なので参照は固定だが、依存配列サイズ警告を避けるためここで直接呼ぶ
+      // streamと描画資源を同じcleanupで解放する
       stopStream();
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      for (const controller of pendingLoads.values()) controller.abort();
+      pendingLoads.clear();
+      for (const object of Object.values(modelMapRef.current)) disposeCameraModel(object);
+      modelMapRef.current = {};
+      sceneRef.current?.clear();
       rendererRef.current?.dispose();
+      rendererRef.current?.forceContextLoss();
+      faceMeshRef.current?.onResults(() => undefined);
       faceMeshRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
-   * 表示中のカメラとキャラクターを合成し編集画面へ渡す。
-   * @returns 保存できた場合は編集画面へ遷移。失敗時は撮影画面で案内する
-   * @example onClick={handleCapture}
+   * プレビューと同じクロップ・鏡像で映像とモデルを合成する。
+   * @param canvas - 写真または動画の出力canvas
+   * @param resize - 初回のみ出力寸法を設定する
+   * @param maxEdge - 動画の長辺上限。写真は元の撮影寸法を使う
+   * @returns なし
+   * @example drawCaptureFrame(canvas, true, CAMERA_VIDEO_MAX_EDGE);
    */
-  const handleCapture = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+  function drawCaptureFrame(canvas: HTMLCanvasElement, resize: boolean, maxEdge?: number): void {
     const video = videoRef.current;
-    const canvas = canvasRef.current;
+    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) throw new Error("Camera frame unavailable");
     const previewWidth = video.clientWidth || 720;
     const previewHeight = video.clientHeight || 480;
     const sourceWidth = video.videoWidth || 1280;
     const sourceHeight = video.videoHeight || 720;
-    const previewAspect = previewWidth / previewHeight;
+    const previewAspect = resize ? previewWidth / previewHeight : canvas.width / canvas.height;
     const sourceAspect = sourceWidth / sourceHeight;
 
     let sx = 0;
@@ -890,10 +971,13 @@ export function CameraCapture() {
       sy = Math.round((sourceHeight - sh) / 2);
     }
 
-    canvas.width = sw;
-    canvas.height = sh;
+    if (resize) {
+      const scale = maxEdge ? Math.min(1, maxEdge / Math.max(sw, sh)) : 1;
+      canvas.width = Math.max(1, Math.round(sw * scale));
+      canvas.height = Math.max(1, Math.round(sh * scale));
+    }
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) throw new Error("Canvas unavailable");
 
     if (activeFacingMode === "user") {
       ctx.save();
@@ -905,10 +989,95 @@ export function CameraCapture() {
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
     }
 
-    if (overlayCanvasRef.current && rendererRef.current && sceneRef.current && cameraRef.current) {
+    if (selectedModels.length > 0 && overlayCanvasRef.current && rendererRef.current && sceneRef.current && cameraRef.current) {
       // 最新フレームを描画してから重ねる
       rendererRef.current.render(sceneRef.current, cameraRef.current);
       ctx.drawImage(overlayCanvasRef.current, 0, 0, canvas.width, canvas.height);
+    }
+
+  }
+
+  /**
+   * 共通シャッターから録画を開始・停止する。
+   * @returns なし
+   * @example handleVideoShutter();
+   */
+  function handleVideoShutter(): void {
+    if (recordingRef.current) {
+      setRecordingPhase("stopping");
+      recordingRef.current.stop();
+      return;
+    }
+    if (!canCapture || videoBusy || !videoSupported || document.hidden) return;
+    if (selectedModels.length > 0 && (!detectionRef.current ||
+      selectedModels.some((id) => !renderedModelsRef.current.includes(id) || !modelMapRef.current[id]?.visible))) return;
+    cancelCapture();
+    setErrorMessage(null);
+    setRecordedMilliseconds(0);
+    try {
+      const output = document.createElement("canvas");
+      drawCaptureFrame(output, true, CAMERA_VIDEO_MAX_EDGE);
+      const recording = startCameraRecording(output, () => drawCaptureFrame(output, false), (ms) => setRecordedMilliseconds(Math.floor(ms / 1000) * 1000));
+      recordingRef.current = recording;
+      setRecordingPhase("recording");
+      void recording.result.then((blob) => {
+        if (unmountedRef.current || recordingRef.current !== recording) return;
+        const extension = blob.type.includes("mp4") ? "mp4" : "webm";
+        const file = new File([blob], `iwate-trip.${extension}`, { type: blob.type });
+        const url = URL.createObjectURL(file);
+        recordingRef.current = null;
+        recordedUrlRef.current = url;
+        setRecordedClip({ file, url });
+        setRecordingPhase("idle");
+        stopStream();
+        setStatus("captured");
+      }).catch(() => {
+        if (unmountedRef.current || recordingRef.current !== recording) return;
+        recordingRef.current = null;
+        setRecordingPhase("idle");
+        setErrorMessage("動画を保存できませんでした。もう一度録画するか、写真を撮ってください。");
+      });
+    } catch {
+      setRecordingPhase("idle");
+      setErrorMessage("録画を開始できませんでした。もう一度試すか、写真を撮ってください。");
+    }
+  }
+
+  /**
+   * 準備済み動画ファイルをユーザー操作と同じ実行内で共有する。
+   * @returns 共有操作の完了
+   * @example void shareRecordedVideo();
+   */
+  async function shareRecordedVideo(): Promise<void> {
+    if (!recordedClip || sharingVideoRef.current) return;
+    sharingVideoRef.current = true;
+    setSharingVideo(true);
+    setErrorMessage(null);
+    try { await navigator.share({ files: [recordedClip.file] }); } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) setErrorMessage("共有できませんでした。動画を保存して添付してください。");
+    } finally { sharingVideoRef.current = false; setSharingVideo(false); }
+  }
+
+  let canShareVideo = false;
+  try { canShareVideo = !!recordedClip && typeof navigator.share === "function" && navigator.canShare?.({ files: [recordedClip.file] }) === true; } catch { /* 保存操作は常に残す。 */ }
+
+  /**
+   * 表示中のカメラとキャラクターを合成し編集画面へ渡す。
+   * @returns 保存と編集画面への遷移を開始できた場合true、再試行可能な失敗はfalse
+   * @example handleCapture();
+   */
+  function handleCapture(): boolean {
+    if (!canCapture || !videoRef.current || !canvasRef.current) return false;
+    // 状態更新前の顔喪失や描画待ちでも、選択モデルのない写真を保存しない。
+    if (selectedModels.length > 0 && (!detectionRef.current ||
+      selectedModels.some((id) => !renderedModelsRef.current.includes(id) || !modelMapRef.current[id]?.visible))) return false;
+    const stream = videoRef.current.srcObject;
+    if (!(stream instanceof MediaStream) || !stream.getVideoTracks().some((track) => track.readyState === "live" && !track.muted)) return false;
+    if (videoRef.current.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return false;
+    const canvas = canvasRef.current;
+    try { drawCaptureFrame(canvas, true); } catch {
+      setErrorMessage("撮影できませんでした。もう一度お試しください。");
+      return false;
     }
 
     try {
@@ -920,20 +1089,44 @@ export function CameraCapture() {
       sessionStorage.setItem("capturedPhoto", dataUrl);
     } catch {
       setErrorMessage("撮影した写真を一時保存できませんでした。ブラウザの空き容量や保存設定を確認して、もう一度撮影してください。");
-      return;
+      return false;
     }
 
     // ページ遷移前にカメラ・FaceMeshを明示的に停止（許可状態はブラウザが保持）
     stopStream();
     faceMeshRef.current = null;
-    setStatus("idle");
+    setStatus("captured");
 
     router.push("/camera/edit");
-  };
+    return true;
+  }
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-app-line/10 bg-app-surface sm:aspect-[16/10]">
+      {recordedClip && (
+        <div className="space-y-3">
+          <video src={recordedClip.url} controls playsInline aria-label="撮影した動画" className="max-h-[65dvh] w-full rounded-3xl bg-black" />
+          <div className="flex flex-wrap gap-2">
+            <a href={recordedClip.url} download={recordedClip.file.name} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-900 px-4 text-white"><Download className="h-4 w-4" />動画を保存</a>
+            {canShareVideo && <Button onClick={() => void shareRecordedVideo()} disabled={sharingVideo}><Share2 className="h-4 w-4" />動画を共有</Button>}
+            <Button variant="outline" disabled={sharingVideo} onClick={() => {
+              URL.revokeObjectURL(recordedClip.url);
+              recordedUrlRef.current = null;
+              setRecordedClip(null);
+              setErrorMessage(null);
+              setStatus("idle");
+            }}>撮影に戻る</Button>
+          </div>
+        </div>
+      )}
+      <div className={recordedClip ? "hidden" : "space-y-4"}>
+      <fieldset className="flex gap-2" disabled={videoBusy || busy}>
+        <legend className="sr-only">撮影モード</legend>
+        <Button variant={captureMode === "photo" ? "primary" : "outline"} aria-pressed={captureMode === "photo"} onClick={() => { cancelCapture(); setCaptureMode("photo"); }}>写真</Button>
+        {videoSupported && <Button variant={captureMode === "video" ? "primary" : "outline"} aria-pressed={captureMode === "video"} onClick={() => { cancelCapture(); setCaptureMode("video"); }}>動画</Button>}
+      </fieldset>
+      {captureMode === "video" && <p className="text-sm tabular-nums text-app-ink-strong" role="status">{videoBusy ? `${Math.floor(recordedMilliseconds / 1000)}秒 / ${CAMERA_VIDEO_MAX_MS / 1000}秒${recordingPhase === "stopping" ? " 保存中…" : ""}` : `無音・最大${CAMERA_VIDEO_MAX_MS / 1000}秒`}</p>}
+      <div className="relative aspect-[4/3] w-full max-h-[calc(100dvh-8rem)] overflow-hidden rounded-3xl border border-app-line/10 bg-app-surface sm:aspect-[16/10]">
         <video
           ref={videoRef}
           className="h-full w-full object-cover"
@@ -972,16 +1165,9 @@ export function CameraCapture() {
           )}
         </div>
 
-        {status === "ready" && detection && selectedModelsReady && selectedModels.length > 0 && (
-          <div
-            className="absolute rounded-full bg-gradient-to-br from-emerald-300 to-amber-200 px-3 py-1 text-xs font-semibold text-app-ink-strong shadow-lg transition"
-            style={{
-              left: `${(detection.x + detection.width / 2) * 100}%`,
-              top: `${detection.y * 100 - 4}%`,
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            {selectedModels.map((id) => getCharacterNameById(id)).join(" / ")}
+        {remaining !== null && (
+          <div role="status" aria-live="assertive" aria-label={`${remaining}秒後に撮影`} className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="rounded-2xl bg-black/60 px-6 py-3 text-5xl font-semibold tabular-nums text-white">{remaining}</span>
           </div>
         )}
 
@@ -1000,17 +1186,19 @@ export function CameraCapture() {
               </Button>
             )}
             <button
-              onClick={handleCapture}
-              aria-label="写真を撮る"
-              disabled={status !== "ready"}
+              type="button"
+              onClick={() => captureMode === "video" ? handleVideoShutter() : remaining !== null ? cancelCapture() : startCapture(captureDelay)}
+              aria-label={captureMode === "video" ? (videoBusy ? "録画を停止" : "録画を開始") : remaining !== null ? "タイマーを取り消す" : "写真を撮る"}
+              disabled={captureMode === "video" ? recordingPhase === "stopping" || (!videoBusy && !canCapture) : remaining === null && (!canCapture || busy)}
               className="pointer-events-auto grid h-16 w-16 place-items-center rounded-full border-4 border-app-line-soft/80 bg-app-surface/90 text-app-ink-strong shadow-xl shadow-emerald-200/50 transition active:scale-95 disabled:opacity-60"
             >
-              <CameraIcon className="h-7 w-7" />
+              {captureMode === "video" ? (videoBusy ? <Square className="h-7 w-7 fill-current text-app-danger" aria-hidden="true" /> : <Video className="h-7 w-7" aria-hidden="true" />) : remaining !== null ? <X className="h-7 w-7" aria-hidden="true" /> : <CameraIcon className="h-7 w-7" aria-hidden="true" />}
             </button>
             {/* 内カメ/外カメ切替ボタン（モバイルのみ表示） */}
             {status === "ready" && (
               <button
                 onClick={switchCamera}
+                disabled={videoBusy}
                 className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-app-surface/80 text-app-ink-strong shadow-lg backdrop-blur transition active:scale-95 sm:hidden"
                 aria-label="カメラ切替"
               >
@@ -1021,7 +1209,40 @@ export function CameraCapture() {
         </div>
       </div>
 
-      <div className="glass flex flex-wrap items-center gap-2 rounded-2xl border border-app-line/10 p-3 ring-1 ring-app-line/10">
+      {status === "ready" && !videoBusy && selectedModels.length > 0 && !canCapture && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-app-line/10 bg-app-surface p-3">
+          <p role={selectedModelErrors.length > 0 || faceError ? "alert" : "status"} className="mr-auto text-sm text-app-accent-ink">
+            {selectedModelErrors.length > 0
+              ? `${selectedModelErrors.map(getCharacterNameById).join("・")}を読み込めませんでした`
+              : faceError ? "顔検出を開始できませんでした"
+              : selectedModelsLoading || !faceHasResult
+                ? "キャラクターを準備中…"
+                : !detection ? "顔をカメラに向ける" : "少し離れる"}
+          </p>
+          {(selectedModelErrors.length > 0 || faceError) && (
+            <Button variant="outline" size="sm" className="min-h-11" onClick={() => {
+              cancelCapture();
+              if (faceError) {
+                setFaceError(false);
+                const attempt = startAttemptRef.current;
+                void recreateFaceMeshInstance().then((tracker) => {
+                  if (unmountedRef.current || attempt !== startAttemptRef.current) return;
+                  tracker.onResults((results) => faceResultHandlerRef.current(results));
+                  faceMeshRef.current = tracker;
+                }).catch(() => {
+                  if (!unmountedRef.current && attempt === startAttemptRef.current) setFaceError(true);
+                });
+              }
+              setModelStatusMap((prev) => ({ ...prev, ...Object.fromEntries(selectedModelErrors.map((id) => [id, "idle" as const])) }));
+            }}>読み込み直す</Button>
+          )}
+          <Button variant="outline" size="sm" className="min-h-11" onClick={() => { cancelCapture(); setSelectedModels([]); }}>
+            キャラクターを外す
+          </Button>
+        </div>
+      )}
+
+      <div className="glass flex items-center gap-2 overflow-x-auto rounded-2xl border border-app-line/10 p-3 ring-1 ring-app-line/10 sm:flex-wrap">
         {characters.map((c) => {
           const active = selectedModels.includes(c.id);
           const isDisabled = !active && selectedModels.length >= 5;
@@ -1031,6 +1252,8 @@ export function CameraCapture() {
               variant={active ? "primary" : "ghost"}
               size="sm"
               onClick={() => {
+                cancelCapture();
+                if (!active) markCameraTiming(`${c.id}:selected`);
                 setSelectedModels((prev) =>
                   active ? prev.filter((id) => id !== c.id) : [...prev, c.id]
                 );
@@ -1038,27 +1261,29 @@ export function CameraCapture() {
                   setModelStatusMap((prev) => ({ ...prev, [c.id]: "idle" }));
                 }
               }}
-              disabled={isDisabled}
+              disabled={isDisabled || videoBusy}
               aria-pressed={active}
-              className="gap-2"
+              className="min-h-11 shrink-0 gap-2 whitespace-nowrap"
             >
               {active ? <Check className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
               {c.name}
             </Button>
           );
         })}
-        <span className="text-xs text-app-ink-muted">最大5体</span>
+        <span className="shrink-0 text-xs text-app-ink-muted">最大5体</span>
       </div>
 
-      <div className="flex items-center justify-between">
-        <Button
-          onClick={handleCapture}
-          className="h-11 px-5 text-base"
-          disabled={status !== "ready"}
-        >
-          <CameraIcon className="h-5 w-5" />
-          シャッター
-        </Button>
+      {captureMode === "photo" && <fieldset className="flex flex-wrap items-center gap-2" disabled={busy && remaining === null}>
+        <legend className="sr-only">撮影タイマー</legend>
+        <Timer aria-hidden="true" className="mr-1 h-5 w-5 text-app-accent-ink" />
+        {([0, 3, 10] as const).map((delay) => (
+          <Button key={delay} type="button" variant={captureDelay === delay ? "primary" : "outline"}
+            aria-pressed={captureDelay === delay} className="min-h-11 min-w-14"
+            onClick={() => { cancelCapture(); setCaptureDelay(delay); }}>
+            {delay === 0 ? "オフ" : `${delay}秒`}
+          </Button>
+        ))}
+      </fieldset>}
       </div>
 
       {errorMessage && (
@@ -1066,17 +1291,7 @@ export function CameraCapture() {
           {errorMessage}
         </div>
       )}
-      {selectedModels.length > 0 && selectedModelsLoading && (
-        <div className="rounded-xl border border-app-info/30 bg-app-info-surface px-3 py-2 text-xs text-app-info">
-          キャラクターを読み込み中…
-        </div>
-      )}
-      {selectedModelErrors.length > 0 && (
-        <div className="rounded-xl border border-app-danger/30 bg-app-danger-surface px-3 py-2 text-xs text-app-danger">
-          一部のガイドを表示できませんでした: {selectedModelErrors.map((id) => getCharacterNameById(id)).join(" / ")}
-          。いったん外してから、もう一度選び直してください。
-        </div>
-      )}
+
     </div>
   );
 }

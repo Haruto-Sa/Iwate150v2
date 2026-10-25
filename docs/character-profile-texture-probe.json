@@ -1,0 +1,26 @@
+{
+  "parent": [
+    {
+      "textureImageLoaded": false,
+      "colorAfterProfile": "888888",
+      "mapRetained": true
+    },
+    {
+      "textureImageLoaded": true,
+      "colorAfterProfile": "ffffff",
+      "mapRetained": true
+    }
+  ],
+  "current": [
+    {
+      "textureImageLoaded": false,
+      "colorAfterProfile": "888888",
+      "mapRetained": true
+    },
+    {
+      "textureImageLoaded": true,
+      "colorAfterProfile": "ffffff",
+      "mapRetained": true
+    }
+  ]
+}

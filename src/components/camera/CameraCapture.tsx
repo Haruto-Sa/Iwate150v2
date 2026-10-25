@@ -1,5 +1,7 @@
 "use client";
 
+import { toLocalAssetUrl } from "@/lib/modelAssets";
+
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Camera as CameraIcon, RefreshCw, Check, SwitchCamera, Timer, X, Video, Square, Download, Share2 } from "lucide-react";
@@ -159,20 +161,6 @@ function resolveActiveFacingMode(
 ): CameraFacingMode {
   const actualFacingMode = stream.getVideoTracks()[0]?.getSettings().facingMode;
   return isCameraFacingMode(actualFacingMode) ? actualFacingMode : requestedFacingMode;
-}
-
-/**
- * Storage相対パスからローカルpublic参照URLを作成する。
- *
- * @param path - `models/...` 形式のパス
- * @returns `/models/...` 形式のURL
- * @example
- * const local = toLocalAssetUrl("models/goshodon.obj");
- */
-function toLocalAssetUrl(path: string | null | undefined): string | null {
-  if (!path) return null;
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  return path.startsWith("/") ? path : `/${path}`;
 }
 
 /**

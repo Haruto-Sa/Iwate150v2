@@ -1,0 +1,17 @@
+[
+  {
+    "case": "r5-character-baseline-karin-model-controls-at-390px-webkit-ui",
+    "matchesInitialBright": true,
+    "matchesAfterDark": false
+  },
+  {
+    "case": "r5-character-baseline-karin-model-controls-at-390px-webkit-ui-repeat1",
+    "matchesInitialBright": true,
+    "matchesAfterDark": false
+  },
+  {
+    "case": "r5-character-baseline-karin-model-controls-at-390px-webkit-ui-repeat2",
+    "matchesInitialBright": true,
+    "matchesAfterDark": false
+  }
+]

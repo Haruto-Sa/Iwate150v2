@@ -1,5 +1,7 @@
 "use client";
 
+import { extractFileStem, resolveModelFormat } from "@/lib/modelAssets";
+
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -64,26 +66,6 @@ const DEFAULT_CANDIDATE_RETRY_COUNT = 2;
 const DEFAULT_AUTO_RETRY_COUNT = 1;
 /** 初期化を遅延するマウントサイズ判定の待機フレーム上限（約6秒相当） */
 const MAX_WAIT_FRAMES_FOR_VIEWPORT_READY = 360;
-
-type ModelFormat = "obj" | "fbx";
-
-/**
- * URL/パスから拡張子なしファイル名（小文字）を取り出す。
- *
- * @param url - URL またはパス
- * @returns ファイル名（拡張子なし）
- * @example
- * const stem = extractFileStem("/models/wanko1.obj?token=abc");
- */
-function extractFileStem(url: string): string | null {
-  const stripped = url.split("?")[0]?.split("#")[0] ?? url;
-  const segment = stripped.split("/").pop();
-  if (!segment) return null;
-  const decoded = decodeURIComponent(segment);
-  const dotIndex = decoded.lastIndexOf(".");
-  const stem = dotIndex > 0 ? decoded.slice(0, dotIndex) : decoded;
-  return stem.toLowerCase();
-}
 
 /**
  * Promise にタイムアウトを設定する。
@@ -231,19 +213,6 @@ function loadFbxModel(modelUrl: string, timeoutMs: number): Promise<THREE.Group>
     timeoutMs,
     `FBX ${modelUrl}`,
   );
-}
-
-/**
- * URL 文字列からモデル形式を推定する。
- *
- * @param modelUrl - モデルURL
- * @returns `obj` または `fbx`
- * @example
- * const format = resolveModelFormat("/models/character.fbx");
- */
-function resolveModelFormat(modelUrl: string): ModelFormat {
-  const stripped = modelUrl.split("?")[0]?.split("#")[0] ?? modelUrl;
-  return stripped.toLowerCase().endsWith(".fbx") ? "fbx" : "obj";
 }
 
 /**

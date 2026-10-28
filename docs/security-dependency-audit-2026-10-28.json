@@ -1,0 +1,402 @@
+{
+  "date": "2026-10-28",
+  "base": "d70c76a",
+  "command": "bun audit --json",
+  "counting": "Package/advisory/range records, not unique CVEs or proof of exploitability",
+  "before": {
+    "packageCount": 26,
+    "advisoryRecordCount": 140,
+    "severityCounts": {
+      "critical": 10,
+      "high": 62,
+      "moderate": 60,
+      "low": 8
+    }
+  },
+  "after": {
+    "packageCount": 21,
+    "advisoryRecordCount": 65,
+    "severityCounts": {
+      "low": 3,
+      "moderate": 23,
+      "high": 36,
+      "critical": 3
+    }
+  },
+  "resolvedTargets": [
+    "next",
+    "next-auth",
+    "@auth/core",
+    "sharp",
+    "nodemailer"
+  ],
+  "remaining": {
+    "@babel/core": [
+      {
+        "url": "https://github.com/advisories/GHSA-4x5r-pxfx-6jf8",
+        "severity": "low",
+        "range": "<=7.29.0"
+      }
+    ],
+    "@humanfs/node": [
+      {
+        "url": "https://github.com/advisories/GHSA-p498-v437-472g",
+        "severity": "moderate",
+        "range": "<0.16.8"
+      }
+    ],
+    "@vitest/mocker": [
+      {
+        "url": "https://github.com/advisories/GHSA-82fw-gwwq-j7x9",
+        "severity": "moderate",
+        "range": ">=2.1.0 <4.1.11"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-qxg6-89mg-rqv8",
+        "severity": "moderate",
+        "range": ">=2.1.0-beta.7 <4.1.12"
+      }
+    ],
+    "ajv": [
+      {
+        "url": "https://github.com/advisories/GHSA-2g4f-4pwh-qvx6",
+        "severity": "moderate",
+        "range": "<6.14.0"
+      }
+    ],
+    "baseline-browser-mapping": [
+      {
+        "url": "https://github.com/advisories/GHSA-w5vr-8v7q-w6rv",
+        "severity": "moderate",
+        "range": ">=2.0.0 <2.11.0"
+      }
+    ],
+    "brace-expansion": [
+      {
+        "url": "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
+        "severity": "high",
+        "range": "<1.1.17"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
+        "severity": "high",
+        "range": ">=2.0.0 <2.1.3"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-rgw5-rvv9-x895",
+        "severity": "high",
+        "range": ">=2.0.0 <2.1.4"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-rgw5-rvv9-x895",
+        "severity": "high",
+        "range": "<1.1.18"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-f886-m6hf-6m8v",
+        "severity": "moderate",
+        "range": "<1.1.13"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-f886-m6hf-6m8v",
+        "severity": "moderate",
+        "range": ">=2.0.0 <2.0.3"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-3jxr-9vmj-r5cp",
+        "severity": "high",
+        "range": ">=2.0.0 <2.1.2"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-3jxr-9vmj-r5cp",
+        "severity": "high",
+        "range": "<1.1.16"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+        "severity": "high",
+        "range": "<1.1.19"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+        "severity": "high",
+        "range": ">=2.0.0 <2.1.5"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+        "severity": "moderate",
+        "range": "<1.1.21"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+        "severity": "moderate",
+        "range": ">=2.0.0 <2.1.7"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+        "severity": "high",
+        "range": "<1.1.20"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+        "severity": "high",
+        "range": ">=2.0.0 <2.1.6"
+      }
+    ],
+    "browserslist": [
+      {
+        "url": "https://github.com/advisories/GHSA-c83g-rgw3-j3cx",
+        "severity": "high",
+        "range": "<=4.28.6"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-73wf-gq98-2v4g",
+        "severity": "high",
+        "range": "<=4.28.6"
+      }
+    ],
+    "esbuild": [
+      {
+        "url": "https://github.com/advisories/GHSA-g7r4-m6w7-qqqr",
+        "severity": "low",
+        "range": ">=0.27.3 <0.28.1"
+      }
+    ],
+    "fflate": [
+      {
+        "url": "https://github.com/advisories/GHSA-px8p-9vwx-vf98",
+        "severity": "moderate",
+        "range": ">=0.8.0 <0.8.3"
+      }
+    ],
+    "flatted": [
+      {
+        "url": "https://github.com/advisories/GHSA-25h7-pfq9-p65f",
+        "severity": "high",
+        "range": "<3.4.0"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-rf6f-7fwh-wjgh",
+        "severity": "high",
+        "range": "<=3.4.1"
+      }
+    ],
+    "js-yaml": [
+      {
+        "url": "https://github.com/advisories/GHSA-h67p-54hq-rp68",
+        "severity": "moderate",
+        "range": ">=4.0.0 <=4.1.1"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-52cp-r559-cp3m",
+        "severity": "high",
+        "range": ">=4.0.0 <4.3.0"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-5p4m-2wfm-xmqj",
+        "severity": "high",
+        "range": ">=4.0.0 <4.3.1"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-2883-xcg3-v3hh",
+        "severity": "high",
+        "range": ">=4.0.0 <4.3.2"
+      }
+    ],
+    "minimatch": [
+      {
+        "url": "https://github.com/advisories/GHSA-3ppc-4f35-3m26",
+        "severity": "high",
+        "range": "<3.1.3"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-3ppc-4f35-3m26",
+        "severity": "high",
+        "range": ">=9.0.0 <9.0.6"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-7r86-cg39-jmmj",
+        "severity": "high",
+        "range": "<3.1.3"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-7r86-cg39-jmmj",
+        "severity": "high",
+        "range": ">=9.0.0 <9.0.7"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-23c5-xmqv-rm74",
+        "severity": "high",
+        "range": "<3.1.4"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-23c5-xmqv-rm74",
+        "severity": "high",
+        "range": ">=9.0.0 <9.0.7"
+      }
+    ],
+    "nanoid": [
+      {
+        "url": "https://github.com/advisories/GHSA-28wg-ghj8-5hjv",
+        "severity": "high",
+        "range": "<3.3.16"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-2v37-7h3g-55p8",
+        "severity": "high",
+        "range": "<3.3.18"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-xwg4-73v4-xw9w",
+        "severity": "high",
+        "range": "<3.3.12"
+      }
+    ],
+    "picomatch": [
+      {
+        "url": "https://github.com/advisories/GHSA-3v7f-55p6-f55p",
+        "severity": "moderate",
+        "range": "<2.3.2"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-3v7f-55p6-f55p",
+        "severity": "moderate",
+        "range": ">=4.0.0 <4.0.4"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-c2c7-rcm5-vvqj",
+        "severity": "high",
+        "range": "<2.3.2"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-c2c7-rcm5-vvqj",
+        "severity": "high",
+        "range": ">=4.0.0 <4.0.4"
+      }
+    ],
+    "postcss": [
+      {
+        "url": "https://github.com/advisories/GHSA-fxqj-rqcc-2cmp",
+        "severity": "moderate",
+        "range": "<=8.5.22"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-qx2v-qp2m-jg93",
+        "severity": "moderate",
+        "range": "<8.5.10"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-6g55-p6wh-862q",
+        "severity": "high",
+        "range": "<=8.5.11"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-r28c-9q8g-f849",
+        "severity": "high",
+        "range": "<=8.5.17"
+      }
+    ],
+    "source-map-js": [
+      {
+        "url": "https://github.com/advisories/GHSA-68fv-2mgg-jv7q",
+        "severity": "high",
+        "range": ">=1.0.0 <1.2.2"
+      }
+    ],
+    "tinypool": [
+      {
+        "url": "https://github.com/advisories/GHSA-5gmw-xhrv-c9v3",
+        "severity": "critical",
+        "range": "<=2.1.0"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-85c8-ppgw-ccpr",
+        "severity": "critical",
+        "range": "<2.1.2"
+      }
+    ],
+    "vite": [
+      {
+        "url": "https://github.com/advisories/GHSA-v6wh-96g9-6wx3",
+        "severity": "moderate",
+        "range": ">=7.0.0 <=7.3.4"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-4w7w-66w2-5vf9",
+        "severity": "moderate",
+        "range": ">=7.0.0 <=7.3.1"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-v2wj-q39q-566r",
+        "severity": "high",
+        "range": ">=7.1.0 <=7.3.1"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-p9ff-h696-f583",
+        "severity": "high",
+        "range": ">=7.0.0 <=7.3.1"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-9jrq-w75r-8gcw",
+        "severity": "low",
+        "range": ">=7.0.0 <=7.3.6"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-rq7h-c2jc-7f22",
+        "severity": "moderate",
+        "range": ">=7.0.0 <=7.3.6"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-587h-7wmj-h5pm",
+        "severity": "high",
+        "range": ">=7.0.0 <=7.3.6"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-698v-4r3x-3vcv",
+        "severity": "moderate",
+        "range": ">=7.0.0 <=7.3.6"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-r825-w8mm-5pxw",
+        "severity": "moderate",
+        "range": ">=7.0.0 <=7.3.6"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-fx2h-pf6j-xcff",
+        "severity": "moderate",
+        "range": ">=7.0.0 <=7.3.4"
+      }
+    ],
+    "vitest": [
+      {
+        "url": "https://github.com/advisories/GHSA-5xrq-8626-4rwp",
+        "severity": "critical",
+        "range": "<3.2.6"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-82fw-gwwq-j7x9",
+        "severity": "moderate",
+        "range": ">=2.1.0 <4.1.11"
+      }
+    ],
+    "ws": [
+      {
+        "url": "https://github.com/advisories/GHSA-58qx-3vcg-4xpx",
+        "severity": "moderate",
+        "range": ">=8.0.0 <8.20.1"
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-96hv-2xvq-fx4p",
+        "severity": "high",
+        "range": ">=8.0.0 <8.21.0"
+      }
+    ],
+    "zod": [
+      {
+        "url": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+        "severity": "high",
+        "range": "<4.6.6"
+      }
+    ]
+  }
+}

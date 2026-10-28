@@ -99,7 +99,9 @@ export async function handlePrivateRecords(request: Request, table: "favorites" 
     const expectedIdentity = request.headers.get("x-session-user");
     if (expectedIdentity && expectedIdentity !== identity) throw new ApiError(409, "利用者が変更されました。再読み込みしてください。");
     if (request.method !== "GET") {
-      const expectedOrigin = process.env.AUTH_URL ? new URL(process.env.AUTH_URL).origin : new URL(request.url).origin;
+      // Auth.jsと同じ優先順位で互換用NEXTAUTH_URLも採用する。
+      const authUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL;
+      const expectedOrigin = authUrl ? new URL(authUrl).origin : new URL(request.url).origin;
       if (request.headers.get("origin") !== expectedOrigin) throw new ApiError(403, "送信元を確認できません。");
     }
     const url = new URL(request.url);

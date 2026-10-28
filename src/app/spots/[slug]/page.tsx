@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { MapPin, Camera, Sparkles } from "lucide-react";
 import { fetchCities, fetchGenres, fetchSpots } from "@/lib/supabaseClient";
-import { buildSpotMetadata, buildSpotJsonLd } from "@/lib/seo";
+import { buildSpotMetadata, buildSpotJsonLd, serializeJsonLd } from "@/lib/seo";
 import { extractSpotIdFromSlug, getSpotHref } from "@/lib/spotRoutes";
 import { getImageUrl } from "@/lib/storage";
 import { Button } from "@/components/ui/Button";
@@ -93,7 +93,7 @@ export default async function SpotDetailPage({ params }: PageProps) {
     <div className="space-y-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
       <section className="overflow-hidden rounded-[32px] border border-emerald-900/10 bg-white shadow-sm">

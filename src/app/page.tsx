@@ -4,7 +4,7 @@ import { fetchCities, fetchEvents, fetchSpots } from "@/lib/supabaseClient";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { HomeCalendarSwitcher } from "@/components/home/HomeCalendarSwitcher";
 import { getImageUrl, resolveServerStorageUrls } from "@/lib/storage";
-import { buildPageMetadata, buildHomeJsonLd } from "@/lib/seo";
+import { buildPageMetadata, buildHomeJsonLd, serializeJsonLd } from "@/lib/seo";
 import { getSpotHref } from "@/lib/spotRoutes";
 
 export const revalidate = 60;
@@ -47,7 +47,7 @@ export default async function Home() {
     <div className="space-y-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(homeJsonLd) }}
       />
       <section className="glass relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-[#0e1c21] via-[#0b1a1f] to-[#0f2b32] p-6 text-white shadow-2xl ring-1 ring-emerald-900/15 sm:p-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(79,255,206,0.35),transparent_38%),radial-gradient(circle_at_90%_20%,rgba(255,159,85,0.28),transparent_35%)]" />

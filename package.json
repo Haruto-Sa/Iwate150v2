@@ -21,7 +21,7 @@
     "@material/material-color-utilities": "^0.4.0",
     "@mediapipe/camera_utils": "^0.3.1640029074",
     "@mediapipe/face_mesh": "^0.4.1633559619",
-    "@serwist/next": "^9.5.7",
+    "@serwist/next": "9.5.13",
     "@supabase/supabase-js": "^2.87.1",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
@@ -33,7 +33,7 @@
     "react-dom": "19.2.1",
     "react-leaflet": "^5.0.0",
     "server-only": "^0.0.1",
-    "serwist": "^9.5.7",
+    "serwist": "9.5.13",
     "three": "^0.169.0"
   },
   "devDependencies": {
@@ -49,15 +49,15 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.169.0",
     "babel-plugin-react-compiler": "1.0.0",
-    "baseline-browser-mapping": "^2.10.0",
+    "baseline-browser-mapping": "2.11.34",
     "eslint": "^9",
     "eslint-config-next": "16.0.8",
     "jsdom": "^27.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^3.2.4"
+    "vitest": "4.1.12"
   },
   "overrides": {
-    "baseline-browser-mapping": "2.10.0"
+    "zod": "4.6.7"
   }
 }

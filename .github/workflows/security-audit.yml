@@ -1,0 +1,51 @@
+name: Dependency security audit
+
+on:
+  pull_request:
+    paths:
+      - package.json
+      - bun.lock
+      - .github/workflows/security-audit.yml
+  push:
+    branches: [main, develop]
+    paths:
+      - package.json
+      - bun.lock
+      - .github/workflows/security-audit.yml
+  schedule:
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.4
+      # lockのみを読み、依存のインストールやスクリプト実行はしない。
+      - name: Audit all locked dependencies
+        shell: bash
+        run: |
+          bun audit --json | tee audit.json
+          # Bun 1.3.4は空応答でもexit 0を返すため、正常な空レポートかも確認する。
+          bun -e 'const report = await Bun.file("audit.json").json(); if (!report || typeof report !== "object" || Array.isArray(report) || Object.keys(report).length !== 0) process.exit(1);'
+      - name: Keep audit evidence
+        if: always() && hashFiles('audit.json') != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dependency-audit
+          path: audit.json
+          retention-days: 14
+          if-no-files-found: error

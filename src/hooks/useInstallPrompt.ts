@@ -128,7 +128,7 @@ export function useInstallPrompt(): InstallPromptState {
   const shouldShow =
     !isStandalone &&
     !isDismissed &&
-    (visitCount === 1 || visitCount === 3) &&
+    visitCount === 3 &&
     (Boolean(deferredPrompt) || isIosSafari);
 
   return {

@@ -1,0 +1,63 @@
+diff --git a/dist/esm/server/image-optimizer.js b/dist/esm/server/image-optimizer.js
+index 4e5a96e6d28492deddccbe360286c07c3035ddd5..919360aac4cfe376ea5e2a5eaea6eb3640344737 100644
+--- a/dist/esm/server/image-optimizer.js
++++ b/dist/esm/server/image-optimizer.js
+@@ -10,7 +10,7 @@ import nodeUrl from 'url';
+ import { getImageBlurSvg } from '../shared/lib/image-blur-svg';
+ import { hasLocalMatch } from '../shared/lib/match-local-pattern';
+ import { hasRemoteMatch } from '../shared/lib/match-remote-pattern';
+-import { createRequestResponseMocks } from './lib/mock-request';
++import { MockedRequest, MockedResponse } from './lib/mock-request';
+ import { CachedRouteKind } from './response-cache';
+ import { sendEtagResponse } from './send-payload';
+ import { getContentType, getExtension } from './serve-static';
+@@ -750,11 +750,17 @@ export async function fetchExternalImage(href, dangerouslyAllowLocalIP, count =
+ }
+ export async function fetchInternalImage(href, _req, _res, handleRequest) {
+     try {
+-        const mocked = createRequestResponseMocks({
+-            url: href,
+-            method: _req.method || 'GET',
+-            socket: _req.socket
+-        });
++        // Backport of https://github.com/vercel/next.js/pull/98168.
++        // Client disconnects must not cancel the shared image response stream.
++        const mocked = {
++            req: new MockedRequest({
++                url: href,
++                method: _req.method || 'GET',
++                headers: {},
++                socket: _req.socket
++            }),
++            res: new MockedResponse({})
++        };
+         await handleRequest(mocked.req, mocked.res, nodeUrl.parse(href, true));
+         await mocked.res.hasStreamed;
+         if (!mocked.res.statusCode) {
+diff --git a/dist/server/image-optimizer.js b/dist/server/image-optimizer.js
+index 6eba3828d11590c9b1901eae3fd15289d19a492a..5be6e1a5033be996ef14a92e2318b9014d9353c6 100644
+--- a/dist/server/image-optimizer.js
++++ b/dist/server/image-optimizer.js
+@@ -866,11 +866,17 @@ async function fetchExternalImage(href, dangerouslyAllowLocalIP, count = 3) {
+ }
+ async function fetchInternalImage(href, _req, _res, handleRequest) {
+     try {
+-        const mocked = (0, _mockrequest.createRequestResponseMocks)({
+-            url: href,
+-            method: _req.method || 'GET',
+-            socket: _req.socket
+-        });
++        // Backport of https://github.com/vercel/next.js/pull/98168.
++        // Client disconnects must not cancel the shared image response stream.
++        const mocked = {
++            req: new _mockrequest.MockedRequest({
++                url: href,
++                method: _req.method || 'GET',
++                headers: {},
++                socket: _req.socket
++            }),
++            res: new _mockrequest.MockedResponse({})
++        };
+         await handleRequest(mocked.req, mocked.res, _url.default.parse(href, true));
+         await mocked.res.hasStreamed;
+         if (!mocked.res.statusCode) {

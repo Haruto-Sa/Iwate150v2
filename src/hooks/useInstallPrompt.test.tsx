@@ -49,7 +49,7 @@ describe("useInstallPrompt", () => {
     })) as typeof window.matchMedia;
   });
 
-  it("初回訪問でインストール促進を表示する", async () => {
+  it("初回訪問では操作を優先してインストール促進を表示しない", async () => {
     const { result } = renderHook(() => useInstallPrompt());
     await act(async () => {
       window.dispatchEvent(installPromptEvent());
@@ -57,11 +57,11 @@ describe("useInstallPrompt", () => {
 
     await waitFor(() => {
       expect(result.current.visitCount).toBe(1);
-      expect(result.current.shouldShow).toBe(true);
+      expect(result.current.shouldShow).toBe(false);
     });
   });
 
-  it("2回目は非表示で3回目に再表示する", async () => {
+  it("2回目は非表示で3回目に表示する", async () => {
     const first = renderHook(() => useInstallPrompt());
     await act(async () => {
       window.dispatchEvent(installPromptEvent());
@@ -92,6 +92,7 @@ describe("useInstallPrompt", () => {
   });
 
   it("あとでを押すと7日間は非表示になる", async () => {
+    window.localStorage.setItem(INSTALL_PROMPT_VISIT_KEY, "2");
     const { result, unmount } = renderHook(() => useInstallPrompt());
     await act(async () => {
       window.dispatchEvent(installPromptEvent());
@@ -115,7 +116,7 @@ describe("useInstallPrompt", () => {
       window.dispatchEvent(installPromptEvent());
     });
     await waitFor(() => {
-      expect(nextVisit.result.current.visitCount).toBe(2);
+      expect(nextVisit.result.current.visitCount).toBe(4);
       expect(nextVisit.result.current.shouldShow).toBe(false);
     });
   });
@@ -145,6 +146,7 @@ describe("useInstallPrompt", () => {
   });
 
   it("iOS Safari では beforeinstallprompt がなくても案内対象になる", async () => {
+    window.localStorage.setItem(INSTALL_PROMPT_VISIT_KEY, "2");
     setUserAgent(
       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
     );
@@ -152,10 +154,10 @@ describe("useInstallPrompt", () => {
     const { result } = renderHook(() => useInstallPrompt());
 
     await waitFor(() => {
-      expect(result.current.visitCount).toBe(1);
+      expect(result.current.visitCount).toBe(3);
       expect(result.current.isIosSafari).toBe(true);
       expect(result.current.shouldShow).toBe(true);
     });
-    expect(window.localStorage.getItem(INSTALL_PROMPT_VISIT_KEY)).toBe("1");
+    expect(window.localStorage.getItem(INSTALL_PROMPT_VISIT_KEY)).toBe("3");
   });
 });

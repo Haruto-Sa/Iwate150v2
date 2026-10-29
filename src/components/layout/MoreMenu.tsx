@@ -99,7 +99,6 @@ function MoreMenuDialog({ id, onClose, restoreFocus }: {
               <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-emerald-700" />
               <span>
                 <span className="block font-medium">{item.label}</span>
-                <span className="block text-sm text-emerald-900/65">{item.description}</span>
               </span>
             </Link>
           );

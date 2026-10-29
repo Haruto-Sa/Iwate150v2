@@ -1,96 +1,157 @@
 @import "tailwindcss";
-
-/* LiftKit デザイントークン（golden-ratio スペーシング・カラー変数） */
 @import "../lib/css/liftkitvars.css";
 @import "../lib/css/background-colors.css";
 
+/* 「いわての旅帖」: 温白の紙、松葉のインク、朱色の小さな目印。 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-
-  /* LiftKit primary をプロジェクトの emerald テーマに合わせてオーバーライド */
-  --light__primary_lkv: #10b981;
+  color-scheme: light;
+  --background: #f6f5ef;
+  --foreground: #213d34;
+  --light__primary_lkv: #234f40;
   --light__onprimary_lkv: #ffffff;
-  --lk-primary: #10b981;
+  --lk-primary: #234f40;
   --lk-onprimary: #ffffff;
 }
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body), sans-serif;
+  --font-display:
+    var(--font-editorial), "Yu Mincho", "Hiragino Mincho ProN",
+    "Noto Serif CJK JP", serif;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-emerald-50: #f0f5ee;
+  --color-emerald-100: #e2ecde;
+  --color-emerald-200: #c9dbc2;
+  --color-emerald-300: #a4c39c;
+  --color-emerald-400: #7da575;
+  --color-emerald-500: #587f54;
+  --color-emerald-600: #406a48;
+  --color-emerald-700: #30573f;
+  --color-emerald-800: #234f40;
+  --color-emerald-900: #234538;
+  --color-emerald-950: #172f26;
 }
-
+html {
+  scroll-padding-top: 6rem;
+}
 body {
-  background:
-    radial-gradient(circle at top, rgba(232, 252, 244, 0.85), transparent 38%),
-    linear-gradient(180deg, #f7fbf9 0%, #eef7f3 46%, #f8fbfa 100%);
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
 }
-
+::selection {
+  background: #dce8d3;
+  color: #172f26;
+}
 a,
 button {
   -webkit-tap-highlight-color: transparent;
 }
-
-.page-shell {
-  animation: page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #a14432;
+  outline-offset: 4px;
 }
-
-.interactive-lift {
-  transition:
-    transform 220ms ease,
-    box-shadow 220ms ease,
-    background-color 220ms ease,
-    border-color 220ms ease;
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
 }
-
-.interactive-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 44px rgba(15, 28, 26, 0.08);
+button:not(:disabled) {
+  cursor: pointer;
 }
-
-.tap-feedback:active {
-  transform: translateY(0) scale(0.985);
+input,
+select,
+textarea {
+  min-width: 0;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .page-shell,
-  .interactive-lift,
-  .tap-feedback {
-    animation: none !important;
-    transition: none !important;
+.glass {
+  background-color: rgb(255 255 252 / 96%);
+}
+.glass-nav {
+  background: #f6f5ef;
+  border-color: #234f4020;
+}
+@supports (backdrop-filter: blur(16px)) {
+  .glass-nav {
+    background-color: rgb(246 245 239 / 88%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 }
-
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
+}
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 44px;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  background: #234f40;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  transition: background-color 180ms;
+}
+.action-link:hover {
+  background: #172f26;
+}
+.action-link-secondary {
+  background: transparent;
+  color: #234f40;
+  box-shadow: inset 0 0 0 1px #234f4040;
+}
+.action-link-secondary:hover {
+  background: #e2ecde;
+}
+.interactive-lift {
+  transition:
+    background-color 180ms,
+    border-color 180ms,
+    box-shadow 180ms;
+}
+.interactive-lift:hover {
+  box-shadow: 0 4px 16px #234f400c;
+}
+.page-shell {
+  animation: page-enter 350ms ease-out;
+}
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
-
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
-
 @keyframes float {
   0%,
   100% {
     transform: translateY(0);
   }
-
   50% {
     transform: translateY(-8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

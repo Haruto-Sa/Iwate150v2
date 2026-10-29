@@ -17,17 +17,18 @@ jobs:
   playwright:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # bun.lockのPlaywrightと揃え、毎回のOS依存ダウンロードを避ける。
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
+      - run: npm install --global bun@1.3.4
       - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
-      - run: bun run test:e2e
+      - run: bunx playwright test --project=chromium --project=screenshots --project=webkit-ui --project=iphone --project=android
       - name: Upload E2E diagnostics
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

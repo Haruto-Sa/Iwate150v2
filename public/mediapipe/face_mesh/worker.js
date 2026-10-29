@@ -15,7 +15,7 @@ self.onmessage = async ({ data }) => {
   try {
     if (data.type === 'init') {
       tracker = new FaceMesh({ locateFile: (file) => `${data.assetBase}/${file.replace('face_mesh_solution_simd_wasm_bin.js', 'face_mesh_solution_wasm_bin.js').replace('face_mesh_solution_simd_wasm_bin.wasm', 'face_mesh_solution_wasm_bin.wasm')}` });
-      tracker.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5, useCpuInference: data.useCpuInference });
+      tracker.setOptions({ maxNumFaces: 1, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5, useCpuInference: data.useCpuInference });
       tracker.onResults((results) => {
         landmarks = results.multiFaceLandmarks;
         if (results.image instanceof ImageBitmap) results.image.close();

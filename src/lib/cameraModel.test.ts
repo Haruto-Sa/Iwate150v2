@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as THREE from "three";
-import { CAMERA_MODEL_TIMEOUT_MS, disposeCameraModel, loadCameraModel } from "./cameraModel";
+import { CAMERA_MODEL_TIMEOUT_MS, disposeCameraModel, loadCameraModel, normalizeCameraModel } from "./cameraModel";
 
 const triangle = "v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n";
 const fetchAsset = vi.fn<typeof fetch>();
@@ -112,4 +112,27 @@ it("テクスチャの取得失敗を描画準備完了として返さない", a
     ? new Response("missing", { status: 404 })
     : new Response(String(url).endsWith(".mtl") ? "newmtl skin\nmap_Kd texture.png\n" : "usemtl skin\n" + triangle)));
   await expect(loadCameraModel("test", "/test.obj", "/test.mtl", new AbortController().signal)).rejects.toThrow("texture failed");
+});
+
+
+it("原点から離れたモデルも追従位置と拡大率の変更後に中心がずれない", () => {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 1), new THREE.MeshBasicMaterial());
+  mesh.geometry.translate(7, 11, -3);
+  mesh.rotation.z = Math.PI / 4;
+  const model = normalizeCameraModel(mesh);
+  model.position.set(-1, 2, 0);
+  model.scale.multiplyScalar(0.7);
+  const box = new THREE.Box3().setFromObject(model);
+  expect(box.getCenter(new THREE.Vector3()).distanceTo(model.position)).toBeLessThan(1e-6);
+  const size = box.getSize(new THREE.Vector3());
+  expect(Math.max(size.x, size.y, size.z)).toBeCloseTo(0.7);
+  disposeCameraModel(model);
+});
+
+it("元データの単位が大きくても正規化した最長辺は1になる", () => {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(1000, 2000, 500), new THREE.MeshBasicMaterial());
+  const model = normalizeCameraModel(mesh);
+  const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+  expect(Math.max(size.x, size.y, size.z)).toBeCloseTo(1);
+  disposeCameraModel(model);
 });

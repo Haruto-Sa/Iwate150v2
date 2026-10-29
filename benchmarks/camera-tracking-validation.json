@@ -1,0 +1,163 @@
+{
+  "commit": "8cbc00d1d8c46e3e5f8015c647615e81610effbd",
+  "recordedAt": "2026-10-23T16:19:44.088Z",
+  "scope": "macOS Playwright device profiles; translated public portrait fixture. Actual transparent model-canvas pixel centroid, not real-person motion or physical front/back camera.",
+  "results": [
+    {
+      "environment": "iphone",
+      "visit": "cold",
+      "tracking": {
+        "fixture": "translated public portrait, not a moving person or physical camera",
+        "samples": [
+          {
+            "facing": "user",
+            "inputOffsetPixels": -64,
+            "center": 0.5002051728538268,
+            "renderedCentroid": 0.5955961246533362
+          },
+          {
+            "facing": "user",
+            "inputOffsetPixels": 64,
+            "center": 0.5002051728538268,
+            "renderedCentroid": 0.40388197784379487
+          },
+          {
+            "facing": "environment",
+            "inputOffsetPixels": -64,
+            "center": 0.4885665455134248,
+            "renderedCentroid": 0.38979745414099903
+          },
+          {
+            "facing": "environment",
+            "inputOffsetPixels": 64,
+            "center": 0.4885665455134248,
+            "renderedCentroid": 0.5859686243394123
+          }
+        ]
+      },
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "iphone",
+      "visit": "revisit",
+      "tracking": {
+        "fixture": "translated public portrait, not a moving person or physical camera",
+        "samples": [
+          {
+            "facing": "user",
+            "inputOffsetPixels": -64,
+            "center": 0.5001967673963749,
+            "renderedCentroid": 0.5974891528704753
+          },
+          {
+            "facing": "user",
+            "inputOffsetPixels": 64,
+            "center": 0.5001967673963749,
+            "renderedCentroid": 0.4050584100343691
+          },
+          {
+            "facing": "environment",
+            "inputOffsetPixels": -64,
+            "center": 0.4881860175417774,
+            "renderedCentroid": 0.3987013019031685
+          },
+          {
+            "facing": "environment",
+            "inputOffsetPixels": 64,
+            "center": 0.4881860175417774,
+            "renderedCentroid": 0.581796235125643
+          }
+        ]
+      },
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "visit": "cold",
+      "tracking": {
+        "fixture": "translated public portrait, not a moving person or physical camera",
+        "samples": [
+          {
+            "facing": "user",
+            "inputOffsetPixels": -64,
+            "center": 0.5003202665442277,
+            "renderedCentroid": 0.5952111205827675
+          },
+          {
+            "facing": "user",
+            "inputOffsetPixels": 64,
+            "center": 0.5003202665442277,
+            "renderedCentroid": 0.4030901662991865
+          },
+          {
+            "facing": "environment",
+            "inputOffsetPixels": -64,
+            "center": 0.4888299740199877,
+            "renderedCentroid": 0.3901815656714982
+          },
+          {
+            "facing": "environment",
+            "inputOffsetPixels": 64,
+            "center": 0.4888299740199877,
+            "renderedCentroid": 0.5852539420108493
+          }
+        ]
+      },
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "visit": "revisit",
+      "tracking": {
+        "fixture": "translated public portrait, not a moving person or physical camera",
+        "samples": [
+          {
+            "facing": "user",
+            "inputOffsetPixels": -64,
+            "center": 0.5000670068709513,
+            "renderedCentroid": 0.5990382501079491
+          },
+          {
+            "facing": "user",
+            "inputOffsetPixels": 64,
+            "center": 0.5000670068709513,
+            "renderedCentroid": 0.4024315994658861
+          },
+          {
+            "facing": "environment",
+            "inputOffsetPixels": -64,
+            "center": 0.4886545639408534,
+            "renderedCentroid": 0.3893372088979819
+          },
+          {
+            "facing": "environment",
+            "inputOffsetPixels": 64,
+            "center": 0.4886545639408534,
+            "renderedCentroid": 0.5859167096865898
+          }
+        ]
+      },
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    }
+  ]
+}

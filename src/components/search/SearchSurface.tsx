@@ -9,6 +9,7 @@ import { PageShortcut } from "@/components/ui/PageShortcut";
 import { getImageUrl } from "@/lib/storage";
 import Image from "next/image";
 import { useResolvedStorageUrls } from "@/lib/storageSignedClient";
+import { findSpotVisitorStatistic } from "@/lib/spotVisitorStatistics";
 import { SpotCard } from "@/components/ui/SpotCard";
 import { splitEventsByTimeline } from "@/lib/eventFilters";
 
@@ -75,6 +76,8 @@ function buildSearchQuery(params: {
  * <SearchSurface cities={cities} genres={genres} />
  */
 export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, initialTab = "spot" }: Props) {
+  const [interactive, setInteractive] = useState(false);
+  useEffect(() => { setInteractive(true); }, []);
   const [tab, setTab] = useState<SearchTab>(initialTab);
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
@@ -240,6 +243,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
   return (
     <div className="space-y-6">
       <div className="flex justify-end"><PageShortcut target="favorites" /></div>
+      <fieldset disabled={!interactive} className="min-w-0 space-y-6">
       <div className="flex items-center gap-3 rounded-2xl border border-emerald-900/15 bg-white px-4 py-3 shadow-sm">
         <Search className="h-5 w-5 text-emerald-700" strokeWidth={1.8} />
         <input
@@ -311,6 +315,8 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
         ))}
       </div>
 
+      </fieldset>
+
       {!isIdleState && (
         <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-emerald-900/70">
           <p>
@@ -342,7 +348,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
                   ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
                   : null;
                 return (
-                  <SpotCard key={spot.id} spot={spot} cityName={cityById.get(spot.city_id)?.name} imageUrl={imageUrl} />
+                  <SpotCard key={spot.id} spot={spot} cityName={cityById.get(spot.city_id)?.name} imageUrl={imageUrl} visitorStatistic={findSpotVisitorStatistic(spot, cityById.get(spot.city_id)?.name)} />
                 );
               })}
             </div>
@@ -395,7 +401,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
               ? (resolvedImageMap.get(imagePath) ?? getImageUrl(imagePath))
               : null;
             return (
-              <SpotCard key={spot.id} spot={spot} cityName={cityById.get(spot.city_id)?.name} imageUrl={imageUrl} />
+              <SpotCard key={spot.id} spot={spot} cityName={cityById.get(spot.city_id)?.name} imageUrl={imageUrl} visitorStatistic={findSpotVisitorStatistic(spot, cityById.get(spot.city_id)?.name)} />
             );
           })}
 

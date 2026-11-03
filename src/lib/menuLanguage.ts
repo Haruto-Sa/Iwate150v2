@@ -9,7 +9,7 @@ let temporaryLanguage: MenuLanguage | undefined;
 
 export const menuMessages = {
   ja: {
-    home: "ホーム", camera: "カメラ", search: "検索", map: "地図", stamps: "スタンプ",
+    help: "使い方", home: "ホーム", camera: "カメラ", search: "検索", map: "地図", stamps: "スタンプ",
     characters: "キャラクター", favorites: "お気に入り", more: "その他", closeMore: "その他を閉じる",
     mainPages: "主要ページ", mobilePages: "モバイル主要ページ", morePages: "その他のページ",
     skipContent: "本文へ移動", login: "ログイン", logout: "ログアウト", account: "マイページ",
@@ -20,7 +20,7 @@ export const menuMessages = {
     installFailed: "このブラウザではインストール画面を開けませんでした。",
   },
   en: {
-    home: "Home", camera: "Camera", search: "Search", map: "Map", stamps: "Stamps",
+    help: "Help", home: "Home", camera: "Camera", search: "Search", map: "Map", stamps: "Stamps",
     characters: "Characters", favorites: "Favorites", more: "More", closeMore: "Close more menu",
     mainPages: "Main pages", mobilePages: "Mobile main pages", morePages: "More pages",
     skipContent: "Skip to content", login: "Sign in", logout: "Sign out", account: "My page",

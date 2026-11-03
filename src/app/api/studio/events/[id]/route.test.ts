@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DELETE, PATCH } from "@/app/api/studio/events/[id]/route";
 
@@ -14,27 +13,12 @@ const {
   mockDeleteEvent: vi.fn(),
 }));
 
-vi.mock("@/lib/studioApi", async () => {
-  return {
-    buildStudioErrorResponse: (error: unknown, fallbackMessage: string) =>
-      NextResponse.json(
-        { error: error instanceof Error ? error.message : fallbackMessage },
-        { status: error instanceof Error ? 400 : 500 }
-      ),
-    parseRequiredInteger: (value: string, fieldName: string) => {
-      const parsed = Number(value);
-      if (!Number.isInteger(parsed) || parsed <= 0) {
-        throw new Error(`${fieldName} must be a positive integer.`);
-      }
-      return parsed;
-    },
-    readJsonObject: async (request: Request) => (await request.json()) as Record<string, unknown>,
-    requireStudioApiAccess: mockRequireStudioApiAccess,
-  };
-});
-
-vi.mock("@/lib/studioPayloads", () => ({
-  parseEventUpdateInput: (input: Record<string, unknown>) => input,
+vi.mock("server-only", () => ({}));
+vi.mock("@/auth", () => ({ auth: vi.fn() }));
+vi.mock("@/lib/authServer", () => ({ fetchAppUserByIdentity: vi.fn() }));
+vi.mock("@/lib/studioApi", async importOriginal => ({
+  ...await importOriginal<typeof import("@/lib/studioApi")>(),
+  requireStudioApiAccess: mockRequireStudioApiAccess,
 }));
 
 vi.mock("@/lib/adminServer", () => ({
@@ -69,7 +53,7 @@ describe("PATCH /api/studio/events/[id]", () => {
     const response = await PATCH(
       new Request("http://localhost/api/studio/events/999", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Origin: "http://localhost" },
         body: JSON.stringify({ title: "更新イベント" }),
       }),
       { params: Promise.resolve({ id: "999" }) }
@@ -110,7 +94,7 @@ describe("PATCH /api/studio/events/[id]", () => {
     const response = await PATCH(
       new Request("http://localhost/api/studio/events/5", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Origin: "http://localhost" },
         body: JSON.stringify({ title: "更新イベント" }),
       }),
       { params: Promise.resolve({ id: "5" }) }
@@ -134,7 +118,7 @@ describe("PATCH /api/studio/events/[id]", () => {
     mockDeleteEvent.mockResolvedValue(undefined);
 
     const response = await DELETE(
-      new Request("http://localhost/api/studio/events/5", { method: "DELETE" }),
+      new Request("http://localhost/api/studio/events/5", { method: "DELETE", headers: { Origin: "http://localhost" } }),
       { params: Promise.resolve({ id: "5" }) }
     );
 

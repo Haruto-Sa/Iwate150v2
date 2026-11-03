@@ -40,3 +40,45 @@ test("英語のページ案内を320px幅で操作できる", async ({ page }, t
   await expect(page.getByRole("button", { name: "Help", exact: true })).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+
+test("ホーム未訪問でも検索案内を閉じた後にPWA案内が出る", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => localStorage.setItem("voja_install_prompt_visits", "2"));
+  await page.goto("/search");
+  const guide = page.getByRole("dialog", { name: "検索の使い方" });
+  await expect(guide).toBeVisible();
+  await guide.getByRole("button", { name: "検索を始める" }).click();
+  await expect(guide).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("voja_install_prompt_visits"))).toBe("3");
+  expect(await page.evaluate(() => localStorage.getItem("onboarding_completed"))).toBeNull();
+  await page.evaluate(() => {
+    const event = new Event("beforeinstallprompt");
+    Object.assign(event, { prompt: async () => {}, userChoice: Promise.resolve({ outcome: "dismissed", platform: "web" }) });
+    window.dispatchEvent(event);
+  });
+  await expect(page.getByRole("dialog", { name: "ホーム画面に追加" })).toBeVisible();
+});
+
+test("再表示した案内を閉じるまでPWAインストール案内を重ねない", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("voja_page_guide:/search", "true");
+    localStorage.setItem("voja_install_prompt_visits", "2");
+  });
+  await page.goto("/search");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("voja_install_prompt_visits"))).toBe("3");
+  await page.getByRole("button", { name: "使い方" }).click();
+  const guide = page.getByRole("dialog", { name: "検索の使い方" });
+  await expect(guide).toBeVisible();
+  await page.evaluate(() => {
+    const event = new Event("beforeinstallprompt");
+    Object.assign(event, { prompt: async () => {}, userChoice: Promise.resolve({ outcome: "dismissed", platform: "web" }) });
+    window.dispatchEvent(event);
+  });
+  await expect(page.getByRole("dialog", { name: "ホーム画面に追加" })).toHaveCount(0);
+  await guide.getByRole("button", { name: "閉じる" }).click();
+  await expect(page.getByRole("dialog", { name: "ホーム画面に追加" })).toBeVisible();
+});

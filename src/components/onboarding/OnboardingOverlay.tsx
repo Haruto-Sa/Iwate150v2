@@ -8,7 +8,7 @@ import { Camera, ArrowRight, Search, Stamp, X, CircleHelp } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { getGuidePath, pageGuides, type GuidePath } from "@/lib/pageGuides";
-import { completePageGuide, usePageGuideCompleted } from "@/hooks/usePageGuideCompleted";
+import { completePageGuide, setPageGuideVisible, usePageGuideCompleted } from "@/hooks/usePageGuideCompleted";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 
@@ -49,6 +49,11 @@ function PageGuide({ path }: { path: GuidePath }) {
   useBodyScrollLock(shouldRender);
 
   useEffect(() => {
+    setPageGuideVisible(path, shouldRender);
+    return () => setPageGuideVisible(path, false);
+  }, [path, shouldRender]);
+
+  useEffect(() => {
     if (!shouldRender) return;
     const dialog = dialogRef.current;
     const trigger = triggerRef.current;
@@ -58,6 +63,7 @@ function PageGuide({ path }: { path: GuidePath }) {
 
   /** 案内を閉じてページ別既読を保存する。@returns なし @example closeOnboarding(); */
   function closeOnboarding(): void {
+    setPageGuideVisible(path, false);
     completePageGuide(path);
     setDismissed(true);
     setReopened(false);
@@ -66,7 +72,7 @@ function PageGuide({ path }: { path: GuidePath }) {
   return (
     <>
     <button ref={triggerRef} type="button" lang={language} aria-label={messages.help}
-      aria-haspopup="dialog" aria-expanded={shouldRender} onClick={() => setReopened(true)}
+      aria-haspopup="dialog" aria-expanded={shouldRender} onClick={() => { setPageGuideVisible(path, true); setReopened(true); }}
       className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-emerald-900/15 text-emerald-900">
       <CircleHelp aria-hidden="true" className="h-5 w-5" />
     </button>

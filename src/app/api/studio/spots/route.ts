@@ -1,7 +1,8 @@
+import { assertSameOrigin } from "@/lib/apiGuards";
 import { NextResponse } from "next/server";
 import { createSpot } from "@/lib/adminServer";
 import { buildStudioErrorResponse, readJsonObject, requireStudioApiAccess } from "@/lib/studioApi";
-import { parseSpotCreateInput } from "@/lib/studioPayloads";
+import { SPOT_FIELDS, parseSpotCreateInput } from "@/lib/studioPayloads";
 
 /**
  * Studio からスポットを作成する。
@@ -12,13 +13,11 @@ import { parseSpotCreateInput } from "@/lib/studioPayloads";
  * await POST(request);
  */
 export async function POST(request: Request): Promise<NextResponse> {
-  const access = await requireStudioApiAccess();
-  if (access.response) {
-    return access.response;
-  }
-
   try {
-    const body = await readJsonObject(request);
+    const access = await requireStudioApiAccess();
+    if (access.response) return access.response;
+    assertSameOrigin(request);
+    const body = await readJsonObject(request, SPOT_FIELDS);
     const input = parseSpotCreateInput(body);
     const spot = await createSpot(input);
     return NextResponse.json(spot, { status: 201 });

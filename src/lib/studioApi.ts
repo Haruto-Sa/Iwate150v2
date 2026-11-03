@@ -1,3 +1,5 @@
+import "server-only";
+import { ApiError, readLimitedJson } from "@/lib/apiGuards";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { AdminServerConfigError, AdminServerNotFoundError } from "@/lib/adminServer";
@@ -59,7 +61,7 @@ export async function requireStudioApiAccess(): Promise<StudioAccessResult> {
 export function parseRequiredInteger(value: unknown, fieldName: string): number {
   const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`${fieldName} must be a positive integer.`);
+    throw new ApiError(400, `${fieldName} must be a positive integer.`);
   }
   return parsed;
 }
@@ -92,7 +94,7 @@ export function parseOptionalInteger(value: unknown, fieldName: string): number 
 export function parseRequiredNumber(value: unknown, fieldName: string): number {
   const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
   if (!Number.isFinite(parsed)) {
-    throw new Error(`${fieldName} must be a valid number.`);
+    throw new ApiError(400, `${fieldName} must be a valid number.`);
   }
   return parsed;
 }
@@ -109,7 +111,7 @@ export function parseRequiredNumber(value: unknown, fieldName: string): number {
  */
 export function parseRequiredString(value: unknown, fieldName: string): string {
   if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`${fieldName} is required.`);
+    throw new ApiError(400, `${fieldName} is required.`);
   }
   return value.trim();
 }
@@ -126,7 +128,7 @@ export function parseRequiredString(value: unknown, fieldName: string): string {
 export function parseOptionalString(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   if (typeof value !== "string") {
-    throw new Error("Optional string field must be a string.");
+    throw new ApiError(400, "Optional string field must be a string.");
   }
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
@@ -146,11 +148,11 @@ export function parseOptionalDate(value: unknown, fieldName: string): string | n
   const normalized = parseOptionalString(value);
   if (!normalized) return null;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
-    throw new Error(`${fieldName} must be in YYYY-MM-DD format.`);
+    throw new ApiError(400, `${fieldName} must be in YYYY-MM-DD format.`);
   }
   const date = new Date(`${normalized}T00:00:00.000Z`);
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== normalized) {
-    throw new Error(`${fieldName} must be a valid date.`);
+    throw new ApiError(400, `${fieldName} must be a valid date.`);
   }
   return normalized;
 }
@@ -159,17 +161,14 @@ export function parseOptionalDate(value: unknown, fieldName: string): string | n
  * JSON ボディをオブジェクトとして読み込む。
  *
  * @param request - Next.js request
+ * @param fields - 許可するキー
  * @returns JSON object
  * @throws Error JSON object でない場合
  * @example
- * const body = await readJsonObject(request);
+ * const body = await readJsonObject(request, ["title"]);
  */
-export async function readJsonObject(request: Request): Promise<Record<string, unknown>> {
-  const payload = await request.json();
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    throw new Error("Request body must be a JSON object.");
-  }
-  return payload as Record<string, unknown>;
+export async function readJsonObject(request: Request, fields: readonly string[]): Promise<Record<string, unknown>> {
+  return readLimitedJson(request, fields, 32 * 1024);
 }
 
 /**
@@ -183,13 +182,13 @@ export async function readJsonObject(request: Request): Promise<Record<string, u
  */
 export function buildStudioErrorResponse(error: unknown, fallbackMessage: string): NextResponse<{ error: string }> {
   if (error instanceof AdminServerNotFoundError) {
-    return NextResponse.json({ error: error.message }, { status: 404 });
+    return NextResponse.json({ error: "対象データが見つかりません。" }, { status: 404 });
   }
   if (error instanceof AdminServerConfigError) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: fallbackMessage }, { status: 500 });
   }
-  if (error instanceof Error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error instanceof ApiError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
   }
   return NextResponse.json({ error: fallbackMessage }, { status: 500 });
 }

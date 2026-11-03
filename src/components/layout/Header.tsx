@@ -1,5 +1,7 @@
 "use client";
 
+import { useMenuLanguage } from "@/lib/menuLanguage";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Compass } from "lucide-react";
@@ -30,6 +32,7 @@ function isSecretWorkspaceRoute(pathname: string): boolean {
  * @example <Header />
  */
 export function Header() {
+  const { language, messages } = useMenuLanguage();
   const pathname = usePathname();
   const { signOut } = useAuthSession();
   const secretWorkspaceRoute = isSecretWorkspaceRoute(pathname);
@@ -55,8 +58,8 @@ export function Header() {
   }
 
   return (
-    <header className="glass-nav sticky top-0 z-[1200] border-b">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[1300] focus:rounded-lg focus:bg-white focus:p-3">本文へ移動</a>
+    <header lang={language} className="glass-nav sticky top-0 z-[1200] border-b">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[1300] focus:rounded-lg focus:bg-white focus:p-3">{messages.skipContent}</a>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="group flex min-w-0 items-center gap-3 text-[#0f1c1a]">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-800 text-white">
@@ -68,7 +71,7 @@ export function Header() {
         </Link>
 
         <div className="flex shrink-0 items-center gap-2">
-          <nav aria-label="主要ページ" className="hidden items-center gap-2 text-sm font-medium text-[#0f1c1a] md:flex">
+          <nav aria-label={messages.mainPages} className="hidden items-center gap-2 text-sm font-medium text-[#0f1c1a] md:flex">
             {PUBLIC_NAV_ITEMS.map((item) => {
               const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
               return (
@@ -82,7 +85,7 @@ export function Header() {
                       : "text-emerald-900/70 hover:bg-emerald-50"
                   }`}
                 >
-                  {item.label}
+                  {messages[item.messageKey]}
                 </Link>
               );
             })}

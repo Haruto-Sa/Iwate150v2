@@ -28,7 +28,22 @@ jobs:
           node-version-file: .node-version
       - run: npm install --global bun@1.3.4
       - run: bun install --frozen-lockfile
-      - run: bunx playwright test --project=chromium --project=screenshots --project=webkit-ui --project=iphone --project=android
+      - name: Run Playwright (retry only a transient Google font loader failure)
+        shell: bash
+        run: |
+          set -o pipefail
+          if bunx playwright test --project=chromium --project=screenshots --project=webkit-ui --project=iphone --project=android 2>&1 | tee playwright-first-attempt.log; then
+            exit 0
+          fi
+          # Known intermittent next/font Google CSS parsing failure in CI.
+          # Do not retry or suppress failing browser assertions.
+          if grep -Fq 'An error occurred in `next/font`.' playwright-first-attempt.log &&
+             grep -Fq "Cannot read properties of null (reading '1')" playwright-first-attempt.log; then
+            echo "Retrying after transient next/font loader failure."
+            bunx playwright test --project=chromium --project=screenshots --project=webkit-ui --project=iphone --project=android
+          else
+            exit 1
+          fi
       - name: Upload E2E diagnostics
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

@@ -55,13 +55,19 @@ test("インストール案内はナビより上に開き、閉じると元の�
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     localStorage.setItem("onboarding_completed", "true");
+    localStorage.setItem("voja_page_guide:/search", "true");
     localStorage.setItem("voja_install_prompt_visits", "2");
   });
   await page.goto("/search");
   const input = page.getByRole("textbox", {
     name: "スポット・イベントのキーワード",
   });
-  await input.focus();
+  const isIosSafari = await page.evaluate(() => /iP(hone|od|ad)/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent));
+  await expect(input).toBeEnabled();
+  if (!isIosSafari) {
+    await input.focus();
+    await expect(input).toBeFocused();
+  }
   await expect
     .poll(() =>
       page.evaluate(() => localStorage.getItem("voja_install_prompt_visits")),
@@ -80,7 +86,7 @@ test("インストール案内はナビより上に開き、閉じると元の�
   expect(await dialog.evaluate((element) => element.matches(":modal"))).toBe(
     true,
   );
-  const isIosSafari = await page.evaluate(() => /iP(hone|od|ad)/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent));
+
   if (isIosSafari) {
     await expect(dialog.getByText(/Safari の共有メニュー/)).toBeVisible();
     await dialog.getByRole("button", { name: "ホーム画面に追加 を閉じる", exact: true }).click();
@@ -107,6 +113,7 @@ test("初回メニューから直接写真撮影へ進み、次の訪問では�
   await menu.getByRole("link", { name: "写真を撮る", exact: true }).click();
   await expect(page).toHaveURL(/\/camera$/);
   await expect(menu).toHaveCount(0);
+  await page.getByRole("dialog", { name: "カメラの使い方" }).getByRole("button", { name: "撮影を始める", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "カメラ" })).toBeVisible();
   await page.reload();
   await expect(menu).toHaveCount(0);

@@ -14,7 +14,9 @@
     "test:screenshots": "playwright test --project=screenshots",
     "storage:migrate": "bun run scripts/migrate_storage_assets.ts",
     "storage:verify": "bun run scripts/verify_storage_links.ts",
-    "add": "liftkit add"
+    "add": "liftkit add",
+    "icons:generate": "node scripts/generate-app-icons.mjs",
+    "icons:check": "node scripts/check-app-icons.mjs"
   },
   "dependencies": {
     "@csstools/normalize.css": "^12.1.1",
@@ -57,7 +59,8 @@
     "jsdom": "^27.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "sharp": "0.34.5"
   },
   "overrides": {
     "baseline-browser-mapping": "2.10.0"

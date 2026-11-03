@@ -95,6 +95,8 @@ export type Character = {
   model_path?: string | null;
   mtl_path?: string | null;
   thumbnail?: string | null;
+  /** 紹介内容を確認できる自治体等の公開資料。モデル利用許諾とは別。 */
+  source_url?: string;
   tags?: string[];
   renderProfile?: CharacterRenderProfile;
 };

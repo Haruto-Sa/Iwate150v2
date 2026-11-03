@@ -1,0 +1,31 @@
+{
+  "scope": "macOS Playwright Chromium/WebKit; synthetic moving rectangle; bounded recording engine only, not camera UI or physical devices",
+  "results": [
+    {
+      "engine": "chromium",
+      "mime": "video/mp4;codecs=avc1.42001f",
+      "bytes": 8025,
+      "width": 640,
+      "height": 480,
+      "duration": 1.560233,
+      "ended": true,
+      "positions": [
+        117.5,
+        300.5
+      ]
+    },
+    {
+      "engine": "webkit",
+      "mime": "video/mp4; codecs=avc1.42000a",
+      "bytes": 12194,
+      "width": 640,
+      "height": 480,
+      "duration": 1.5766666666666667,
+      "ended": true,
+      "positions": [
+        105.99398448630679,
+        307.9939844863068
+      ]
+    }
+  ]
+}

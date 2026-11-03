@@ -1,0 +1,110 @@
+{
+  "run": "https://github.com/Haruto-Sa/Iwate150v2/actions/runs/40007280430",
+  "commit": "1a4c904",
+  "project": "webkit-ui",
+  "result": {
+    "passed": 240,
+    "skipped": 6,
+    "failed": 1
+  },
+  "failure": "first-send poll returned zero until its 15s timeout, although final diagnostics contain first-send at 4937ms and result at 20964ms",
+  "interpretation": "Consistent with native inference blocking page evaluation while the GPU initializes. Wait for final UI once, rather than polling an intermediate mark with a shorter deadline. Runtime stall itself remains unresolved.",
+  "marks": [
+    {
+      "name": "iwate-camera:camera:start",
+      "time": 1070
+    },
+    {
+      "name": "iwate-camera:camera:playing",
+      "time": 1516
+    },
+    {
+      "name": "iwate-camera:renderer:initialize:start",
+      "time": 1516
+    },
+    {
+      "name": "iwate-camera:renderer:initialize:end",
+      "time": 1772
+    },
+    {
+      "name": "iwate-camera:urls:start",
+      "time": 1772
+    },
+    {
+      "name": "iwate-camera:urls:end",
+      "time": 1773
+    },
+    {
+      "name": "iwate-camera:face:initialize:start",
+      "time": 1779
+    },
+    {
+      "name": "iwate-camera:renderer:first-submit:start",
+      "time": 1808
+    },
+    {
+      "name": "iwate-camera:renderer:first-submit:end",
+      "time": 1815
+    },
+    {
+      "name": "iwate-camera:face:worker-unavailable",
+      "time": 2883
+    },
+    {
+      "name": "iwate-camera:face:import:start",
+      "time": 2883
+    },
+    {
+      "name": "iwate-camera:face:import:end",
+      "time": 3140
+    },
+    {
+      "name": "iwate-camera:sobacchi:selected",
+      "time": 3189
+    },
+    {
+      "name": "iwate-camera:sobacchi:load:start",
+      "time": 3201
+    },
+    {
+      "name": "iwate-camera:sobacchi:material-parse:start",
+      "time": 3429
+    },
+    {
+      "name": "iwate-camera:sobacchi:material-parse:end",
+      "time": 3432
+    },
+    {
+      "name": "iwate-camera:sobacchi:parse:start",
+      "time": 3433
+    },
+    {
+      "name": "iwate-camera:sobacchi:parse:end",
+      "time": 3951
+    },
+    {
+      "name": "iwate-camera:sobacchi:object-ready",
+      "time": 3952
+    },
+    {
+      "name": "iwate-camera:face:initialize:end",
+      "time": 4936
+    },
+    {
+      "name": "iwate-camera:face:ready",
+      "time": 4936
+    },
+    {
+      "name": "iwate-camera:face:first-send",
+      "time": 4937
+    },
+    {
+      "name": "iwate-camera:face:first-result",
+      "time": 20964
+    },
+    {
+      "name": "iwate-camera:face:first-send-end",
+      "time": 20965
+    }
+  ]
+}

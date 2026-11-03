@@ -1,0 +1,414 @@
+{
+  "baseCommit": "5665040cf3fb6b8e62b06b2cab87009f6a220df0",
+  "scope": "Instrumented baseline; macOS desktop engines with iPhone 13 / Pixel 5 profiles and 640x480 canvas stream from MediaPipe portrait.jpg; not physical-device or GPU completion timing. Cold=new context; revisit=SPA navigation. Delayed assets=1s per intercepted request with SW unavailable; other cases SW enabled. Three samples each.",
+  "samples": [
+    {
+      "environment": "iphone",
+      "scenario": "single",
+      "visit": "cold",
+      "runs": [
+        {
+          "cameraPlayingMs": 85,
+          "firstFaceMs": 381,
+          "objectReadyMs": 239,
+          "firstVisibleMs": 391,
+          "selectedToVisibleMs": 216,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 92,
+          "firstFaceMs": 444,
+          "objectReadyMs": 307,
+          "firstVisibleMs": 455,
+          "selectedToVisibleMs": 231,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 102,
+          "firstFaceMs": 572,
+          "objectReadyMs": 322,
+          "firstVisibleMs": 585,
+          "selectedToVisibleMs": 351,
+          "delayedRequests": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "iphone",
+      "scenario": "single",
+      "visit": "revisit",
+      "runs": [
+        {
+          "cameraPlayingMs": 83,
+          "firstFaceMs": 99,
+          "objectReadyMs": 267,
+          "firstVisibleMs": 283,
+          "selectedToVisibleMs": 83,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 81,
+          "firstFaceMs": 101,
+          "objectReadyMs": 292,
+          "firstVisibleMs": 310,
+          "selectedToVisibleMs": 102,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 84,
+          "firstFaceMs": 104,
+          "objectReadyMs": 347,
+          "firstVisibleMs": 369,
+          "selectedToVisibleMs": 130,
+          "delayedRequests": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "iphone",
+      "scenario": "multiple",
+      "visit": "cold",
+      "runs": [
+        {
+          "cameraPlayingMs": 153,
+          "firstFaceMs": 421,
+          "objectReadyMs": 294,
+          "firstVisibleMs": 433,
+          "selectedToVisibleMs": 212,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 153,
+          "firstFaceMs": 424,
+          "objectReadyMs": 306,
+          "firstVisibleMs": 518,
+          "selectedToVisibleMs": 206,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 155,
+          "firstFaceMs": 495,
+          "objectReadyMs": 325,
+          "firstVisibleMs": 510,
+          "selectedToVisibleMs": 266,
+          "delayedRequests": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "iphone",
+      "scenario": "multiple",
+      "visit": "revisit",
+      "runs": [
+        {
+          "cameraPlayingMs": 147,
+          "firstFaceMs": 175,
+          "objectReadyMs": 344,
+          "firstVisibleMs": 463,
+          "selectedToVisibleMs": 82,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 150,
+          "firstFaceMs": 164,
+          "objectReadyMs": 351,
+          "firstVisibleMs": 479,
+          "selectedToVisibleMs": 87,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 87,
+          "firstFaceMs": 105,
+          "objectReadyMs": 398,
+          "firstVisibleMs": 573,
+          "selectedToVisibleMs": 158,
+          "delayedRequests": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "iphone",
+      "scenario": "delayed-assets",
+      "visit": "cold",
+      "runs": [
+        {
+          "cameraPlayingMs": 91,
+          "firstFaceMs": 2348,
+          "objectReadyMs": 2203,
+          "firstVisibleMs": 2357,
+          "selectedToVisibleMs": 2217,
+          "delayedRequests": 7,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 150,
+          "firstFaceMs": 2464,
+          "objectReadyMs": 2281,
+          "firstVisibleMs": 2476,
+          "selectedToVisibleMs": 2262,
+          "delayedRequests": 7,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 155,
+          "firstFaceMs": 2471,
+          "objectReadyMs": 2299,
+          "firstVisibleMs": 2483,
+          "selectedToVisibleMs": 2261,
+          "delayedRequests": 7,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "iphone",
+      "scenario": "delayed-assets",
+      "visit": "revisit",
+      "runs": [
+        {
+          "cameraPlayingMs": 137,
+          "firstFaceMs": 155,
+          "objectReadyMs": 2321,
+          "firstVisibleMs": 2338,
+          "selectedToVisibleMs": 2084,
+          "delayedRequests": 2,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 136,
+          "firstFaceMs": 156,
+          "objectReadyMs": 2389,
+          "firstVisibleMs": 2409,
+          "selectedToVisibleMs": 2118,
+          "delayedRequests": 2,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 71,
+          "firstFaceMs": 88,
+          "objectReadyMs": 2339,
+          "firstVisibleMs": 2363,
+          "selectedToVisibleMs": 2126,
+          "delayedRequests": 2,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "android",
+      "scenario": "single",
+      "visit": "cold",
+      "runs": [
+        {
+          "cameraPlayingMs": 33.8999999910593,
+          "firstFaceMs": 3794.8999999910593,
+          "objectReadyMs": 272.29999999701977,
+          "firstVisibleMs": 3802.7999999970198,
+          "selectedToVisibleMs": 3620.1000000089407,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 32.400000005960464,
+          "firstFaceMs": 4792.800000011921,
+          "objectReadyMs": 358.5,
+          "firstVisibleMs": 4801.9000000059605,
+          "selectedToVisibleMs": 4569.4000000059605,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 37.0,
+          "firstFaceMs": 4464.29999999702,
+          "objectReadyMs": 364.69999998807907,
+          "firstVisibleMs": 4473.0999999940395,
+          "selectedToVisibleMs": 4239.0,
+          "delayedRequests": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "android",
+      "scenario": "single",
+      "visit": "revisit",
+      "runs": [
+        {
+          "cameraPlayingMs": 15.400000005960464,
+          "firstFaceMs": 56.70000000298023,
+          "objectReadyMs": 766.4000000059605,
+          "firstVisibleMs": 797.9000000059605,
+          "selectedToVisibleMs": 416.5,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 16.0,
+          "firstFaceMs": 57.79999999701977,
+          "objectReadyMs": 946.3999999910593,
+          "firstVisibleMs": 980.7999999970198,
+          "selectedToVisibleMs": 571.4000000059605,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 19.599999994039536,
+          "firstFaceMs": 59.0,
+          "objectReadyMs": 1058.7000000029802,
+          "firstVisibleMs": 1099.0999999940395,
+          "selectedToVisibleMs": 612.8999999910593,
+          "delayedRequests": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "android",
+      "scenario": "multiple",
+      "visit": "cold",
+      "runs": [
+        {
+          "cameraPlayingMs": 20.299999997019768,
+          "firstFaceMs": 3688.7999999970198,
+          "objectReadyMs": 244.0,
+          "firstVisibleMs": 3696.2999999970198,
+          "selectedToVisibleMs": 3556.7999999970198,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 21.100000008940697,
+          "firstFaceMs": 4662.70000000298,
+          "objectReadyMs": 272.0,
+          "firstVisibleMs": 4672.29999999702,
+          "selectedToVisibleMs": 4533.79999999702,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 25.599999994039536,
+          "firstFaceMs": 5466.5,
+          "objectReadyMs": 294.09999999403954,
+          "firstVisibleMs": 5476.5999999940395,
+          "selectedToVisibleMs": 5305.79999999702,
+          "delayedRequests": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "android",
+      "scenario": "multiple",
+      "visit": "revisit",
+      "runs": [
+        {
+          "cameraPlayingMs": 15.299999997019768,
+          "firstFaceMs": 56.5,
+          "objectReadyMs": 798.8999999910593,
+          "firstVisibleMs": 1166.0,
+          "selectedToVisibleMs": 450.0,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 19.5,
+          "firstFaceMs": 59.5,
+          "objectReadyMs": 969.5999999940395,
+          "firstVisibleMs": 1589.7000000029802,
+          "selectedToVisibleMs": 547.8999999910593,
+          "delayedRequests": 0,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 22.799999997019768,
+          "firstFaceMs": 75.19999998807907,
+          "objectReadyMs": 965.5,
+          "firstVisibleMs": 1221.5999999940395,
+          "selectedToVisibleMs": 677.6000000089407,
+          "delayedRequests": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "android",
+      "scenario": "delayed-assets",
+      "visit": "cold",
+      "runs": [
+        {
+          "cameraPlayingMs": 20.5,
+          "firstFaceMs": 5717.0999999940395,
+          "objectReadyMs": 5892.399999991059,
+          "firstVisibleMs": 5931.399999991059,
+          "selectedToVisibleMs": 4791.79999999702,
+          "delayedRequests": 7,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 25.100000008940697,
+          "firstFaceMs": 6783.79999999702,
+          "objectReadyMs": 2217.2999999970198,
+          "firstVisibleMs": 6790.100000008941,
+          "selectedToVisibleMs": 6665.800000011921,
+          "delayedRequests": 7,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 31.69999998807907,
+          "firstFaceMs": 6247.0,
+          "objectReadyMs": 2253.5999999940395,
+          "firstVisibleMs": 6253.0999999940395,
+          "selectedToVisibleMs": 6104.5999999940395,
+          "delayedRequests": 7,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "environment": "android",
+      "scenario": "delayed-assets",
+      "visit": "revisit",
+      "runs": [
+        {
+          "cameraPlayingMs": 2.0,
+          "firstFaceMs": 39.3999999910593,
+          "objectReadyMs": 2600.699999988079,
+          "firstVisibleMs": 2644.2999999970198,
+          "selectedToVisibleMs": 2280.0,
+          "delayedRequests": 2,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 2.2000000029802322,
+          "firstFaceMs": 42.0,
+          "objectReadyMs": 2683.0,
+          "firstVisibleMs": 2728.2999999970198,
+          "selectedToVisibleMs": 2311.2000000029802,
+          "delayedRequests": 2,
+          "visible": true
+        },
+        {
+          "cameraPlayingMs": 27.600000008940697,
+          "firstFaceMs": 63.1000000089407,
+          "objectReadyMs": 2857.2000000029802,
+          "firstVisibleMs": 2925.2000000029802,
+          "selectedToVisibleMs": 2475.5999999940395,
+          "delayedRequests": 2,
+          "visible": true
+        }
+      ]
+    }
+  ]
+}

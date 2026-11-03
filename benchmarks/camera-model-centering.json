@@ -1,0 +1,51 @@
+{
+  "scope": "Real local OBJ geometry; no textures, rasterization, FBX, or physical-device validation",
+  "results": [
+    {
+      "path": "public/models/wanko1.obj",
+      "sha256": "47135bdd4ade6a67fffa2849315fde0979253fd8d0d1960c2c57ebf90c6fa75d",
+      "oldCenterError": 0.0034899326939508875,
+      "newCenterError": 0,
+      "newLongestEdge": 0.9999999999999999
+    },
+    {
+      "path": "public/models/enzo.obj",
+      "sha256": "99338cdd5d03ec3cde9374bca0bf2bef3ed9995942ba165db0ec891cf6344079",
+      "oldCenterError": 0.4902050214898664,
+      "newCenterError": 0,
+      "newLongestEdge": 1
+    },
+    {
+      "path": "public/models/kerohira1.obj",
+      "sha256": "64871b5989af0dce468752850282176461d288347ec2ebba3ba345ab3c5e9c20",
+      "oldCenterError": 0.1866536915485187,
+      "newCenterError": 1.1188630228279524e-16,
+      "newLongestEdge": 1
+    },
+    {
+      "path": "public/assets/characters/karin/karin.obj",
+      "sha256": "d32baa6617f2215c0e7e89fd64ffc518e1bc19af181247cf95031367f36bd394",
+      "oldCenterError": 0.001041536926161031,
+      "newCenterError": 0,
+      "newLongestEdge": 1
+    }
+  ],
+  "sourceSHA256": {
+    "src/lib/cameraModel.ts": "5c6c350989c7a774dba8626e9d759778e942c4e0c8c8ecf031d8d08e510c376c",
+    "src/components/camera/CameraCapture.tsx": "be3715e2fdb2698c3bb1dd1c078ca4255704d7d6dd66909b75b3e2b0094330e3"
+  },
+  "uiValidation": {
+    "profiles": [
+      "iphone(WebKit)",
+      "android(Chromium)"
+    ],
+    "facingModes": [
+      "user",
+      "environment"
+    ],
+    "recordingsSaved": 4,
+    "pngCaptures": 2,
+    "source": "documents/video-centering-validation.json",
+    "frameInspection": "All four 0.3s frames include mascot; top clipping and face overlap remain. No physical device validation."
+  }
+}

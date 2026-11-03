@@ -1,0 +1,3456 @@
+{
+  "commit": "b4fd5264f34a364d26d40b5a4bc15687c81d4cb0",
+  "instrumentedWorkingTree": true,
+  "recordedAt": "2026-10-23T16:00:08.978Z",
+  "scope": "Desktop engine/device profiles; public still-image canvas stream; CPU render submission, not GPU completion or physical device. One sample per condition.",
+  "results": [
+    {
+      "environment": "iphone",
+      "scenario": "single",
+      "visit": "cold",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 372,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 273,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 250
+        },
+        {
+          "name": "camera:playing",
+          "time": 341
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 341
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 363
+        },
+        {
+          "name": "urls:start",
+          "time": 363
+        },
+        {
+          "name": "urls:end",
+          "time": 363
+        },
+        {
+          "name": "face:initialize:start",
+          "time": 363
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 376
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 377
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 455
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 456
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 492
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 492
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 492
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 530
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 530
+        },
+        {
+          "name": "face:initialize:end",
+          "time": 631
+        },
+        {
+          "name": "face:ready",
+          "time": 631
+        },
+        {
+          "name": "face:first-send",
+          "time": 633
+        },
+        {
+          "name": "face:first-result",
+          "time": 712
+        },
+        {
+          "name": "face:first-detected",
+          "time": 712
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 712
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 718
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 726
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 364,
+          "duration": 5,
+          "transferSize": 1112,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 457,
+          "duration": 4,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 457,
+          "duration": 32,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "iphone",
+      "scenario": "single",
+      "visit": "revisit",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 1238,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 1156,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 1141
+        },
+        {
+          "name": "camera:playing",
+          "time": 1224
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 1224
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 1226
+        },
+        {
+          "name": "urls:start",
+          "time": 1226
+        },
+        {
+          "name": "urls:end",
+          "time": 1226
+        },
+        {
+          "name": "face:ready",
+          "time": 1226
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 1228
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 1229
+        },
+        {
+          "name": "face:first-send",
+          "time": 1234
+        },
+        {
+          "name": "face:first-result",
+          "time": 1248
+        },
+        {
+          "name": "face:first-detected",
+          "time": 1248
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 1248
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 1272
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 1272
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 1282
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 1282
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 1282
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 1313
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 1313
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 1314
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 1319
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 364,
+          "duration": 5,
+          "transferSize": 1112,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 457,
+          "duration": 4,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 457,
+          "duration": 32,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 1274,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 1274,
+          "duration": 6,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "iphone",
+      "scenario": "multiple",
+      "visit": "cold",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 308,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 162,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 143
+        },
+        {
+          "name": "camera:playing",
+          "time": 296
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 296
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 300
+        },
+        {
+          "name": "urls:start",
+          "time": 300
+        },
+        {
+          "name": "urls:end",
+          "time": 301
+        },
+        {
+          "name": "face:initialize:start",
+          "time": 301
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 306
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 306
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 361
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 362
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 389
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 389
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 390
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 425
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 425
+        },
+        {
+          "name": "enzo:selected",
+          "time": 443
+        },
+        {
+          "name": "enzo:load:start",
+          "time": 443
+        },
+        {
+          "name": "enzo:material-parse:start",
+          "time": 451
+        },
+        {
+          "name": "enzo:material-parse:end",
+          "time": 451
+        },
+        {
+          "name": "enzo:parse:start",
+          "time": 451
+        },
+        {
+          "name": "enzo:parse:end",
+          "time": 463
+        },
+        {
+          "name": "enzo:object-ready",
+          "time": 463
+        },
+        {
+          "name": "face:initialize:end",
+          "time": 495
+        },
+        {
+          "name": "face:ready",
+          "time": 495
+        },
+        {
+          "name": "face:first-send",
+          "time": 506
+        },
+        {
+          "name": "face:first-result",
+          "time": 580
+        },
+        {
+          "name": "face:first-detected",
+          "time": 581
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 581
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 588
+        },
+        {
+          "name": "enzo:visible-submit:start",
+          "time": 588
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 597
+        },
+        {
+          "name": "enzo:visible-submit:end",
+          "time": 597
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 301,
+          "duration": 3,
+          "transferSize": 1112,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 368,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 368,
+          "duration": 19,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 445,
+          "duration": 2,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 445,
+          "duration": 5,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo"
+        ]
+      }
+    },
+    {
+      "environment": "iphone",
+      "scenario": "multiple",
+      "visit": "revisit",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 1193,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 1042,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 1029
+        },
+        {
+          "name": "camera:playing",
+          "time": 1176
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 1176
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 1178
+        },
+        {
+          "name": "urls:start",
+          "time": 1178
+        },
+        {
+          "name": "urls:end",
+          "time": 1178
+        },
+        {
+          "name": "face:ready",
+          "time": 1178
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 1180
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 1180
+        },
+        {
+          "name": "face:first-send",
+          "time": 1190
+        },
+        {
+          "name": "face:first-result",
+          "time": 1203
+        },
+        {
+          "name": "face:first-detected",
+          "time": 1203
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 1204
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 1227
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 1227
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 1238
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 1238
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 1238
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 1272
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 1272
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 1273
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 1278
+        },
+        {
+          "name": "enzo:selected",
+          "time": 1313
+        },
+        {
+          "name": "enzo:load:start",
+          "time": 1313
+        },
+        {
+          "name": "enzo:material-parse:start",
+          "time": 1319
+        },
+        {
+          "name": "enzo:material-parse:end",
+          "time": 1319
+        },
+        {
+          "name": "enzo:parse:start",
+          "time": 1319
+        },
+        {
+          "name": "enzo:parse:end",
+          "time": 1332
+        },
+        {
+          "name": "enzo:object-ready",
+          "time": 1332
+        },
+        {
+          "name": "enzo:visible-submit:start",
+          "time": 1333
+        },
+        {
+          "name": "enzo:visible-submit:end",
+          "time": 1335
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 301,
+          "duration": 3,
+          "transferSize": 1112,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 368,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 368,
+          "duration": 19,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 445,
+          "duration": 2,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 445,
+          "duration": 5,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 1229,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 1229,
+          "duration": 7,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 1315,
+          "duration": 2,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 1315,
+          "duration": 3,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo"
+        ]
+      }
+    },
+    {
+      "environment": "iphone",
+      "scenario": "delayed-assets",
+      "visit": "cold",
+      "serviceWorker": false,
+      "delayedRequests": 9,
+      "firstVideoObserved": 282,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 202,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 171
+        },
+        {
+          "name": "camera:playing",
+          "time": 270
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 270
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 275
+        },
+        {
+          "name": "urls:start",
+          "time": 275
+        },
+        {
+          "name": "urls:end",
+          "time": 275
+        },
+        {
+          "name": "face:initialize:start",
+          "time": 275
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 286
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 286
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 325
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 326
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 1343
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 1344
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 1344
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 1382
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 1382
+        },
+        {
+          "name": "face:initialize:end",
+          "time": 6467
+        },
+        {
+          "name": "face:ready",
+          "time": 6467
+        },
+        {
+          "name": "face:first-send",
+          "time": 6471
+        },
+        {
+          "name": "face:first-result",
+          "time": 6547
+        },
+        {
+          "name": "face:first-detected",
+          "time": 6547
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 6547
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 6554
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 6563
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 1280,
+          "duration": 3,
+          "transferSize": 1112,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 1331,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 1331,
+          "duration": 10,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "iphone",
+      "scenario": "delayed-assets",
+      "visit": "revisit",
+      "serviceWorker": false,
+      "delayedRequests": 2,
+      "firstVideoObserved": 7127,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 7052,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 7050
+        },
+        {
+          "name": "camera:playing",
+          "time": 7121
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 7121
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 7123
+        },
+        {
+          "name": "urls:start",
+          "time": 7123
+        },
+        {
+          "name": "urls:end",
+          "time": 7123
+        },
+        {
+          "name": "face:ready",
+          "time": 7124
+        },
+        {
+          "name": "face:first-send",
+          "time": 7124
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 7131
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 7131
+        },
+        {
+          "name": "face:first-result",
+          "time": 7140
+        },
+        {
+          "name": "face:first-detected",
+          "time": 7140
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 7140
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 7161
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 7162
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 8173
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 8173
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 8173
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 8209
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 8209
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 8210
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 8216
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 1280,
+          "duration": 3,
+          "transferSize": 1112,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 1331,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 1331,
+          "duration": 10,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 8165,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 8165,
+          "duration": 6,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "iphone",
+      "scenario": "all-models",
+      "visit": "cold",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 315,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 170,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 150
+        },
+        {
+          "name": "camera:playing",
+          "time": 304
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 304
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 308
+        },
+        {
+          "name": "urls:start",
+          "time": 308
+        },
+        {
+          "name": "urls:end",
+          "time": 309
+        },
+        {
+          "name": "face:initialize:start",
+          "time": 309
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 315
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 316
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 365
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 366
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 382
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 383
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 383
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 421
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 421
+        },
+        {
+          "name": "enzo:selected",
+          "time": 437
+        },
+        {
+          "name": "enzo:load:start",
+          "time": 438
+        },
+        {
+          "name": "enzo:material-parse:start",
+          "time": 445
+        },
+        {
+          "name": "enzo:material-parse:end",
+          "time": 445
+        },
+        {
+          "name": "enzo:parse:start",
+          "time": 445
+        },
+        {
+          "name": "enzo:parse:end",
+          "time": 458
+        },
+        {
+          "name": "enzo:object-ready",
+          "time": 458
+        },
+        {
+          "name": "karin:selected",
+          "time": 477
+        },
+        {
+          "name": "karin:load:start",
+          "time": 478
+        },
+        {
+          "name": "karin:material-parse:start",
+          "time": 517
+        },
+        {
+          "name": "karin:material-parse:end",
+          "time": 517
+        },
+        {
+          "name": "karin:parse:start",
+          "time": 517
+        },
+        {
+          "name": "karin:parse:end",
+          "time": 647
+        },
+        {
+          "name": "karin:object-ready",
+          "time": 655
+        },
+        {
+          "name": "kerohira:selected",
+          "time": 669
+        },
+        {
+          "name": "kerohira:load:start",
+          "time": 670
+        },
+        {
+          "name": "face:initialize:end",
+          "time": 673
+        },
+        {
+          "name": "face:ready",
+          "time": 673
+        },
+        {
+          "name": "face:first-send",
+          "time": 682
+        },
+        {
+          "name": "goshodon:selected",
+          "time": 723
+        },
+        {
+          "name": "goshodon:load:start",
+          "time": 723
+        },
+        {
+          "name": "kerohira:material-parse:start",
+          "time": 767
+        },
+        {
+          "name": "kerohira:material-parse:end",
+          "time": 767
+        },
+        {
+          "name": "kerohira:parse:start",
+          "time": 768
+        },
+        {
+          "name": "kerohira:parse:end",
+          "time": 1009
+        },
+        {
+          "name": "kerohira:object-ready",
+          "time": 1009
+        },
+        {
+          "name": "face:first-result",
+          "time": 1014
+        },
+        {
+          "name": "face:first-detected",
+          "time": 1014
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 1014
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 1015
+        },
+        {
+          "name": "enzo:visible-submit:start",
+          "time": 1015
+        },
+        {
+          "name": "karin:visible-submit:start",
+          "time": 1015
+        },
+        {
+          "name": "kerohira:visible-submit:start",
+          "time": 1015
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 1070
+        },
+        {
+          "name": "enzo:visible-submit:end",
+          "time": 1070
+        },
+        {
+          "name": "karin:visible-submit:end",
+          "time": 1070
+        },
+        {
+          "name": "kerohira:visible-submit:end",
+          "time": 1070
+        },
+        {
+          "name": "goshodon:parse:start",
+          "time": 1095
+        },
+        {
+          "name": "goshodon:parse:end",
+          "time": 1382
+        },
+        {
+          "name": "goshodon:object-ready",
+          "time": 1386
+        },
+        {
+          "name": "goshodon:visible-submit:start",
+          "time": 1387
+        },
+        {
+          "name": "goshodon:visible-submit:end",
+          "time": 1407
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 309,
+          "duration": 4,
+          "transferSize": 1112,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 370,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 370,
+          "duration": 8,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 440,
+          "duration": 2,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 440,
+          "duration": 4,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/assets/characters/karin/karin.mtl",
+          "start": 479,
+          "duration": 4,
+          "transferSize": 484,
+          "decodedBodySize": 184
+        },
+        {
+          "name": "/assets/characters/karin/karin.obj",
+          "start": 479,
+          "duration": 29,
+          "transferSize": 14082835,
+          "decodedBodySize": 14082535
+        },
+        {
+          "name": "/assets/characters/karin/karin-color.png",
+          "start": 648,
+          "duration": 2,
+          "transferSize": 74043,
+          "decodedBodySize": 73743
+        },
+        {
+          "name": "/models/kerohira1.obj",
+          "start": 673,
+          "duration": 73,
+          "transferSize": 23442330,
+          "decodedBodySize": 23442030
+        },
+        {
+          "name": "/models/kerohira1.mtl",
+          "start": 674,
+          "duration": 1,
+          "transferSize": 2076,
+          "decodedBodySize": 1776
+        },
+        {
+          "name": "/assets/characters/goshodon.fbx",
+          "start": 726,
+          "duration": 29,
+          "transferSize": 4413832,
+          "decodedBodySize": 4413532
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo",
+          "karin",
+          "kerohira",
+          "goshodon"
+        ]
+      }
+    },
+    {
+      "environment": "iphone",
+      "scenario": "all-models",
+      "visit": "revisit",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 2068,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 1994,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 1980
+        },
+        {
+          "name": "camera:playing",
+          "time": 2062
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 2062
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 2064
+        },
+        {
+          "name": "urls:start",
+          "time": 2064
+        },
+        {
+          "name": "urls:end",
+          "time": 2064
+        },
+        {
+          "name": "face:ready",
+          "time": 2064
+        },
+        {
+          "name": "face:first-send",
+          "time": 2065
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 2070
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 2070
+        },
+        {
+          "name": "face:first-result",
+          "time": 2081
+        },
+        {
+          "name": "face:first-detected",
+          "time": 2081
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 2081
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 2104
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 2105
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 2119
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 2119
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 2120
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 2158
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 2158
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 2159
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 2164
+        },
+        {
+          "name": "enzo:selected",
+          "time": 2176
+        },
+        {
+          "name": "enzo:load:start",
+          "time": 2176
+        },
+        {
+          "name": "enzo:material-parse:start",
+          "time": 2184
+        },
+        {
+          "name": "enzo:material-parse:end",
+          "time": 2184
+        },
+        {
+          "name": "enzo:parse:start",
+          "time": 2184
+        },
+        {
+          "name": "enzo:parse:end",
+          "time": 2198
+        },
+        {
+          "name": "enzo:object-ready",
+          "time": 2198
+        },
+        {
+          "name": "enzo:visible-submit:start",
+          "time": 2199
+        },
+        {
+          "name": "enzo:visible-submit:end",
+          "time": 2200
+        },
+        {
+          "name": "karin:selected",
+          "time": 2238
+        },
+        {
+          "name": "karin:load:start",
+          "time": 2239
+        },
+        {
+          "name": "karin:material-parse:start",
+          "time": 2264
+        },
+        {
+          "name": "karin:material-parse:end",
+          "time": 2264
+        },
+        {
+          "name": "karin:parse:start",
+          "time": 2264
+        },
+        {
+          "name": "karin:parse:end",
+          "time": 2399
+        },
+        {
+          "name": "karin:object-ready",
+          "time": 2406
+        },
+        {
+          "name": "karin:visible-submit:start",
+          "time": 2409
+        },
+        {
+          "name": "karin:visible-submit:end",
+          "time": 2442
+        },
+        {
+          "name": "kerohira:selected",
+          "time": 2504
+        },
+        {
+          "name": "kerohira:load:start",
+          "time": 2505
+        },
+        {
+          "name": "goshodon:selected",
+          "time": 2541
+        },
+        {
+          "name": "goshodon:load:start",
+          "time": 2542
+        },
+        {
+          "name": "kerohira:material-parse:start",
+          "time": 2564
+        },
+        {
+          "name": "kerohira:material-parse:end",
+          "time": 2564
+        },
+        {
+          "name": "kerohira:parse:start",
+          "time": 2564
+        },
+        {
+          "name": "kerohira:parse:end",
+          "time": 2809
+        },
+        {
+          "name": "kerohira:object-ready",
+          "time": 2809
+        },
+        {
+          "name": "goshodon:parse:start",
+          "time": 2813
+        },
+        {
+          "name": "goshodon:parse:end",
+          "time": 3065
+        },
+        {
+          "name": "kerohira:visible-submit:start",
+          "time": 3067
+        },
+        {
+          "name": "kerohira:visible-submit:end",
+          "time": 3075
+        },
+        {
+          "name": "goshodon:object-ready",
+          "time": 3081
+        },
+        {
+          "name": "goshodon:visible-submit:start",
+          "time": 3085
+        },
+        {
+          "name": "goshodon:visible-submit:end",
+          "time": 3103
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 309,
+          "duration": 4,
+          "transferSize": 1112,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 370,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 370,
+          "duration": 8,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 440,
+          "duration": 2,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 440,
+          "duration": 4,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/assets/characters/karin/karin.mtl",
+          "start": 479,
+          "duration": 4,
+          "transferSize": 484,
+          "decodedBodySize": 184
+        },
+        {
+          "name": "/assets/characters/karin/karin.obj",
+          "start": 479,
+          "duration": 29,
+          "transferSize": 14082835,
+          "decodedBodySize": 14082535
+        },
+        {
+          "name": "/assets/characters/karin/karin-color.png",
+          "start": 648,
+          "duration": 2,
+          "transferSize": 74043,
+          "decodedBodySize": 73743
+        },
+        {
+          "name": "/models/kerohira1.obj",
+          "start": 673,
+          "duration": 73,
+          "transferSize": 23442330,
+          "decodedBodySize": 23442030
+        },
+        {
+          "name": "/models/kerohira1.mtl",
+          "start": 674,
+          "duration": 1,
+          "transferSize": 2076,
+          "decodedBodySize": 1776
+        },
+        {
+          "name": "/assets/characters/goshodon.fbx",
+          "start": 726,
+          "duration": 29,
+          "transferSize": 4413832,
+          "decodedBodySize": 4413532
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 2107,
+          "duration": 2,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 2107,
+          "duration": 8,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 2178,
+          "duration": 4,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 2179,
+          "duration": 2,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/assets/characters/karin/karin.mtl",
+          "start": 2241,
+          "duration": 2,
+          "transferSize": 484,
+          "decodedBodySize": 184
+        },
+        {
+          "name": "/assets/characters/karin/karin.obj",
+          "start": 2241,
+          "duration": 18,
+          "transferSize": 14082835,
+          "decodedBodySize": 14082535
+        },
+        {
+          "name": "/assets/characters/karin/karin-color.png",
+          "start": 2264,
+          "duration": 135,
+          "transferSize": 0,
+          "decodedBodySize": 0
+        },
+        {
+          "name": "/models/kerohira1.mtl",
+          "start": 2507,
+          "duration": 2,
+          "transferSize": 2076,
+          "decodedBodySize": 1776
+        },
+        {
+          "name": "/models/kerohira1.obj",
+          "start": 2507,
+          "duration": 39,
+          "transferSize": 23442330,
+          "decodedBodySize": 23442030
+        },
+        {
+          "name": "/assets/characters/goshodon.fbx",
+          "start": 2544,
+          "duration": 11,
+          "transferSize": 4413832,
+          "decodedBodySize": 4413532
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo",
+          "karin",
+          "kerohira",
+          "goshodon"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "scenario": "single",
+      "visit": "cold",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 290.2000000178814,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 167.80000001192093,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 152
+        },
+        {
+          "name": "camera:playing",
+          "time": 183.09999999403954
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 183.09999999403954
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 197.80000001192093
+        },
+        {
+          "name": "urls:start",
+          "time": 197.80000001192093
+        },
+        {
+          "name": "urls:end",
+          "time": 198
+        },
+        {
+          "name": "face:initialize:start",
+          "time": 198.2000000178814
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 292.40000000596046
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 293.40000000596046
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 359.40000000596046
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 360.30000001192093
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 394.90000000596046
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 395.30000001192093
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 395.5
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 461.2000000178814
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 461.40000000596046
+        },
+        {
+          "name": "face:initialize:end",
+          "time": 569.7000000178814
+        },
+        {
+          "name": "face:ready",
+          "time": 569.7000000178814
+        },
+        {
+          "name": "face:first-send",
+          "time": 579.8000000119209
+        },
+        {
+          "name": "face:first-result",
+          "time": 4954.5
+        },
+        {
+          "name": "face:first-detected",
+          "time": 4954.5
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 4954.5
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 4963.5
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 4972.5999999940395
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 295.2000000178814,
+          "duration": -92.40000000596046,
+          "transferSize": 1095,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 361,
+          "duration": 30.80000001192093,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 361.2000000178814,
+          "duration": 4.299999982118607,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "scenario": "single",
+      "visit": "revisit",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 6143.800000011921,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 6092.5999999940395,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 6083.300000011921
+        },
+        {
+          "name": "camera:playing",
+          "time": 6103.5
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 6103.5
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 6108.0999999940395
+        },
+        {
+          "name": "urls:start",
+          "time": 6108.0999999940395
+        },
+        {
+          "name": "urls:end",
+          "time": 6108.200000017881
+        },
+        {
+          "name": "face:ready",
+          "time": 6108.200000017881
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 6109.200000017881
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 6109.200000017881
+        },
+        {
+          "name": "face:first-send",
+          "time": 6113.300000011921
+        },
+        {
+          "name": "face:first-result",
+          "time": 6180.800000011921
+        },
+        {
+          "name": "face:first-detected",
+          "time": 6180.800000011921
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 6180.800000011921
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 6220.5999999940395
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 6221.0999999940395
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 6241.300000011921
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 6241.5
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 6241.5
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 6303.700000017881
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 6303.800000011921
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 6304.800000011921
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 6308.700000017881
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 295.2000000178814,
+          "duration": -92.40000000596046,
+          "transferSize": 1095,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 361,
+          "duration": 30.80000001192093,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 361.2000000178814,
+          "duration": 4.299999982118607,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 6221.5,
+          "duration": 17.30000001192093,
+          "transferSize": 0,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 6221.700000017881,
+          "duration": 6.0999999940395355,
+          "transferSize": 0,
+          "decodedBodySize": 1617
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "scenario": "multiple",
+      "visit": "cold",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 225.60000002384186,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 135,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 123.40000000596046
+        },
+        {
+          "name": "camera:playing",
+          "time": 148.60000002384186
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 148.60000002384186
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 158
+        },
+        {
+          "name": "urls:start",
+          "time": 158
+        },
+        {
+          "name": "urls:end",
+          "time": 158.2000000178814
+        },
+        {
+          "name": "face:initialize:start",
+          "time": 158.40000000596046
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 227.60000002384186
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 228.7000000178814
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 282.2000000178814
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 283
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 323.90000000596046
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 324.2000000178814
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 324.5
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 395
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 395.10000002384186
+        },
+        {
+          "name": "enzo:selected",
+          "time": 416.7000000178814
+        },
+        {
+          "name": "enzo:load:start",
+          "time": 417.40000000596046
+        },
+        {
+          "name": "enzo:material-parse:start",
+          "time": 429.7000000178814
+        },
+        {
+          "name": "enzo:material-parse:end",
+          "time": 429.80000001192093
+        },
+        {
+          "name": "enzo:parse:start",
+          "time": 429.90000000596046
+        },
+        {
+          "name": "enzo:parse:end",
+          "time": 453.10000002384186
+        },
+        {
+          "name": "enzo:object-ready",
+          "time": 453.2000000178814
+        },
+        {
+          "name": "face:initialize:end",
+          "time": 537.8000000119209
+        },
+        {
+          "name": "face:ready",
+          "time": 537.9000000059605
+        },
+        {
+          "name": "face:first-send",
+          "time": 540.6000000238419
+        },
+        {
+          "name": "face:first-result",
+          "time": 4866.4000000059605
+        },
+        {
+          "name": "face:first-detected",
+          "time": 4866.5
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 4866.5
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 4874.200000017881
+        },
+        {
+          "name": "enzo:visible-submit:start",
+          "time": 4874.200000017881
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 4882.4000000059605
+        },
+        {
+          "name": "enzo:visible-submit:end",
+          "time": 4882.4000000059605
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 230.10000002384186,
+          "duration": -67.80000001192093,
+          "transferSize": 1095,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 283.7000000178814,
+          "duration": 36.400000005960464,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 284,
+          "duration": 3.7000000178813934,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 417.7000000178814,
+          "duration": 3.2999999821186066,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 418,
+          "duration": 1.600000023841858,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "scenario": "multiple",
+      "visit": "revisit",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 6305.300000011921,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 6255.4000000059605,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 6246
+        },
+        {
+          "name": "camera:playing",
+          "time": 6266.9000000059605
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 6266.9000000059605
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 6271.9000000059605
+        },
+        {
+          "name": "urls:start",
+          "time": 6272
+        },
+        {
+          "name": "urls:end",
+          "time": 6272.100000023842
+        },
+        {
+          "name": "face:ready",
+          "time": 6272.100000023842
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 6273.100000023842
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 6273.300000011921
+        },
+        {
+          "name": "face:first-send",
+          "time": 6273.5
+        },
+        {
+          "name": "face:first-result",
+          "time": 6343.100000023842
+        },
+        {
+          "name": "face:first-detected",
+          "time": 6343.100000023842
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 6343.100000023842
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 6384.200000017881
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 6384.700000017881
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 6402.100000023842
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 6402.300000011921
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 6402.4000000059605
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 6467.100000023842
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 6467.200000017881
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 6468.100000023842
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 6472.5
+        },
+        {
+          "name": "enzo:selected",
+          "time": 6753.600000023842
+        },
+        {
+          "name": "enzo:load:start",
+          "time": 6754.100000023842
+        },
+        {
+          "name": "enzo:material-parse:start",
+          "time": 6950.800000011921
+        },
+        {
+          "name": "enzo:material-parse:end",
+          "time": 6951
+        },
+        {
+          "name": "enzo:parse:start",
+          "time": 6951.100000023842
+        },
+        {
+          "name": "enzo:parse:end",
+          "time": 6974.600000023842
+        },
+        {
+          "name": "enzo:object-ready",
+          "time": 6974.700000017881
+        },
+        {
+          "name": "enzo:visible-submit:start",
+          "time": 6975.200000017881
+        },
+        {
+          "name": "enzo:visible-submit:end",
+          "time": 6976.600000023842
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 230.10000002384186,
+          "duration": -67.80000001192093,
+          "transferSize": 1095,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 283.7000000178814,
+          "duration": 36.400000005960464,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 284,
+          "duration": 3.7000000178813934,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 417.7000000178814,
+          "duration": 3.2999999821186066,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 418,
+          "duration": 1.600000023841858,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 6385.100000023842,
+          "duration": 14.599999994039536,
+          "transferSize": 0,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 6385.4000000059605,
+          "duration": 6.200000017881393,
+          "transferSize": 0,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 6754.4000000059605,
+          "duration": 176.5,
+          "transferSize": 0,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 6754.700000017881,
+          "duration": 3.5,
+          "transferSize": 0,
+          "decodedBodySize": 2944
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "scenario": "delayed-assets",
+      "visit": "cold",
+      "serviceWorker": false,
+      "delayedRequests": 9,
+      "firstVideoObserved": 198.5,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 137.80000001192093,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 127.30000001192093
+        },
+        {
+          "name": "camera:playing",
+          "time": 151.59999999403954
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 151.59999999403954
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 161.09999999403954
+        },
+        {
+          "name": "urls:start",
+          "time": 161.09999999403954
+        },
+        {
+          "name": "urls:end",
+          "time": 161.30000001192093
+        },
+        {
+          "name": "face:initialize:start",
+          "time": 161.59999999403954
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 199.90000000596046
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 200.90000000596046
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 249.09999999403954
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 249.90000000596046
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 1267.5
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 1267.800000011921
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 1268
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 1332.0999999940395
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 1332.300000011921
+        },
+        {
+          "name": "face:initialize:end",
+          "time": 6368.5
+        },
+        {
+          "name": "face:ready",
+          "time": 6368.5
+        },
+        {
+          "name": "face:first-send",
+          "time": 6374.5
+        },
+        {
+          "name": "face:first-result",
+          "time": 10920.90000000596
+        },
+        {
+          "name": "face:first-detected",
+          "time": 10920.90000000596
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 10921
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 10923.5
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 10930.59999999404
+        }
+      ],
+      "resources": [
+        {
+          "name": "/models/wanko1.obj",
+          "start": 250.7000000178814,
+          "duration": 1013.7999999821186,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 251,
+          "duration": 1007.9000000059605,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 1167.5999999940395,
+          "duration": -1.5999999940395355,
+          "transferSize": 1095,
+          "decodedBodySize": 1840
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "scenario": "delayed-assets",
+      "visit": "revisit",
+      "serviceWorker": false,
+      "delayedRequests": 2,
+      "firstVideoObserved": 12110.59999999404,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 12065.700000017881,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 12064.300000011921
+        },
+        {
+          "name": "camera:playing",
+          "time": 12067.09999999404
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 12067.09999999404
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 12072.59999999404
+        },
+        {
+          "name": "urls:start",
+          "time": 12072.59999999404
+        },
+        {
+          "name": "urls:end",
+          "time": 12072.59999999404
+        },
+        {
+          "name": "face:ready",
+          "time": 12072.700000017881
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 12073.700000017881
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 12073.800000011921
+        },
+        {
+          "name": "face:first-send",
+          "time": 12075.09999999404
+        },
+        {
+          "name": "face:first-result",
+          "time": 12151.59999999404
+        },
+        {
+          "name": "face:first-detected",
+          "time": 12151.700000017881
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 12151.800000011921
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 12200.09999999404
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 12200.5
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 13219.800000011921
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 13220
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 13220.09999999404
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 13309.300000011921
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 13309.5
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 13311.59999999404
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 13316.90000000596
+        }
+      ],
+      "resources": [
+        {
+          "name": "/models/wanko1.obj",
+          "start": 250.7000000178814,
+          "duration": 1013.7999999821186,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 251,
+          "duration": 1007.9000000059605,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 1167.5999999940395,
+          "duration": -1.5999999940395355,
+          "transferSize": 1095,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 12201,
+          "duration": 1015.0999999940395,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 12201.200000017881,
+          "duration": 1008.3999999761581,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "scenario": "all-models",
+      "visit": "cold",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 248.40000000596046,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 153.90000000596046,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 141.2999999821186
+        },
+        {
+          "name": "camera:playing",
+          "time": 169.09999999403954
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 169.09999999403954
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 180.19999998807907
+        },
+        {
+          "name": "urls:start",
+          "time": 180.19999998807907
+        },
+        {
+          "name": "urls:end",
+          "time": 180.5
+        },
+        {
+          "name": "face:initialize:start",
+          "time": 180.7999999821186
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 251.2999999821186
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 252.5
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 315.2999999821186
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 316.19999998807907
+        },
+        {
+          "name": "enzo:selected",
+          "time": 356.69999998807907
+        },
+        {
+          "name": "enzo:load:start",
+          "time": 357.40000000596046
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 366.19999998807907
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 366.5
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 366.7999999821186
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 442.69999998807907
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 442.90000000596046
+        },
+        {
+          "name": "enzo:material-parse:start",
+          "time": 457.90000000596046
+        },
+        {
+          "name": "enzo:material-parse:end",
+          "time": 458
+        },
+        {
+          "name": "enzo:parse:start",
+          "time": 458.19999998807907
+        },
+        {
+          "name": "enzo:parse:end",
+          "time": 498.69999998807907
+        },
+        {
+          "name": "enzo:object-ready",
+          "time": 498.90000000596046
+        },
+        {
+          "name": "karin:selected",
+          "time": 547.6999999880791
+        },
+        {
+          "name": "karin:load:start",
+          "time": 548.0999999940395
+        },
+        {
+          "name": "kerohira:selected",
+          "time": 580.9000000059605
+        },
+        {
+          "name": "kerohira:load:start",
+          "time": 581.2999999821186
+        },
+        {
+          "name": "face:initialize:end",
+          "time": 594.7999999821186
+        },
+        {
+          "name": "face:ready",
+          "time": 594.9000000059605
+        },
+        {
+          "name": "face:first-send",
+          "time": 606.4000000059605
+        },
+        {
+          "name": "goshodon:selected",
+          "time": 614.0999999940395
+        },
+        {
+          "name": "goshodon:load:start",
+          "time": 614.5999999940395
+        },
+        {
+          "name": "goshodon:parse:start",
+          "time": 639.6999999880791
+        },
+        {
+          "name": "goshodon:parse:end",
+          "time": 880.6999999880791
+        },
+        {
+          "name": "goshodon:object-ready",
+          "time": 5230.5
+        },
+        {
+          "name": "karin:material-parse:start",
+          "time": 5244.799999982119
+        },
+        {
+          "name": "karin:material-parse:end",
+          "time": 5245
+        },
+        {
+          "name": "karin:parse:start",
+          "time": 5246.4000000059605
+        },
+        {
+          "name": "karin:parse:end",
+          "time": 5427.699999988079
+        },
+        {
+          "name": "face:first-result",
+          "time": 5431.799999982119
+        },
+        {
+          "name": "face:first-detected",
+          "time": 5432
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 5432
+        },
+        {
+          "name": "karin:object-ready",
+          "time": 5435.0999999940395
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 5442.199999988079
+        },
+        {
+          "name": "enzo:visible-submit:start",
+          "time": 5442.199999988079
+        },
+        {
+          "name": "karin:visible-submit:start",
+          "time": 5442.199999988079
+        },
+        {
+          "name": "goshodon:visible-submit:start",
+          "time": 5442.199999988079
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 5508
+        },
+        {
+          "name": "enzo:visible-submit:end",
+          "time": 5508
+        },
+        {
+          "name": "karin:visible-submit:end",
+          "time": 5508
+        },
+        {
+          "name": "goshodon:visible-submit:end",
+          "time": 5508
+        },
+        {
+          "name": "kerohira:material-parse:start",
+          "time": 6505.5
+        },
+        {
+          "name": "kerohira:material-parse:end",
+          "time": 6505.699999988079
+        },
+        {
+          "name": "kerohira:parse:start",
+          "time": 6505.799999982119
+        },
+        {
+          "name": "kerohira:parse:end",
+          "time": 6901.799999982119
+        },
+        {
+          "name": "kerohira:object-ready",
+          "time": 6902.0999999940395
+        },
+        {
+          "name": "kerohira:visible-submit:start",
+          "time": 6906.9000000059605
+        },
+        {
+          "name": "kerohira:visible-submit:end",
+          "time": 6918.199999988079
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 254.09999999403954,
+          "duration": -70.40000000596046,
+          "transferSize": 1095,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 316.90000000596046,
+          "duration": 39.599999994039536,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 317.19999998807907,
+          "duration": 3.4000000059604645,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 357.69999998807907,
+          "duration": 8.200000017881393,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 358,
+          "duration": 4.5,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/assets/characters/karin/karin.obj",
+          "start": 548.5,
+          "duration": 4688.5999999940395,
+          "transferSize": 0,
+          "decodedBodySize": 14082535
+        },
+        {
+          "name": "/assets/characters/karin/karin.mtl",
+          "start": 548.7999999821186,
+          "duration": 3.2000000178813934,
+          "transferSize": 0,
+          "decodedBodySize": 184
+        },
+        {
+          "name": "/models/kerohira1.obj",
+          "start": 581.6999999880791,
+          "duration": 5822,
+          "transferSize": 0,
+          "decodedBodySize": 23442030
+        },
+        {
+          "name": "/models/kerohira1.mtl",
+          "start": 581.9000000059605,
+          "duration": 3.399999976158142,
+          "transferSize": 0,
+          "decodedBodySize": 1776
+        },
+        {
+          "name": "/assets/characters/goshodon.fbx",
+          "start": 615,
+          "duration": 21.19999998807907,
+          "transferSize": 0,
+          "decodedBodySize": 4413532
+        },
+        {
+          "name": "/assets/characters/karin/karin-color.png",
+          "start": 5246.299999982119,
+          "duration": 186.7000000178814,
+          "transferSize": 0,
+          "decodedBodySize": 73743
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo",
+          "karin",
+          "kerohira",
+          "goshodon"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "scenario": "all-models",
+      "visit": "revisit",
+      "serviceWorker": true,
+      "delayedRequests": 0,
+      "firstVideoObserved": 13366.40000000596,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 13309.59999999404,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 13298.40000000596
+        },
+        {
+          "name": "camera:playing",
+          "time": 13321.299999982119
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 13321.299999982119
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 13326.90000000596
+        },
+        {
+          "name": "urls:start",
+          "time": 13326.90000000596
+        },
+        {
+          "name": "urls:end",
+          "time": 13327
+        },
+        {
+          "name": "face:ready",
+          "time": 13327.09999999404
+        },
+        {
+          "name": "face:first-send",
+          "time": 13327.5
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 13367.09999999404
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 13367.40000000596
+        },
+        {
+          "name": "face:first-result",
+          "time": 13403.799999982119
+        },
+        {
+          "name": "face:first-detected",
+          "time": 13403.799999982119
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 13403.799999982119
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 13425.299999982119
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 13425.799999982119
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 13457
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 13457.199999988079
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 13457.299999982119
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 13538.09999999404
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 13538.09999999404
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 13539.199999988079
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 13543.90000000596
+        },
+        {
+          "name": "enzo:selected",
+          "time": 13752.5
+        },
+        {
+          "name": "enzo:load:start",
+          "time": 13753.09999999404
+        },
+        {
+          "name": "enzo:material-parse:start",
+          "time": 13863.699999988079
+        },
+        {
+          "name": "enzo:material-parse:end",
+          "time": 13863.90000000596
+        },
+        {
+          "name": "enzo:parse:start",
+          "time": 13864
+        },
+        {
+          "name": "enzo:parse:end",
+          "time": 13887.90000000596
+        },
+        {
+          "name": "enzo:object-ready",
+          "time": 13888
+        },
+        {
+          "name": "enzo:visible-submit:start",
+          "time": 13888.699999988079
+        },
+        {
+          "name": "enzo:visible-submit:end",
+          "time": 13889.90000000596
+        },
+        {
+          "name": "karin:selected",
+          "time": 14150
+        },
+        {
+          "name": "karin:load:start",
+          "time": 14150.5
+        },
+        {
+          "name": "karin:material-parse:start",
+          "time": 14299.5
+        },
+        {
+          "name": "karin:material-parse:end",
+          "time": 14299.5
+        },
+        {
+          "name": "karin:parse:start",
+          "time": 14299.90000000596
+        },
+        {
+          "name": "karin:parse:end",
+          "time": 14523.299999982119
+        },
+        {
+          "name": "karin:object-ready",
+          "time": 14549.90000000596
+        },
+        {
+          "name": "karin:visible-submit:start",
+          "time": 14558
+        },
+        {
+          "name": "karin:visible-submit:end",
+          "time": 14624.5
+        },
+        {
+          "name": "kerohira:selected",
+          "time": 15078.5
+        },
+        {
+          "name": "kerohira:load:start",
+          "time": 15078.90000000596
+        },
+        {
+          "name": "kerohira:material-parse:start",
+          "time": 15340.59999999404
+        },
+        {
+          "name": "kerohira:material-parse:end",
+          "time": 15340.699999988079
+        },
+        {
+          "name": "kerohira:parse:start",
+          "time": 15340.799999982119
+        },
+        {
+          "name": "kerohira:parse:end",
+          "time": 15771.699999988079
+        },
+        {
+          "name": "kerohira:object-ready",
+          "time": 15772.09999999404
+        },
+        {
+          "name": "kerohira:visible-submit:start",
+          "time": 15776.699999988079
+        },
+        {
+          "name": "kerohira:visible-submit:end",
+          "time": 15788.199999988079
+        },
+        {
+          "name": "goshodon:selected",
+          "time": 16457.09999999404
+        },
+        {
+          "name": "goshodon:load:start",
+          "time": 16457.69999998808
+        },
+        {
+          "name": "goshodon:parse:start",
+          "time": 16785.59999999404
+        },
+        {
+          "name": "goshodon:parse:end",
+          "time": 16983.69999998808
+        },
+        {
+          "name": "goshodon:object-ready",
+          "time": 17139.69999998808
+        },
+        {
+          "name": "goshodon:visible-submit:start",
+          "time": 17142.69999998808
+        },
+        {
+          "name": "goshodon:visible-submit:end",
+          "time": 17166.79999998212
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 254.09999999403954,
+          "duration": -70.40000000596046,
+          "transferSize": 1095,
+          "decodedBodySize": 1840
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 316.90000000596046,
+          "duration": 39.599999994039536,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 317.19999998807907,
+          "duration": 3.4000000059604645,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 357.69999998807907,
+          "duration": 8.200000017881393,
+          "transferSize": 1233587,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 358,
+          "duration": 4.5,
+          "transferSize": 3244,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/assets/characters/karin/karin.obj",
+          "start": 548.5,
+          "duration": 4688.5999999940395,
+          "transferSize": 0,
+          "decodedBodySize": 14082535
+        },
+        {
+          "name": "/assets/characters/karin/karin.mtl",
+          "start": 548.7999999821186,
+          "duration": 3.2000000178813934,
+          "transferSize": 0,
+          "decodedBodySize": 184
+        },
+        {
+          "name": "/models/kerohira1.obj",
+          "start": 581.6999999880791,
+          "duration": 5822,
+          "transferSize": 0,
+          "decodedBodySize": 23442030
+        },
+        {
+          "name": "/models/kerohira1.mtl",
+          "start": 581.9000000059605,
+          "duration": 3.399999976158142,
+          "transferSize": 0,
+          "decodedBodySize": 1776
+        },
+        {
+          "name": "/assets/characters/goshodon.fbx",
+          "start": 615,
+          "duration": 21.19999998807907,
+          "transferSize": 0,
+          "decodedBodySize": 4413532
+        },
+        {
+          "name": "/assets/characters/karin/karin-color.png",
+          "start": 5246.299999982119,
+          "duration": 186.7000000178814,
+          "transferSize": 0,
+          "decodedBodySize": 73743
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 13426.199999988079,
+          "duration": 27.80000001192093,
+          "transferSize": 0,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 13426.5,
+          "duration": 9.5,
+          "transferSize": 0,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/enzo.obj",
+          "start": 13753.5,
+          "duration": 109.19999998807907,
+          "transferSize": 0,
+          "decodedBodySize": 1233287
+        },
+        {
+          "name": "/models/enzo.mtl",
+          "start": 13753.799999982119,
+          "duration": 4.5,
+          "transferSize": 0,
+          "decodedBodySize": 2944
+        },
+        {
+          "name": "/assets/characters/karin/karin.obj",
+          "start": 14150.799999982119,
+          "duration": 137.2000000178814,
+          "transferSize": 0,
+          "decodedBodySize": 14082535
+        },
+        {
+          "name": "/assets/characters/karin/karin.mtl",
+          "start": 14151.199999988079,
+          "duration": 2.5999999940395355,
+          "transferSize": 0,
+          "decodedBodySize": 184
+        },
+        {
+          "name": "/assets/characters/karin/karin-color.png",
+          "start": 14299.799999982119,
+          "duration": 1.2000000178813934,
+          "transferSize": 0,
+          "decodedBodySize": 73743
+        },
+        {
+          "name": "/models/kerohira1.obj",
+          "start": 15079.40000000596,
+          "duration": 258.2999999821186,
+          "transferSize": 0,
+          "decodedBodySize": 23442030
+        },
+        {
+          "name": "/models/kerohira1.mtl",
+          "start": 15079.699999988079,
+          "duration": 2,
+          "transferSize": 0,
+          "decodedBodySize": 1776
+        },
+        {
+          "name": "/assets/characters/goshodon.fbx",
+          "start": 16458.09999999404,
+          "duration": 324.19999998807907,
+          "transferSize": 0,
+          "decodedBodySize": 4413532
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi",
+          "enzo",
+          "karin",
+          "kerohira",
+          "goshodon"
+        ]
+      }
+    }
+  ]
+}

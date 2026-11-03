@@ -1,0 +1,96 @@
+{
+  "applicationCommit": "1181ba91233dc0d18d733c6ffa8ecead58f8d20d",
+  "scope": "Chromium Pixel 5 profile on macOS with --enable-unsafe-swiftshader; 8Mbps shared body limit; public portrait; instrumentation affects timing. Not Android hardware.",
+  "longEvents": [
+    {
+      "thread": "DedicatedWorker thread",
+      "name": "RunTask",
+      "durationMs": 8639.405
+    },
+    {
+      "thread": "DedicatedWorker thread",
+      "name": "HandlePostMessage",
+      "durationMs": 8639.382
+    },
+    {
+      "thread": "DedicatedWorker thread",
+      "name": "v8.callFunction",
+      "durationMs": 8639.367
+    },
+    {
+      "thread": "CrRendererMain",
+      "name": "RunTask",
+      "durationMs": 2292.808
+    },
+    {
+      "thread": "CrRendererMain",
+      "name": "Commit",
+      "durationMs": 2292.276
+    },
+    {
+      "thread": "CrGpuMain",
+      "name": "RunTask",
+      "durationMs": 2291.568
+    },
+    {
+      "thread": "CrGpuMain",
+      "name": "GPUTask",
+      "durationMs": 2291.528
+    },
+    {
+      "thread": "CrRendererMain",
+      "name": "RunTask",
+      "durationMs": 461.889
+    },
+    {
+      "thread": "CrRendererMain",
+      "name": "Commit",
+      "durationMs": 461.516
+    },
+    {
+      "thread": "CrGpuMain",
+      "name": "RunTask",
+      "durationMs": 455.583
+    },
+    {
+      "thread": "CrGpuMain",
+      "name": "GPUTask",
+      "durationMs": 455.56
+    },
+    {
+      "thread": "CrRendererMain",
+      "name": "RunTask",
+      "durationMs": 5285.991
+    },
+    {
+      "thread": "CrRendererMain",
+      "name": "Commit",
+      "durationMs": 5285.679
+    },
+    {
+      "thread": "CrGpuMain",
+      "name": "RunTask",
+      "durationMs": 5239.541
+    },
+    {
+      "thread": "CrGpuMain",
+      "name": "GPUTask",
+      "durationMs": 5239.5
+    },
+    {
+      "thread": "DedicatedWorker thread",
+      "name": "RunTask",
+      "durationMs": 306.593
+    },
+    {
+      "thread": "DedicatedWorker thread",
+      "name": "HandlePostMessage",
+      "durationMs": 306.564
+    },
+    {
+      "thread": "DedicatedWorker thread",
+      "name": "v8.callFunction",
+      "durationMs": 306.542
+    }
+  ]
+}

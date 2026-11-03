@@ -1,7 +1,8 @@
+import { assertSameOrigin } from "@/lib/apiGuards";
 import { NextResponse } from "next/server";
 import { deleteEvent, fetchAdminEventById, updateEvent } from "@/lib/adminServer";
 import { buildStudioErrorResponse, parseRequiredInteger, readJsonObject, requireStudioApiAccess } from "@/lib/studioApi";
-import { parseEventUpdateInput } from "@/lib/studioPayloads";
+import { EVENT_FIELDS, parseEventUpdateInput } from "@/lib/studioPayloads";
 
 type RouteContext = {
   params: Promise<{
@@ -19,20 +20,18 @@ type RouteContext = {
  * await PATCH(request, context);
  */
 export async function PATCH(request: Request, context: RouteContext): Promise<NextResponse> {
-  const access = await requireStudioApiAccess();
-  if (access.response) {
-    return access.response;
-  }
-
   try {
+    const access = await requireStudioApiAccess();
+    if (access.response) return access.response;
+    assertSameOrigin(request);
     const { id } = await context.params;
     const eventId = parseRequiredInteger(id, "id");
+    const body = await readJsonObject(request, EVENT_FIELDS);
     const current = await fetchAdminEventById(eventId);
     if (!current) {
       return NextResponse.json({ error: "Event not found." }, { status: 404 });
     }
 
-    const body = await readJsonObject(request);
     const input = parseEventUpdateInput(body, current);
     const event = await updateEvent(eventId, input);
     return NextResponse.json(event);
@@ -44,19 +43,17 @@ export async function PATCH(request: Request, context: RouteContext): Promise<Ne
 /**
  * Studio からイベントを削除する。
  *
- * @param _request - Next.js request
+ * @param request - Next.js request
  * @param context - route context
  * @returns 204 response
  * @example
  * await DELETE(request, context);
  */
-export async function DELETE(_request: Request, context: RouteContext): Promise<NextResponse> {
-  const access = await requireStudioApiAccess();
-  if (access.response) {
-    return access.response;
-  }
-
+export async function DELETE(request: Request, context: RouteContext): Promise<NextResponse> {
   try {
+    const access = await requireStudioApiAccess();
+    if (access.response) return access.response;
+    assertSameOrigin(request);
     const { id } = await context.params;
     const eventId = parseRequiredInteger(id, "id");
     await deleteEvent(eventId);

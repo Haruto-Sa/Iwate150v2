@@ -1,5 +1,7 @@
 "use client";
 
+import { getGuidePath } from "@/lib/pageGuides";
+import { usePageGuideCompleted, usePageGuideVisible } from "@/hooks/usePageGuideCompleted";
 import { useMenuLanguage } from "@/lib/menuLanguage";
 
 import { useMemo, useState } from "react";
@@ -7,8 +9,6 @@ import { Download, Share2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Button } from "@/components/ui/Button";
-import { useIsMobileViewport } from "@/hooks/useIsMobileViewport";
-import { useOnboardingCompleted } from "@/hooks/useOnboardingCompleted";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 /**
@@ -21,8 +21,9 @@ import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 export function PwaInstallPrompt() {
   const { language, messages } = useMenuLanguage();
   const pathname = usePathname();
-  const isMobileViewport = useIsMobileViewport();
-  const onboardingCompleted = useOnboardingCompleted();
+  const guidePath = getGuidePath(pathname);
+  const pageGuideCompleted = usePageGuideCompleted(guidePath);
+  const pageGuideVisible = usePageGuideVisible(guidePath);
   const { dismissForDays, isIosSafari, promptInstall, shouldShow } = useInstallPrompt();
   const [isOpen, setIsOpen] = useState(true);
   const [installFailed, setInstallFailed] = useState(false);
@@ -32,7 +33,7 @@ export function PwaInstallPrompt() {
     [pathname]
   );
 
-  if (!shouldShow || !isOpen || hiddenRoute || (isMobileViewport && !onboardingCompleted)) {
+  if (!pageGuideCompleted || pageGuideVisible || !shouldShow || !isOpen || hiddenRoute) {
     return null;
   }
 

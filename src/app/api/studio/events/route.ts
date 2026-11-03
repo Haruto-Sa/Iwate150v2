@@ -1,7 +1,8 @@
+import { assertSameOrigin } from "@/lib/apiGuards";
 import { NextResponse } from "next/server";
 import { createEvent } from "@/lib/adminServer";
 import { buildStudioErrorResponse, readJsonObject, requireStudioApiAccess } from "@/lib/studioApi";
-import { parseEventCreateInput } from "@/lib/studioPayloads";
+import { EVENT_FIELDS, parseEventCreateInput } from "@/lib/studioPayloads";
 
 /**
  * Studio からイベントを作成する。
@@ -12,13 +13,11 @@ import { parseEventCreateInput } from "@/lib/studioPayloads";
  * await POST(request);
  */
 export async function POST(request: Request): Promise<NextResponse> {
-  const access = await requireStudioApiAccess();
-  if (access.response) {
-    return access.response;
-  }
-
   try {
-    const body = await readJsonObject(request);
+    const access = await requireStudioApiAccess();
+    if (access.response) return access.response;
+    assertSameOrigin(request);
+    const body = await readJsonObject(request, EVENT_FIELDS);
     const input = parseEventCreateInput(body);
     const event = await createEvent(input);
     return NextResponse.json(event, { status: 201 });

@@ -3,9 +3,6 @@ import { IWATE_PUBLIC_BOUNDS } from "./config";
 import { mockCities, mockEvents, mockGenres, mockSpots, mockStampCatalog } from "./mockData";
 import { getCurrentDateKey, getUpcomingEvents, sortEventsForTimeline } from "./eventFilters";
 import {
-  AdminDashboardEventSummary,
-  AdminDashboardSpotSummary,
-  AdminDashboardStats,
   AdminEventCreateInput,
   AdminSpotCreateInput,
   AdminUserSummary,
@@ -599,113 +596,6 @@ export async function fetchCurrentAppUser(): Promise<User | null> {
     return null;
   }
   return inserted.data as User;
-}
-
-/**
- * 管理ダッシュボード表示用の集計値を取得する。
- *
- * @returns 管理ダッシュボード統計。Supabase未接続/取得失敗時はゼロ値
- * @example
- * const stats = await fetchAdminDashboardStats();
- */
-export async function fetchAdminDashboardStats(): Promise<AdminDashboardStats> {
-  const fallback: AdminDashboardStats = {
-    totalUsers: 0,
-    newUsersLast7Days: 0,
-    totalSpots: 0,
-    totalEvents: 0,
-    totalAdmins: 0,
-    latestSpots: [],
-    latestEvents: [],
-  };
-
-  if (!client) return fallback;
-
-  const writableClient = getWritableClient();
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-  const [
-    totalUsersRes,
-    newUsersRes,
-    totalSpotsRes,
-    totalEventsRes,
-    totalAdminsRes,
-    latestSpotsRes,
-    latestEventsRes,
-  ] = await Promise.all([
-    writableClient.from("users").select("*", { head: true, count: "exact" }),
-    writableClient.from("users").select("*", { head: true, count: "exact" }).gte("created_at", sevenDaysAgo),
-    writableClient.from("spots").select("*", { head: true, count: "exact" }),
-    writableClient.from("events").select("*", { head: true, count: "exact" }),
-    writableClient
-      .from("users")
-      .select("*", { head: true, count: "exact" })
-      .in("role", ["admin", "super_admin"]),
-    writableClient.from("spots").select("id,name,city_id").order("id", { ascending: false }).limit(5),
-    writableClient
-      .from("events")
-      .select("id,title,city_id,start_date")
-      .order("id", { ascending: false })
-      .limit(5),
-  ]);
-
-  const hasError = [
-    totalUsersRes.error,
-    newUsersRes.error,
-    totalSpotsRes.error,
-    totalEventsRes.error,
-    totalAdminsRes.error,
-    latestSpotsRes.error,
-    latestEventsRes.error,
-  ].some(Boolean);
-
-  if (hasError) {
-    console.warn("[supabase] admin dashboard stats fetch error", {
-      totalUsersError: totalUsersRes.error?.message,
-      newUsersError: newUsersRes.error?.message,
-      totalSpotsError: totalSpotsRes.error?.message,
-      totalEventsError: totalEventsRes.error?.message,
-      totalAdminsError: totalAdminsRes.error?.message,
-      latestSpotsError: latestSpotsRes.error?.message,
-      latestEventsError: latestEventsRes.error?.message,
-    });
-    return fallback;
-  }
-
-  return {
-    totalUsers: totalUsersRes.count ?? 0,
-    newUsersLast7Days: newUsersRes.count ?? 0,
-    totalSpots: totalSpotsRes.count ?? 0,
-    totalEvents: totalEventsRes.count ?? 0,
-    totalAdmins: totalAdminsRes.count ?? 0,
-    latestSpots: (latestSpotsRes.data ?? []) as AdminDashboardSpotSummary[],
-    latestEvents: (latestEventsRes.data ?? []) as AdminDashboardEventSummary[],
-  };
-}
-
-/**
- * 管理対象ユーザー一覧を取得する。
- *
- * @param limit - 最大件数
- * @returns 管理対象ユーザー配列
- * @example
- * const users = await fetchManageableUsers(200);
- */
-export async function fetchManageableUsers(limit = 200): Promise<AdminUserSummary[]> {
-  if (!client) return [];
-  const writableClient = getWritableClient();
-  const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 500);
-  const { data, error } = await writableClient
-    .from("users")
-    .select("id,auth_id,email,display_name,role,created_at")
-    .order("created_at", { ascending: false })
-    .limit(safeLimit);
-
-  if (error) {
-    console.warn("[supabase] manageable users fetch error:", error);
-    return [];
-  }
-  return (data ?? []) as AdminUserSummary[];
 }
 
 /**

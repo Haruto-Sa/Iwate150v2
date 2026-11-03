@@ -7,39 +7,12 @@ const { mockRequireStudioApiAccess, mockCreateSpot } = vi.hoisted(() => ({
   mockCreateSpot: vi.fn(),
 }));
 
-vi.mock("@/lib/studioApi", async () => {
-  return {
-    buildStudioErrorResponse: (error: unknown, fallbackMessage: string) =>
-      NextResponse.json(
-        { error: error instanceof Error ? error.message : fallbackMessage },
-        { status: error instanceof Error ? 400 : 500 }
-      ),
-    readJsonObject: async (request: Request) => (await request.json()) as Record<string, unknown>,
-    requireStudioApiAccess: mockRequireStudioApiAccess,
-  };
-});
-
-vi.mock("@/lib/studioPayloads", () => ({
-  parseSpotCreateInput: (input: Record<string, unknown>) => {
-    if (typeof input.name !== "string" || !input.name.trim()) {
-      throw new Error("name is required.");
-    }
-    if (typeof input.description !== "string" || !input.description.trim()) {
-      throw new Error("description is required.");
-    }
-    return {
-      name: input.name.trim(),
-      description: input.description.trim(),
-      city_id: Number(input.city_id),
-      genre_id: Number(input.genre_id),
-      lat: Number(input.lat),
-      lng: Number(input.lng),
-      image_thumb_path: input.image_thumb_path ? String(input.image_thumb_path) : null,
-      image_path: input.image_path ? String(input.image_path) : null,
-      model_path: input.model_path ? String(input.model_path) : null,
-      reference_url: input.reference_url ? String(input.reference_url) : null,
-    };
-  },
+vi.mock("server-only", () => ({}));
+vi.mock("@/auth", () => ({ auth: vi.fn() }));
+vi.mock("@/lib/authServer", () => ({ fetchAppUserByIdentity: vi.fn() }));
+vi.mock("@/lib/studioApi", async importOriginal => ({
+  ...await importOriginal<typeof import("@/lib/studioApi")>(),
+  requireStudioApiAccess: mockRequireStudioApiAccess,
 }));
 
 vi.mock("@/lib/adminServer", () => ({
@@ -79,7 +52,7 @@ describe("POST /api/studio/spots", () => {
     const response = await POST(
       new Request("http://localhost/api/studio/spots", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Origin: "http://localhost" },
         body: JSON.stringify({
           name: "",
           city_id: 1,
@@ -121,7 +94,7 @@ describe("POST /api/studio/spots", () => {
     const response = await POST(
       new Request("http://localhost/api/studio/spots", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Origin: "http://localhost" },
         body: JSON.stringify({
           name: "盛岡城跡公園",
           description: "説明",

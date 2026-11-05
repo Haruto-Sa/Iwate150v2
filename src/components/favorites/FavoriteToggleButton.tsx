@@ -10,6 +10,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 
 type Props = {
   spotId: number;
+  isSample?: boolean;
 };
 
 /**
@@ -20,11 +21,15 @@ type Props = {
  * @example
  * <FavoriteToggleButton spotId={12} />
  */
-export function FavoriteToggleButton({ spotId }: Props) {
+export function FavoriteToggleButton({ spotId, isSample = false }: Props) {
   const favorites = useFavorites();
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
   const active = favorites.isFavorite(spotId);
+
+  if (isSample) {
+    return <Button variant="outline" className="mt-5" disabled>サンプル（保存対象外）</Button>;
+  }
 
   if (favorites.isReady && !favorites.isAuthenticated) {
     return (

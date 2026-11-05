@@ -19,6 +19,8 @@ export type AdminCitySummary = Pick<City, "id" | "name">;
 export type AdminGenreSummary = Pick<Genre, "id" | "name">;
 
 export type Spot = {
+  /** DB取得値には付かない、閲覧用フォールバックの識別。 */
+  isSample?: boolean;
   id: number;
   name: string;
   description: string;

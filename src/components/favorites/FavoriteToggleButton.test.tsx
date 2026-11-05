@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { FavoriteToggleButton } from "./FavoriteToggleButton";
 
@@ -31,4 +31,25 @@ describe("スポットの保存導線", () => {
       screen.getByRole("button", { name: "お気に入りに残す" }),
     ).toBeDisabled();
   });
+  it.each([false, true])("サンプルは認証状態%sでも保存APIを呼ばない", (isAuthenticated) => {
+    const toggleFavorite = vi.fn();
+    favorites.mockReturnValue({ isReady: true, isAuthenticated, isFavorite: () => false, toggleFavorite });
+    render(<FavoriteToggleButton spotId={5} isSample />);
+    const button = screen.getByRole("button", { name: "サンプル（保存対象外）" });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(toggleFavorite).not.toHaveBeenCalled();
+    expect(screen.queryByRole("link", { name: "ログインして保存" })).not.toBeInTheDocument();
+  });
+
+  it("実データは認証済みなら従来どおり保存できる", async () => {
+    const toggleFavorite = vi.fn().mockResolvedValue(true);
+    favorites.mockReturnValue({ isReady: true, isAuthenticated: true, isFavorite: () => false, toggleFavorite });
+    render(<FavoriteToggleButton spotId={50} />);
+    const button = screen.getByRole("button", { name: "お気に入りに残す" });
+    expect(button).toBeEnabled();
+    await act(async () => { fireEvent.click(button); });
+    expect(toggleFavorite).toHaveBeenCalledWith(50);
+  });
+
 });

@@ -31,6 +31,36 @@ export function privateJson(body: unknown, status = 200): NextResponse {
 }
 
 /**
+ * 確認した本人の利用者行を削除し、外部キーで保存記録も一括削除する。
+ * @param request - 本人確認ヘッダーと明示確認を含むDELETEリクエスト
+ * @returns キャッシュ禁止の削除結果
+ * @example await deleteOwnData(request);
+ */
+export async function deleteOwnData(request: Request): Promise<NextResponse> {
+  try {
+    const session = await auth();
+    const identity = session?.user?.id;
+    if (!identity) throw new ApiError(401, "ログインが必要です。");
+    if (request.headers.get("x-session-user") !== identity) {
+      throw new ApiError(409, "利用者が変更されました。再読み込みしてください。");
+    }
+    const expectedOrigin = new URL(process.env.AUTH_URL || request.url).origin;
+    if (request.headers.get("origin") !== expectedOrigin) throw new ApiError(403, "送信元を確認できません。");
+    if (new URL(request.url).search) throw new ApiError(400, "検索条件が不正です。");
+    const body = await readBody(request, ["confirmation"]);
+    if (body.confirmation !== "delete") throw new ApiError(400, "削除の確認が必要です。");
+    const client = getServerAdminClient();
+    if (!client) throw new ApiError(503, "保存サービスを利用できません。");
+    // users.auth_idは一意。stamps/favoritesのON DELETE CASCADEと同じトランザクションで処理する。
+    const { error } = await client.from("users").delete().eq("auth_id", identity);
+    if (error) throw new ApiError(503, "削除できませんでした。再試行してください。");
+    return privateJson({ success: true });
+  } catch (error) {
+    return privateJson({ error: error instanceof ApiError ? error.message : "削除を確認できませんでした。再試行してください。" }, error instanceof ApiError ? error.status : 503);
+  }
+}
+
+/**
  * 本文をサイズ・時間制限付きで読み、許可済みフィールドのみ受け付ける。
  * @param request - HTTP request
  * @param fields - 許可するキー

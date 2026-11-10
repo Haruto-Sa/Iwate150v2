@@ -32,7 +32,15 @@ function query(table: string) {
     },
     then: (resolve: (result: unknown) => unknown) => {
       const matching = records[table].filter((row) => filters.every((filter) => filter(row)));
-      if (deletion && !state.failure) records[table] = records[table].filter((row) => !matching.includes(row));
+      if (deletion && !state.failure) {
+        records[table] = records[table].filter((row) => !matching.includes(row));
+        // schema.sqlの連鎖削除をモデル化する。実DB制約の検証ではない。
+        if (table === "users") {
+          for (const child of ["stamps", "favorites"]) {
+            records[child] = records[child].filter((row) => !matching.some((owner) => owner.id === row.user_id));
+          }
+        }
+      }
       return Promise.resolve(resolve({ data: matching, error: state.failure ? {} : null }));
     },
   };
@@ -41,6 +49,7 @@ function query(table: string) {
 vi.mock("@/lib/authServer", () => ({ getServerAdminClient: () => state.unavailable ? null : { from: query } }));
 import { GET, PUT, POST, DELETE } from "@/app/api/me/favorites/route";
 import { GET as getStamps, POST as postStamp } from "@/app/api/me/stamps/route";
+import { DELETE as deleteOwnData } from "@/app/api/me/route";
 
 /** @param method - HTTP method @param body - 本文 @param origin - 送信元 @returns request @example request("PUT", {spotId: 3}); */
 function request(method = "GET", body?: unknown, origin = "https://app.test"): Request {
@@ -52,8 +61,58 @@ function request(method = "GET", body?: unknown, origin = "https://app.test"): R
 beforeEach(() => {
   delete process.env.AUTH_URL;
   state.identity = "oauth:google:A"; state.unavailable = false; state.failure = false;
+  records.users = [{ id: 1, auth_id: "oauth:google:A" }, { id: 2, auth_id: "oauth:google:B" }];
   records.favorites = [{ id: 1, user_id: 1, spot_id: 10 }, { id: 2, user_id: 2, spot_id: 20 }];
   records.stamps = [{ id: 1, user_id: 2, spot_id: 20 }];
+});
+
+describe("本人の保存データを全削除", () => {
+  it("Aの登録と記録だけを削除し、Bを保持して再送も成功する", async () => {
+    records.stamps.push({ id: 2, user_id: 1, spot_id: 30 });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const response = await deleteOwnData(request("DELETE", { confirmation: "delete" }));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("cache-control")).toContain("no-store");
+    }
+    expect(records.users).toEqual([{ id: 2, auth_id: "oauth:google:B" }]);
+    expect(records.favorites).toEqual([{ id: 2, user_id: 2, spot_id: 20 }]);
+    expect(records.stamps).toEqual([{ id: 1, user_id: 2, spot_id: 20 }]);
+  });
+
+  it("未認証・確認なし・所有者指定・別Origin・利用者変更を拒否する", async () => {
+    expect((await deleteOwnData(request("DELETE", {}))).status).toBe(400);
+    expect((await deleteOwnData(request("DELETE", { confirmation: "delete", userId: 2 }))).status).toBe(400);
+    expect((await deleteOwnData(request("DELETE", { confirmation: "delete" }, "https://evil.test"))).status).toBe(403);
+    const oldRequest = request("DELETE", { confirmation: "delete" });
+    state.identity = "oauth:google:B";
+    expect((await deleteOwnData(oldRequest)).status).toBe(409);
+    state.identity = null;
+    expect((await deleteOwnData(request("DELETE", { confirmation: "delete" }))).status).toBe(401);
+    expect(records.users).toHaveLength(2);
+    expect(records.favorites).toHaveLength(2);
+  });
+
+  it("DB障害・設定不足で削除成功を返さない", async () => {
+    state.failure = true;
+    expect((await deleteOwnData(request("DELETE", { confirmation: "delete" }))).status).toBe(503);
+    state.failure = false;
+    state.unavailable = true;
+    expect((await deleteOwnData(request("DELETE", { confirmation: "delete" }))).status).toBe(503);
+    expect(records.users).toHaveLength(2);
+    expect(records.favorites).toHaveLength(2);
+  });
+
+  it("本人確認ヘッダーなしとクエリでの所有者指定を拒否する", async () => {
+    const missingIdentity = request("DELETE", { confirmation: "delete" });
+    missingIdentity.headers.delete("x-session-user");
+    expect((await deleteOwnData(missingIdentity)).status).toBe(409);
+    const withQuery = new Request("https://app.test/api/me?userId=2", {
+      method: "DELETE", headers: { origin: "https://app.test", "x-session-user": "oauth:google:A", "content-type": "application/json" },
+      body: JSON.stringify({ confirmation: "delete" }),
+    });
+    expect((await deleteOwnData(withQuery)).status).toBe(400);
+    expect(records.users).toHaveLength(2);
+  });
 });
 
 describe("本人API", () => {

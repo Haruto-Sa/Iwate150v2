@@ -94,7 +94,7 @@ function MoreMenuDialog({ id, onClose, restoreFocus }: {
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 id={titleId} className="font-display text-2xl">{messages.more}</h2>
-        <Button autoFocus aria-label={messages.closeMore} variant="ghost" size="sm" onClick={onClose}>
+        <Button autoFocus iconOnly aria-label={messages.closeMore} variant="ghost" size="sm" onClick={onClose}>
           <X aria-hidden="true" className="h-5 w-5" />
         </Button>
       </div>

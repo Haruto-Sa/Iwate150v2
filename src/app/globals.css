@@ -98,6 +98,7 @@
 }
 html {
   scroll-padding-top: 6rem;
+  scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
 }
 body {
   background: var(--background);
@@ -112,9 +113,15 @@ a,
 button {
   -webkit-tap-highlight-color: transparent;
 }
-:where(a, button, input, select, textarea, summary):focus-visible {
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--app-highlight);
   outline-offset: 4px;
+  scroll-margin-block: 6rem;
+  scroll-margin-inline: 1rem;
+}
+/* 重なる地図マーカーでもキーボードで選んだ対象を前面に表示する。 */
+.leaflet-marker-icon:focus-visible {
+  z-index: 2147483647 !important;
 }
 button,
 a,

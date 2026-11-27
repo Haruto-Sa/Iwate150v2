@@ -67,6 +67,9 @@ export function CameraCharacters({ ready, videoBusy, selectedModels, canCapture,
               variant={active ? "primary" : "ghost"}
               size="sm"
               onClick={() => onToggle(c.id, active)}
+              onFocus={(event) => {
+                if (event.currentTarget.matches(":focus-visible")) event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" });
+              }}
               disabled={isDisabled || videoBusy}
               aria-pressed={active}
               className="min-h-11 shrink-0 gap-2 whitespace-nowrap"

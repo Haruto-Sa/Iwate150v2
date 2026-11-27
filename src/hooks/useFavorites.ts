@@ -128,10 +128,10 @@ export function useFavorites(): FavoritesState {
   const generation = useRef(0);
   const busy = useRef(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    generation.current += 1;
-    busy.current = false;
+  const loadKey = JSON.stringify([identity, status, revision]);
+  const [previousLoadKey, setPreviousLoadKey] = useState(loadKey);
+  if (loadKey !== previousLoadKey) {
+    setPreviousLoadKey(loadKey);
     setIsMutating(false);
     setLoading(true);
     setLoadFailed(false);
@@ -142,6 +142,12 @@ export function useFavorites(): FavoritesState {
     setLegacyIds([]);
     setImportedIds([]);
     setHasOtherLegacyOwner(false);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    generation.current += 1;
+    busy.current = false;
 
     /**
      * 本人APIと公開情報を読み込む。ゲストでは公開情報のみ読む。

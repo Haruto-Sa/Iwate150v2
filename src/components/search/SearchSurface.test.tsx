@@ -368,6 +368,33 @@ describe("SearchSurface", () => {
     expect(getLastRequestUrl(mockFetch).searchParams.get("page")).toBe("2");
   });
 
+  it("2ページ目で条件を変えたとき、新条件の1ページ目だけを要求する", async () => {
+    const mockFetch = vi.fn(async () => createJsonResponse({ items: defaultSpots, total: 60, page: 1, pageSize: 50, hasNext: true }));
+    vi.stubGlobal("fetch", mockFetch);
+    render(<SearchSurface cities={cities} genres={genres} defaultSpots={defaultSpots} defaultEvents={defaultEvents} />);
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText("市区町村"), "1");
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    expect(getLastRequestUrl(mockFetch).searchParams.get("page")).toBe("2");
+    mockFetch.mockClear();
+    await user.selectOptions(screen.getByLabelText("市区町村"), "2");
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(getLastRequestUrl(mockFetch).searchParams.get("cityId")).toBe("2");
+    expect(getLastRequestUrl(mockFetch).searchParams.get("page")).toBe("1");
+  });
+
+  it("検索失敗後に条件を解除するとエラーを消して初期候補へ戻る", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+    render(<SearchSurface cities={cities} genres={genres} defaultSpots={defaultSpots} defaultEvents={defaultEvents} />);
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText("市区町村"), "1");
+    const message = "検索結果の取得に失敗しました。時間をおいて再試行してください。";
+    expect(await screen.findByText(message)).toBeVisible();
+    await user.selectOptions(screen.getByLabelText("市区町村"), "all");
+    expect(screen.queryByText(message)).toBeNull();
+    expect(screen.getByText("旅先のヒント")).toBeVisible();
+  });
+
   it("shows a retry message when the search request fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network error")));
 

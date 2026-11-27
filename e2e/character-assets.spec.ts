@@ -26,8 +26,10 @@ for (const character of characters) test(`${character.name}のプレビュー・
 
 test("モデル失敗時も別キャラクターへ置換せず再試行できる", async ({ page }) => {
   const requested: string[] = [];
-  await page.route(/\.(?:obj|mtl|fbx)(?:\?|$)/, route => {
+  let failRequests = Promise.resolve();
+  await page.route(/\.(?:obj|mtl|fbx)(?:\?|$)/, async route => {
     requested.push(new URL(route.request().url()).pathname);
+    await failRequests;
     return route.abort();
   });
   await page.goto("/character");
@@ -39,8 +41,15 @@ test("モデル失敗時も別キャラクターへ置換せず再試行でき�
   expect(requested.length).toBeGreaterThan(0);
   expect(requested.every(path => path.startsWith("/assets/characters/karin/"))).toBe(true);
   const before = requested.length;
-  await page.getByRole("button", { name: "再試行", exact: true }).click();
-  await expect.poll(() => requested.length).toBeGreaterThan(before);
+  let releaseFailure!: () => void;
+  failRequests = new Promise<void>(resolve => { releaseFailure = resolve; });
+  try {
+    await page.getByRole("button", { name: "再試行", exact: true }).click();
+    await expect.poll(() => requested.length).toBeGreaterThan(before);
+    await expect(page.getByText("3Dモデルを読み込み中...", { exact: true })).toBeVisible();
+  } finally {
+    releaseFailure();
+  }
   await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toBeVisible();
   await page.unroute(/\.(?:obj|mtl|fbx)(?:\?|$)/);
   await page.getByRole("button", { name: "再試行", exact: true }).click();
@@ -92,22 +101,22 @@ test("カリンの画像がモデルより遅れても描画色を変えない",
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
     const frame = await readViewerFrame(page);
     expect(frame.painted).toBeGreaterThan(0.01);
-    renders.push(frame.url);
+    renders.push(frame.fingerprint);
     page.off("console", listener);
     await page.unrouteAll({ behavior: "wait" });
   }
-  expect(renders[0].length).toBeGreaterThan(1000);
+  expect(renders[0]).toMatch(/^\d+x\d+:[a-f0-9]{64}$/);
   expect(renders[1]).toBe(renders[0]);
 });
 
 /**
  * WebGL描画直後のCanvasからモデル画素と画像を取得する。
  * @param page - ビューアを表示中のページ
- * @returns 背景以外の画素比率とPNG
+ * @returns 背景以外の画素比率と全画素のSHA-256
  * @example const frame = await readViewerFrame(page);
  */
 async function readViewerFrame(page: Page) {
-  return await page.locator("canvas").evaluate(canvas => new Promise<{ url: string; painted: number }>(resolve => requestAnimationFrame(() => {
+  return await page.locator("canvas").evaluate(canvas => new Promise<{ fingerprint: string; painted: number }>((resolve, reject) => requestAnimationFrame(() => {
       const source = canvas as HTMLCanvasElement;
       const copy = document.createElement("canvas");
       copy.width = source.width;
@@ -119,7 +128,11 @@ async function readViewerFrame(page: Page) {
       for (let index = 0; index < pixels.length; index += 4) {
         if (pixels[index + 3] > 0 && Math.abs(pixels[index] - 240) + Math.abs(pixels[index + 1] - 242) + Math.abs(pixels[index + 2] - 239) > 40) painted++;
       }
-      resolve({ url: copy.toDataURL(), painted: painted / (copy.width * copy.height) });
+      // 全画素を使った比較は維持し、PNGのエンコード・転送を省く。
+      crypto.subtle.digest("SHA-256", pixels).then((digest) => {
+        const fingerprint = `${copy.width}x${copy.height}:` + Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+        resolve({ fingerprint, painted: painted / (copy.width * copy.height) });
+      }, reject);
     })));
 }
 
@@ -149,7 +162,7 @@ test("全5モデルを表示し拡大・縮小・回転・リセットできる"
     await page.getByRole("button", { name: "回転", exact: true }).click();
     await expect(page.getByRole("button", { name: "停止", exact: true })).toBeVisible();
     const rotating = await readViewerFrame(page);
-    await expect.poll(async () => (await readViewerFrame(page)).url).not.toBe(rotating.url);
+    await expect.poll(async () => (await readViewerFrame(page)).fingerprint).not.toBe(rotating.fingerprint);
     await page.getByRole("button", { name: "リセット", exact: true }).click();
     await expect(page.getByRole("button", { name: "回転", exact: true })).toBeVisible();
     expect(Math.abs((await readViewerFrame(page)).painted - initial.painted)).toBeLessThan(0.02);

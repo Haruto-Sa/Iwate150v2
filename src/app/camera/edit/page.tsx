@@ -1,6 +1,7 @@
 "use client";
 
 import type { StickerItem, TextItem, EditMode, ToolPanel } from "@/components/camera/editor/types";
+import { useOverlayDrag } from "@/components/camera/editor/useOverlayDrag";
 import { renderEditedPhoto } from "@/components/camera/editor/renderEditedPhoto";
 import { CAPTURED_PHOTO_KEY, CAPTURED_DETECTION_KEY } from "@/lib/config";
 
@@ -51,7 +52,6 @@ export default function CameraEditPage() {
   
   const nextOverlayId = useRef(0);
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const draggingRef = useRef<{ type: "sticker" | "text"; id: string; startX: number; startY: number; startSize: number } | null>(null);
 
   // Load captured photo + detection
   useEffect(() => {
@@ -114,95 +114,10 @@ export default function CameraEditPage() {
     [stickers, activeItemId, activeItemType]
   );
 
-  /**
-   * ドラッグ対象と開始座標を記録する。
-   * @param e - ポインター操作
-   * @param type - 文字またはスタンプ
-   * @param id - 対象ID
-   * @returns なし
-   * @example handlePointerDown(event, "text", "caption");
-   */
-  const handlePointerDown = useCallback((e: React.PointerEvent, type: "sticker" | "text", id: string) => {
-    e.stopPropagation();
-    setActiveItemId(id);
-    setActiveItemType(type);
-    
-    if (!stageRef.current) return;
-    const rect = stageRef.current.getBoundingClientRect();
-    
-    const item = type === "sticker" 
-      ? stickers.find(s => s.id === id)
-      : texts.find(t => t.id === id);
-    
-    draggingRef.current = { 
-      type, 
-      id, 
-      startX: (e.clientX - rect.left) / rect.width,
-      startY: (e.clientY - rect.top) / rect.height,
-      startSize: item?.size || 0.06
-    };
-  }, [stickers, texts]);
-
-  /**
-   * 選択要素の移動または拡大縮小を反映する。
-   * @param e - ポインター操作
-   * @returns なし
-   * @example onPointerMove={handlePointerMove}
-   */
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!draggingRef.current || !stageRef.current) return;
-    const rect = stageRef.current.getBoundingClientRect();
-    const currentX = (e.clientX - rect.left) / rect.width;
-    const currentY = (e.clientY - rect.top) / rect.height;
-    
-    const { type, id, startY, startSize } = draggingRef.current;
-
-    if (editMode === "move") {
-      // 移動モード
-      const clamped = { 
-        x: Math.min(0.95, Math.max(0.05, currentX)), 
-        y: Math.min(0.95, Math.max(0.05, currentY)) 
-      };
-
-      if (type === "sticker") {
-        setStickers((prev) =>
-          prev.map((s) => (s.id === id ? { ...s, ...clamped } : s))
-        );
-      } else {
-        setTexts((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, ...clamped } : t))
-        );
-      }
-    } else {
-      // リサイズモード - 垂直方向のドラッグでサイズ変更
-      const deltaY = startY - currentY;
-      const newSize = Math.min(0.2, Math.max(0.03, startSize + deltaY * 0.3));
-      
-      if (type === "sticker") {
-        setStickers((prev) =>
-          prev.map((s) => (s.id === id ? { ...s, size: newSize } : s))
-        );
-      } else {
-        setTexts((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, size: newSize } : t))
-        );
-      }
-    }
-  }, [editMode]);
-
-  /**
-   * ドラッグ状態を解除する。
-   * @returns なし
-   * @example stopDrag();
-   */
-  const stopDrag = useCallback(() => {
-    draggingRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("pointerup", stopDrag);
-    return () => window.removeEventListener("pointerup", stopDrag);
-  }, [stopDrag]);
+  const { handlePointerDown, handlePointerMove } = useOverlayDrag({
+    stageRef, stickers, texts, editMode,
+    setStickers, setTexts, setActiveItemId, setActiveItemType,
+  });
 
   /**
    * 編集画像にスタンプを追加する。

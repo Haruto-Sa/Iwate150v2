@@ -37,3 +37,9 @@ Step 1〜4の本番ビルドと撮影・編集E2E68件が成功（4.8分、1 wor
 `camera/editor/types.ts`に装飾・操作モードの型、`renderEditedPhoto.ts`にPNG合成を移動した。`generateImage`は最新のphoto/stickers/textsを渡す。画像decode、フォント準備待ち、crossOrigin、元画像寸法、正規化座標、描画順、PNG形式を維持している。
 
 PNG合成の移動後は、インデント以外の処理が変更前と一致。単体735件・型・lint（0 errors / 5 warnings）・本番ビルド・編集20件が成功（43.6秒）。
+
+## 装飾のドラッグ操作
+
+`useOverlayDrag.ts`がドラッグ開始位置・移動・サイズ変更とwindowのpointerup購読を所有する。装飾・選択状態はページに保持し、正規化座標、移動範囲5〜95%、サイズ範囲3〜20%、縦ドラッグの感度0.3を維持する。hookの依存配列には安定したrefとstate更新関数を明示する。
+
+ドラッグ分離後は3コールバックの本体が変更前と厳密一致。単体735件・型・lint（0 errors / 5 warnings）・本番ビルド・編集20件が成功（44.7秒）。

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { buildObservedHeaderPolicy } from "./src/lib/headerPolicy";
 import withSerwistInit from "@serwist/next";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -73,6 +74,13 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(self), geolocation=(self), microphone=()",
           },
+          ...(process.env.NODE_ENV === "production" ? [{
+            key: "Content-Security-Policy-Report-Only",
+            value: buildObservedHeaderPolicy({
+              supabaseUrl,
+              faceMeshAssetBase: process.env.NEXT_PUBLIC_MEDIAPIPE_FACE_MESH_ASSET_BASE,
+            }),
+          }] : []),
           {
             key: "Content-Security-Policy",
             value: [

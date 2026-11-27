@@ -46,14 +46,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: buildProviders(),
   callbacks: {
     /**
-     * 認証トークンからプロフィールを除き、本人識別子とロールを設定する。
+     * 認証トークンからプロフィールを除き、サインイン時だけ本人識別子とロールを同期する。
      *
      * @param params - NextAuth callback params
      * @returns 更新後 token
      * @example
      * await callbacks.jwt(params);
      */
-    async jwt({ token, user, account }) {
+    async jwt({ token, account }) {
       // 既存Cookieも更新時にプロフィールを取り除く。
       delete token.email;
       delete token.name;
@@ -62,15 +62,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // 検証済みOAuth callbackでのみIDを確定。クライアントのsession updateは信用しない。
       if (account && (account.provider === "google" || account.provider === "github")) {
         token.sub = oauthIdentity(account.provider, account.providerAccountId);
+        const appUser = await syncAppUserFromIdentity({ identityId: token.sub });
+        token.role = appUser?.role ?? "user";
       }
-      const identityId = typeof token.sub === "string" ? token.sub : typeof user?.id === "string" ? user.id : null;
-      if (!identityId) return token;
-
-      const appUser = await syncAppUserFromIdentity({
-        identityId,
-      });
-
-      token.role = appUser?.role ?? "user";
       return token;
     },
     /**

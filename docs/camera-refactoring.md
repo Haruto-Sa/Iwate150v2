@@ -15,3 +15,7 @@ Supabaseテーブルの変更や追加のセットアップはない。
 撮影・編集E2Eを実行中。Android相当の顔検出タイムアウト後の復帰で「顔をカメラに向ける」の待機が失敗したため、変更前後の比較を継続する。テストの待機期限やskipは変更していない。実機での顔追従、写真のモデル位置、保存・SNS共有は未検証。
 
 初回E2Eは67成功・1失敗（Android相当、3.2分）。失敗した復帰テストを単独・1 workerで変更前2回、変更後2回実行し、いずれも成功（各約27秒）しました。初回は単体テストとの並行実行があったため負荷の可能性はありますが、原因の確定とは扱いません。失敗トレースを保持しています。
+
+## カメラの向きと写真引き渡しキー
+
+`isCameraFacingMode` / `resolveActiveFacingMode`と型を`src/lib/cameraStream.ts`へ移動。実際のtrack設定を要求値より優先し、不明・未対応・トラックなしでは要求値を使う挙動を維持する。撮影画面と編集画面は`src/lib/config.ts`のsessionStorageキーを参照し、`capturedPhoto` / `capturedDetection` / `capturedModels`の文字列は変更しない。

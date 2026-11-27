@@ -1,5 +1,7 @@
 "use client";
 
+import { CAPTURED_PHOTO_KEY, CAPTURED_DETECTION_KEY } from "@/lib/config";
+
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { 
   Sticker, Undo2, Type, Palette,
@@ -66,11 +68,11 @@ export default function CameraEditPage() {
   // Load captured photo + detection
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem("capturedPhoto");
+      const stored = sessionStorage.getItem(CAPTURED_PHOTO_KEY);
       // ブラウザの保存領域をマウント後に読み込む。SSRと初回描画を一致させる。
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (stored) setPhoto(stored);
-      const det = sessionStorage.getItem("capturedDetection");
+      const det = sessionStorage.getItem(CAPTURED_DETECTION_KEY);
       if (det) setDetPos(JSON.parse(det));
     } catch {
       // 保存領域が使えない場合も空状態から撮影に戻れる。

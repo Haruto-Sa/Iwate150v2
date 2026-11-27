@@ -1,5 +1,7 @@
 "use client";
 
+import { CAPTURED_PHOTO_KEY, CAPTURED_DETECTION_KEY, CAPTURED_MODELS_KEY } from "@/lib/config";
+
 import { toLocalAssetUrl } from "@/lib/modelAssets";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
@@ -10,7 +12,7 @@ import { characterModelCatalog, characters } from "@/lib/characters";
 import { useCaptureTimer, type CaptureDelay } from "@/hooks/useCaptureTimer";
 import { markCameraTiming, resetCameraTimings } from "@/lib/cameraTimings";
 import { forgetFailedFaceMeshInstance, acquireFaceMeshInstance, recreateFaceMeshInstance, isFaceMeshModuleArgumentsError, type FaceMeshInstance, type FaceMeshResults, type FaceResultsHandler } from "./faceMesh";
-import { createCameraStream } from "@/lib/cameraStream";
+import { createCameraStream, resolveActiveFacingMode, type CameraFacingMode } from "@/lib/cameraStream";
 import { getModelUrl } from "@/lib/storage";
 import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
 import * as THREE from "three";
@@ -25,40 +27,6 @@ type Detection = { x: number; y: number; width: number; height: number } | null;
 type CameraStream = ReturnType<typeof createCameraStream>;
 type ModelLoadStatus = "idle" | "loading" | "ready" | "error";
 type ModelSource = { modelUrl: string; mtlUrl: string | null };
-type CameraFacingMode = "user" | "environment";
-
-/**
- * ブラウザが返した facingMode がアプリ定義の値か判定する。
- *
- * @param value - 判定対象
- * @returns `user` または `environment` の場合 true
- * @example
- * isCameraFacingMode("user");
- */
-function isCameraFacingMode(value: unknown): value is CameraFacingMode {
-  return value === "user" || value === "environment";
-}
-
-/**
- * 起動した stream から実際に有効な facingMode を解決する。
- *
- * `getUserMedia` が要求どおりに切り替えられなかった環境では、
- * track settings を優先し、取得できない場合のみ要求値へフォールバックする。
- *
- * @param stream - 起動済み MediaStream
- * @param requestedFacingMode - 要求した facingMode
- * @returns 実際に採用された facingMode
- * @example
- * const activeFacingMode = resolveActiveFacingMode(stream, "environment");
- */
-function resolveActiveFacingMode(
-  stream: MediaStream,
-  requestedFacingMode: CameraFacingMode
-): CameraFacingMode {
-  const actualFacingMode = stream.getVideoTracks()[0]?.getSettings().facingMode;
-  return isCameraFacingMode(actualFacingMode) ? actualFacingMode : requestedFacingMode;
-}
-
 /**
  * キャラクターIDから表示名を解決する。
  *
@@ -868,10 +836,10 @@ export function CameraCapture() {
     try {
       const dataUrl = canvas.toDataURL("image/png");
       // 前の写真の顔位置を次の撮影へ持ち越さない。
-      sessionStorage.removeItem("capturedDetection");
-      sessionStorage.setItem("capturedModels", JSON.stringify(selectedModels));
-      if (detection) sessionStorage.setItem("capturedDetection", JSON.stringify(detection));
-      sessionStorage.setItem("capturedPhoto", dataUrl);
+      sessionStorage.removeItem(CAPTURED_DETECTION_KEY);
+      sessionStorage.setItem(CAPTURED_MODELS_KEY, JSON.stringify(selectedModels));
+      if (detection) sessionStorage.setItem(CAPTURED_DETECTION_KEY, JSON.stringify(detection));
+      sessionStorage.setItem(CAPTURED_PHOTO_KEY, dataUrl);
     } catch {
       setErrorMessage("撮影した写真を一時保存できませんでした。ブラウザの空き容量や保存設定を確認して、もう一度撮影してください。");
       return false;

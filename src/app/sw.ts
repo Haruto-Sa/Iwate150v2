@@ -45,6 +45,21 @@ function isLeafletTileRequest(url: URL): boolean {
   );
 }
 
+/**
+ * 同一originの認証API・管理画面をキャッシュ対象から除外する。
+ * Cookie認証はAuthorizationヘッダーの有無では判断できないため、URLで境界を定める。
+ * @param url - リクエストURL（queryは判定に影響しない）
+ * @returns 保存・再利用してはいけないURLならtrue
+ * @example isPrivateUrl(new URL("/studio/users?_rsc=example", self.location.origin));
+ */
+function isPrivateUrl(url: URL): boolean {
+  return url.origin === self.location.origin && (
+    url.pathname.startsWith("/api/") ||
+    url.pathname === "/studio" ||
+    url.pathname.startsWith("/studio/")
+  );
+}
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -54,7 +69,7 @@ const serwist = new Serwist({
     {
       matcher({ request, url }) {
         return request.headers.has("authorization") ||
-          (url.origin === self.location.origin && url.pathname.startsWith("/api/"));
+          isPrivateUrl(url);
       },
       handler: new NetworkOnly(),
     },
@@ -115,7 +130,7 @@ const serwist = new Serwist({
   },
 });
 
-// 以前のNetworkFirstが保存した認証API応答も更新時に除去する。
+// 旧版が保存した認証API・管理画面のHTML/RSC応答を更新時に除去する。
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     // 旧版が個人REST応答を含めていたキャッシュは丸ごと破棄する。
@@ -124,7 +139,7 @@ self.addEventListener("activate", (event) => {
       const cache = await caches.open(name);
       for (const request of await cache.keys()) {
         const url = new URL(request.url);
-        if (url.origin === self.location.origin && url.pathname.startsWith("/api/")) {
+        if (isPrivateUrl(url)) {
           await cache.delete(request);
         }
       }

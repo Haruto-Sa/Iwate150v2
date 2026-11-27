@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { Timer, Download, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CameraCharacters } from "./CameraCharacters";
+import { useCameraVideo } from "./useCameraVideo";
 import { CameraPreview } from "./CameraPreview";
 import { characterModelCatalog } from "@/lib/characters";
 import { useCaptureTimer, type CaptureDelay } from "@/hooks/useCaptureTimer";
@@ -21,7 +22,7 @@ import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
 import * as THREE from "three";
 import { loadCameraModel, disposeCameraModel, normalizeCameraModel } from "@/lib/cameraModel";
 
-import { CAMERA_VIDEO_MAX_EDGE, CAMERA_VIDEO_MAX_MS, getCameraRecordingMime, startCameraRecording, type CameraRecording } from "@/lib/cameraRecording";
+import { CAMERA_VIDEO_MAX_MS } from "@/lib/cameraRecording";
 
 import { layoutCameraModels } from "@/lib/cameraModelLayout";
 
@@ -75,47 +76,9 @@ export function CameraCapture() {
   const facingModeRef = useRef<CameraFacingMode>("user");
   const router = useRouter();
   const [captureMode, setCaptureMode] = useState<"photo" | "video">("photo");
-  const [videoSupported, setVideoSupported] = useState(false);
-  const [recordingPhase, setRecordingPhase] = useState<"idle" | "recording" | "stopping">("idle");
-  const [recordedMilliseconds, setRecordedMilliseconds] = useState(0);
-  const [recordedClip, setRecordedClip] = useState<{ file: File; url: string } | null>(null);
-  const [sharingVideo, setSharingVideo] = useState(false);
-  const recordingRef = useRef<CameraRecording | null>(null);
-  const recordedUrlRef = useRef<string | null>(null);
-  const sharingVideoRef = useRef(false);
-  const videoBusy = recordingPhase !== "idle";
-
-  /**
-   * 録画中の未完成データを破棄する。
-   * @returns なし
-   * @example cancelRecording();
-   */
-  const cancelRecording = useCallback(() => {
-    const recording = recordingRef.current;
-    recordingRef.current = null;
-    recording?.cancel();
-    if (recording && !unmountedRef.current) {
-      setRecordingPhase("idle");
-      setErrorMessage("録画を中断しました。もう一度録画してください。");
-    }
-  }, []);
-
-  useEffect(() => {
-    // SSRでは存在しないMediaRecorderの対応状況をマウント後に確認する。
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setVideoSupported(getCameraRecordingMime() !== null);
-    /** バックグラウンドの未完成動画を破棄する。@returns なし @example onHidden(); */
-    function onHidden() { if (document.hidden) cancelRecording(); }
-    document.addEventListener("visibilitychange", onHidden);
-    window.addEventListener("orientationchange", cancelRecording);
-    return () => {
-      document.removeEventListener("visibilitychange", onHidden);
-      window.removeEventListener("orientationchange", cancelRecording);
-      cancelRecording();
-      if (recordedUrlRef.current) URL.revokeObjectURL(recordedUrlRef.current);
-    };
-  }, [cancelRecording]);
-
+  const { videoSupported, recordingPhase, recordedMilliseconds, recordedClip, sharingVideo,
+    videoBusy, cancelRecording, stopRecording, beginRecording, shareRecordedVideo, canShareVideo,
+    clearRecordedClip } = useCameraVideo(unmountedRef, setErrorMessage);
 
   // StrictModeでeffectが再実行されても、起動前にマウント状態を復帰する。
   useEffect(() => {
@@ -734,63 +697,16 @@ export function CameraCapture() {
    * @example handleVideoShutter();
    */
   function handleVideoShutter(): void {
-    if (recordingRef.current) {
-      setRecordingPhase("stopping");
-      recordingRef.current.stop();
-      return;
-    }
+    if (stopRecording()) return;
     if (!canCapture || videoBusy || !videoSupported || document.hidden) return;
     if (selectedModels.length > 0 && (!detectionRef.current ||
       selectedModels.some((id) => !renderedModelsRef.current.includes(id) || !modelMapRef.current[id]?.visible))) return;
     cancelCapture();
-    setErrorMessage(null);
-    setRecordedMilliseconds(0);
-    try {
-      const output = document.createElement("canvas");
-      drawCaptureFrame(output, true, CAMERA_VIDEO_MAX_EDGE);
-      const recording = startCameraRecording(output, () => drawCaptureFrame(output, false), (ms) => setRecordedMilliseconds(Math.floor(ms / 1000) * 1000));
-      recordingRef.current = recording;
-      setRecordingPhase("recording");
-      void recording.result.then((blob) => {
-        if (unmountedRef.current || recordingRef.current !== recording) return;
-        const extension = blob.type.includes("mp4") ? "mp4" : "webm";
-        const file = new File([blob], `iwate-trip.${extension}`, { type: blob.type });
-        const url = URL.createObjectURL(file);
-        recordingRef.current = null;
-        recordedUrlRef.current = url;
-        setRecordedClip({ file, url });
-        setRecordingPhase("idle");
-        stopStream();
-        setStatus("captured");
-      }).catch(() => {
-        if (unmountedRef.current || recordingRef.current !== recording) return;
-        recordingRef.current = null;
-        setRecordingPhase("idle");
-        setErrorMessage("動画を保存できませんでした。もう一度録画するか、写真を撮ってください。");
-      });
-    } catch {
-      setRecordingPhase("idle");
-      setErrorMessage("録画を開始できませんでした。もう一度試すか、写真を撮ってください。");
-    }
+    beginRecording(drawCaptureFrame, () => {
+      stopStream();
+      setStatus("captured");
+    });
   }
-
-  /**
-   * 準備済み動画ファイルをユーザー操作と同じ実行内で共有する。
-   * @returns 共有操作の完了
-   * @example void shareRecordedVideo();
-   */
-  async function shareRecordedVideo(): Promise<void> {
-    if (!recordedClip || sharingVideoRef.current) return;
-    sharingVideoRef.current = true;
-    setSharingVideo(true);
-    setErrorMessage(null);
-    try { await navigator.share({ files: [recordedClip.file] }); } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) setErrorMessage("共有できませんでした。動画を保存して添付してください。");
-    } finally { sharingVideoRef.current = false; setSharingVideo(false); }
-  }
-
-  let canShareVideo = false;
-  try { canShareVideo = !!recordedClip && typeof navigator.share === "function" && navigator.canShare?.({ files: [recordedClip.file] }) === true; } catch { /* 保存操作は常に残す。 */ }
 
   /**
    * 表示中のカメラとキャラクターを合成し編集画面へ渡す。
@@ -841,9 +757,7 @@ export function CameraCapture() {
             <a href={recordedClip.url} download={recordedClip.file.name} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-900 px-4 text-white"><Download className="h-4 w-4" />動画を保存</a>
             {canShareVideo && <Button onClick={() => void shareRecordedVideo()} disabled={sharingVideo}><Share2 className="h-4 w-4" />動画を共有</Button>}
             <Button variant="outline" disabled={sharingVideo} onClick={() => {
-              URL.revokeObjectURL(recordedClip.url);
-              recordedUrlRef.current = null;
-              setRecordedClip(null);
+              clearRecordedClip();
               setErrorMessage(null);
               setStatus("idle");
             }}>撮影に戻る</Button>

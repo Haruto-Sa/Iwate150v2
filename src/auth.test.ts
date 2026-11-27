@@ -35,11 +35,12 @@ describe("OAuth identity", () => {
   });
   it("クライアントのsession updateでidentityとroleを上書きしない", async () => {
     const token = await captured.config!.callbacks!.jwt!({
-      token: { sub: "oauth:google:123" }, user: { id: "attacker" }, account: null,
+      token: { sub: "oauth:google:123", role: "user" }, user: { id: "attacker" }, account: null,
       trigger: "update", session: { user: { id: "other", role: "super_admin" } },
     });
     expect(token?.sub).toBe("oauth:google:123");
     expect(token?.role).toBe("user");
+    expect(captured.sync).not.toHaveBeenCalled();
   });
 });
 
@@ -48,7 +49,7 @@ describe("プロフィール最小化", () => {
     const token = await captured.config!.callbacks!.jwt!({
       token: { sub: "oauth:google:123", email: "old@example.com", name: "Old Name", picture: "https://example.com/photo", displayName: "Old Name" },
       user: { id: "123", email: "new@example.com", name: "New Name", image: "https://example.com/new" },
-      account: null, trigger: "update",
+      account: { provider: "google", providerAccountId: "123", type: "oauth" }, trigger: "signIn",
     });
     expect(captured.sync).toHaveBeenCalledWith({ identityId: "oauth:google:123" });
     expect(token).toEqual({ sub: "oauth:google:123", role: "user" });
@@ -61,5 +62,33 @@ describe("プロフィール最小化", () => {
       token: { sub: "oauth:google:123", role: "user" },
     } as unknown as Parameters<typeof callback>[0]);
     expect(result.user).toEqual({ id: "oauth:google:123", role: "user" });
+  });
+});
+
+describe("通常のセッション確認", () => {
+  it("既存Cookieの読み取りではDB同期せず、プロフィールだけ除く", async () => {
+    const token = await captured.config!.callbacks!.jwt!({
+      token: { sub: "oauth:github:123", role: "admin", email: "old@example.com", name: "Old", picture: "photo", displayName: "Old" },
+      user: { id: "ignored" }, account: null,
+    });
+    expect(token).toEqual({ sub: "oauth:github:123", role: "admin" });
+    expect(captured.sync).not.toHaveBeenCalled();
+  });
+
+  it("OAuth callbackでないuser.idから本人IDや行を作らない", async () => {
+    const token = await captured.config!.callbacks!.jwt!({ token: {}, user: { id: "unverified" }, account: null });
+    expect(token).toEqual({});
+    expect(captured.sync).not.toHaveBeenCalled();
+  });
+
+  it("同期先に行がなくてもCookie更新で再作成せず、再ログイン時だけ同期する", async () => {
+    captured.sync.mockResolvedValue(null);
+    const jwt = captured.config!.callbacks!.jwt!;
+    const existing = { sub: "oauth:google:123", role: "user" } as const;
+    await jwt({ token: { ...existing }, user: { id: "123" }, account: null });
+    await jwt({ token: { ...existing }, user: { id: "123" }, account: null, trigger: "update", session: {} });
+    expect(captured.sync).not.toHaveBeenCalled();
+    expect((await login("new-id", "google"))?.sub).toBe(existing.sub);
+    expect(captured.sync).toHaveBeenCalledTimes(1);
   });
 });

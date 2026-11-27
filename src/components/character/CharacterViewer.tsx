@@ -1,12 +1,13 @@
 "use client";
 
-import { addViewerLights, createViewerControls } from "./characterScene";
+import { startViewerAnimation, observeViewerResize, logViewerLoadFailure, logViewerModelLoaded } from "./characterRuntime";
+import { addViewerLights, createViewerControls, createViewerScene, SCENE_BG_COLOR } from "./characterScene";
 import { fitObjectToView } from "./characterViewFit";
 import { applyRenderProfile } from "./characterRenderProfile";
 import { applyLegacyMeshFixes } from "@/lib/characterMaterials";
-import { loadModelFromCandidates, type ModelLoadError, type ModelLoadSuccess } from "./characterModelLoader";
+import { loadModelFromCandidates, type ModelLoadSuccess } from "./characterModelLoader";
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Minus, Plus, RotateCw, RefreshCw, RotateCcw } from "lucide-react";
@@ -35,7 +36,6 @@ type Props = {
 type ViewerErrorType = "model" | "webgl";
 
 /** シーン背景色（純白を避けて白モデルでも視認できるようにする） */
-const SCENE_BG_COLOR = 0xf0f2ef;
 /** 各候補URLに対するデフォルトリトライ回数 */
 const DEFAULT_CANDIDATE_RETRY_COUNT = 2;
 /** 読み込み失敗時のデフォルト自動再試行回数 */
@@ -113,6 +113,84 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     rotatingRef.current = isRotating;
   }, [isRotating]);
 
+  /**
+   * fit計算後のref/state更新をコンポーネント側で管理する。
+   * @param object - 対象モデル
+   * @param reason - 初回、読込後、リサイズの区別
+   * @returns なし
+   * @example fitAndCenterObject(object, "initial");
+   */
+  const fitAndCenterObject = useCallback((
+    object: THREE.Object3D,
+    reason: "initial" | "post-load" | "resize",
+  ) => {
+    const activeCamera = cameraInstanceRef.current;
+    const activeControls = controlsInstanceRef.current;
+    if (!activeCamera || !activeControls) return;
+
+    setZoom(1);
+    const { distance, scale, centeredSize } = fitObjectToView({
+      object, camera: activeCamera, controls: activeControls,
+      baseTransform: {
+        position: basePositionRef.current,
+        quaternion: baseQuaternionRef.current,
+        scale: baseScaleVectorRef.current,
+        restore: hasBaseTransformRef.current,
+      },
+      profileOffset: profileOffsetRef.current,
+      minDistance: reason === "post-load" ? initialCameraDistanceRef.current : 0,
+    });
+    baseScaleRef.current = scale;
+    if (reason !== "post-load") initialCameraDistanceRef.current = distance;
+    console.info("[CharacterViewer] fit and center complete", {
+      characterId,
+      reason,
+      cameraDistance: distance,
+      bounds: {
+        x: centeredSize.x,
+        y: centeredSize.y,
+        z: centeredSize.z,
+      },
+    });
+  }, [characterId]);
+
+  /**
+   * 読込失敗後の自動再試行・エラー表示を更新する。
+   * @returns なし
+   * @example handleModelFailure();
+   */
+  const handleModelFailure = useCallback(() => {
+    const normalizedAutoRetryCount = Math.max(0, Math.floor(autoRetryCount));
+    const canAutoRetry =
+      normalizedAutoRetryCount > 0 &&
+      autoRetriedSessionKeyRef.current !== viewerSessionKey &&
+      autoRetryNonce < normalizedAutoRetryCount;
+    if (canAutoRetry) {
+      autoRetriedSessionKeyRef.current = viewerSessionKey;
+      setAutoRetryNonce((value) => value + 1);
+      return;
+    }
+
+    setErrorType("model");
+    setErrorMessage("読み込みに時間がかかっています。時間をおいて再試行してください。");
+    setStatus("error");
+  }, [autoRetryCount, viewerSessionKey, autoRetryNonce]);
+
+  /**
+   * 描画器破棄後のカメラと補正参照を初期値へ戻す。
+   * @returns なし
+   * @example resetViewerReferences();
+   */
+  const resetViewerReferences = useCallback(() => {
+    controlsInstanceRef.current = null;
+    cameraInstanceRef.current = null;
+    profileOffsetRef.current = new THREE.Vector3();
+    hasBaseTransformRef.current = false;
+    basePositionRef.current = new THREE.Vector3();
+    baseQuaternionRef.current = new THREE.Quaternion();
+    baseScaleVectorRef.current = new THREE.Vector3(1, 1, 1);
+  }, []);
+
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
@@ -161,19 +239,13 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
         frameId = requestAnimationFrame(waitForReadyViewport);
       };
       frameId = requestAnimationFrame(waitForReadyViewport);
-      return () => {
-        cancelAnimationFrame(frameId);
-      };
+      return () => cancelAnimationFrame(frameId);
     }
     const width = initialWidth;
     const height = initialHeight;
     console.info("[CharacterViewer] init viewport", { characterId, width, height });
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(SCENE_BG_COLOR);
-
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.01, 500);
-    camera.position.set(0, 1.2, 3.4);
+    const { scene, camera } = createViewerScene(width, height);
     cameraInstanceRef.current = camera;
 
     let renderer: THREE.WebGLRenderer;
@@ -203,40 +275,6 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     let cancelled = false;
     let postLoadRefitFrame = 0;
 
-    const fitAndCenterObject = (
-      object: THREE.Object3D,
-      reason: "initial" | "post-load" | "resize",
-    ) => {
-      const activeCamera = cameraInstanceRef.current;
-      const activeControls = controlsInstanceRef.current;
-      if (!activeCamera || !activeControls) return;
-
-      setZoom(1);
-      const { distance, scale, centeredSize } = fitObjectToView({
-        object, camera: activeCamera, controls: activeControls,
-        baseTransform: {
-          position: basePositionRef.current,
-          quaternion: baseQuaternionRef.current,
-          scale: baseScaleVectorRef.current,
-          restore: hasBaseTransformRef.current,
-        },
-        profileOffset: profileOffsetRef.current,
-        minDistance: reason === "post-load" ? initialCameraDistanceRef.current : 0,
-      });
-      baseScaleRef.current = scale;
-      if (reason !== "post-load") initialCameraDistanceRef.current = distance;
-      console.info("[CharacterViewer] fit and center complete", {
-        characterId,
-        reason,
-        cameraDistance: distance,
-        bounds: {
-          x: centeredSize.x,
-          y: centeredSize.y,
-          z: centeredSize.z,
-        },
-      });
-    };
-
     const addModel = ({
       object,
       modelUrl,
@@ -244,12 +282,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       stage,
     }: ModelLoadSuccess) => {
       if (cancelled) return;
-      console.info("[CharacterViewer] candidate load succeeded", {
-        characterId,
-        stage,
-        modelUrl,
-        mtlUrl,
-      });
+      logViewerModelLoaded({ stage, modelUrl, mtlUrl }, characterId);
       applyLegacyMeshFixes(object, renderProfile);
       const profileOffset = applyRenderProfile(object, renderProfile);
       profileOffsetRef.current = disableProfilePositionOffset ? new THREE.Vector3() : profileOffset;
@@ -275,86 +308,28 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     )
       .then((payload) => addModel(payload))
       .catch((error) => {
-        const errorWithMeta = error as ModelLoadError;
-        const failures = errorWithMeta.failures ?? [];
-        console.warn("[CharacterViewer] all candidates failed", {
-          characterId,
-          message: errorWithMeta.message,
-          failureCount: failures.length,
-          failures: failures.map((failure) => ({
-            stage: failure.stage,
-            modelUrl: failure.modelUrl,
-            mtlUrl: failure.mtlUrl,
-            reason: failure.error instanceof Error ? failure.error.message : String(failure.error),
-          })),
-        });
+        logViewerLoadFailure(error, characterId);
         if (cancelled) return;
 
-        const normalizedAutoRetryCount = Math.max(0, Math.floor(autoRetryCount));
-        const canAutoRetry =
-          normalizedAutoRetryCount > 0 &&
-          autoRetriedSessionKeyRef.current !== viewerSessionKey &&
-          autoRetryNonce < normalizedAutoRetryCount;
-        if (canAutoRetry) {
-          autoRetriedSessionKeyRef.current = viewerSessionKey;
-          setAutoRetryNonce((value) => value + 1);
-          return;
-        }
-
-        setErrorType("model");
-        setErrorMessage("読み込みに時間がかかっています。時間をおいて再試行してください。");
-        setStatus("error");
+        handleModelFailure();
       });
 
-    let frame = 0;
-    const animate = () => {
-      frame = requestAnimationFrame(animate);
-      if (rotatingRef.current && objectRef.current) {
-        objectRef.current.rotation.y += 0.01;
-      }
-      controls.update();
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const handleResize = () => {
-      if (!mountRef.current) return;
-      const w = mountRef.current.clientWidth || width;
-      const h = mountRef.current.clientHeight || height;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-      console.info("[CharacterViewer] viewport resized", { characterId, width: w, height: h });
-      if (objectRef.current) {
-        fitAndCenterObject(objectRef.current, "resize");
-      }
-    };
-
-    let resizeObserver: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(() => handleResize());
-      resizeObserver.observe(mount);
-    } else {
-      window.addEventListener("resize", handleResize);
-    }
+    const stopAnimation = startViewerAnimation({ scene, camera, renderer, controls, objectRef, rotatingRef });
+    const stopResize = observeViewerResize({
+      mount, mountRef, width, height, camera, renderer, characterId,
+      onResize: () => {
+        if (objectRef.current) fitAndCenterObject(objectRef.current, "resize");
+      },
+    });
 
     return () => {
       cancelled = true;
-      resizeObserver?.disconnect();
-      if (!resizeObserver) {
-        window.removeEventListener("resize", handleResize);
-      }
+      stopResize();
       cancelAnimationFrame(postLoadRefitFrame);
-      cancelAnimationFrame(frame);
+      stopAnimation();
       controls.dispose();
       renderer.dispose();
-      controlsInstanceRef.current = null;
-      cameraInstanceRef.current = null;
-      profileOffsetRef.current = new THREE.Vector3();
-      hasBaseTransformRef.current = false;
-      basePositionRef.current = new THREE.Vector3();
-      baseQuaternionRef.current = new THREE.Quaternion();
-      baseScaleVectorRef.current = new THREE.Vector3(1, 1, 1);
+      resetViewerReferences();
       if (objectRef.current) {
         scene.remove(objectRef.current);
         objectRef.current = null;
@@ -363,7 +338,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
         mount.removeChild(renderer.domElement);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- candidatesKey は normalizedModel/MtlCandidates の値ベースのキー
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- 候補値は candidatesKey、各callbackの更新条件は下記依存に含む（resetはrefのみ）
   }, [
     characterId,
     candidatesKey,

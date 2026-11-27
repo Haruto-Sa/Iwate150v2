@@ -173,5 +173,7 @@ test("全5モデルを表示し拡大・縮小・回転・リセットできる"
     await expect(page.getByRole("button", { name: "回転", exact: true })).toBeVisible();
     expect(Math.abs((await readViewerFrame(page)).painted - initial.painted)).toBeLessThan(0.02);
     await page.screenshot({ path: info.outputPath(`viewer-${character.id}.png`), animations: "disabled" });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: info.outputPath(`viewer-full-${character.id}.png`), fullPage: true, animations: "disabled" });
   }
 });

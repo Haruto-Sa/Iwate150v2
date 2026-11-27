@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { isSpotEditorialPick } from "@/lib/spotEditorialPicks";
 import type { SpotVisitorStatistic } from "@/lib/spotVisitorStatistics";
 import type { Spot } from "@/lib/types";
 import { getSpotHref } from "@/lib/spotRoutes";
@@ -33,6 +34,11 @@ export function SpotCard({
         <p className="mb-2 text-xs tracking-wider text-app-accent-ink">
           {cityName ?? "岩手県"}
         </p>
+        {isSpotEditorialPick(spot, cityName) && (
+          <span className="mb-2 inline-flex rounded-full border border-app-line/20 bg-app-surface-soft px-3 py-1 text-xs font-medium text-app-accent-ink">
+            編集おすすめ
+          </span>
+        )}
         <h3 className="font-display text-xl leading-relaxed text-app-ink-strong">
           {spot.name}
         </h3>

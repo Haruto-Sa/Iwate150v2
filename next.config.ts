@@ -96,7 +96,8 @@ export default process.env.NODE_ENV === "production"
   ? withSerwistInit({
       swSrc: "src/app/sw.ts",
       swDest: "public/sw.js",
-      cacheOnNavigation: true,
+      // 補助Workerによる直接保存は、管理画面のNetworkOnly規則を迂回するため無効にする。
+      cacheOnNavigation: false,
       additionalPrecacheEntries: [
         {
           url: "/offline",

@@ -24,7 +24,7 @@ export default function NotFoundPage() {
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
       <div className="w-full max-w-md text-center">
         {/* 大きな数字 */}
-        <p className="font-display mb-2 text-8xl font-bold text-emerald-200 select-none">404</p>
+        <p className="font-display mb-2 text-8xl font-bold text-app-ink-muted select-none">404</p>
 
         {/* タイトル */}
         <h1 className="text-balance font-display mb-2 text-2xl leading-relaxed text-app-ink-strong">ページが見つかりません</h1>

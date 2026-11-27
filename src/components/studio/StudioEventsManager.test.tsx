@@ -20,6 +20,20 @@ describe("StudioEventsManager", () => {
     vi.restoreAllMocks();
   });
 
+  it("同じ編集対象では入力を保持し、同じIDの更新データではフォームを更新する", async () => {
+    const editingEvent = { id: 5, title: "元のイベント", location: "盛岡", start_date: "2026-03-12", end_date: "2026-03-13", city_id: 1 };
+    const props = { items: [], total: 0, page: 1, pageSize: 20, hasNext: false,
+      cities: [{ id: 1, name: "盛岡市" }],  editingEvent };
+    const { rerender } = render(<StudioEventsManager {...props} />);
+    const user = userEvent.setup();
+    await user.clear(screen.getByLabelText("タイトル"));
+    await user.type(screen.getByLabelText("タイトル"), "編集中");
+    rerender(<StudioEventsManager {...props} total={1} />);
+    expect(screen.getByLabelText("タイトル")).toHaveValue("編集中");
+    rerender(<StudioEventsManager {...props} editingEvent={{ ...editingEvent, title: "更新済み" }} />);
+    expect(screen.getByLabelText("タイトル")).toHaveValue("更新済み");
+  });
+
   it("switches between edit and create form values", () => {
     const { rerender } = render(
       <StudioEventsManager

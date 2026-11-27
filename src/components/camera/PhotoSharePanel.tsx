@@ -39,6 +39,8 @@ export function PhotoSharePanel({ build, hasPhoto }: { build: () => Promise<Blob
   useEffect(() => {
     if (!file) return;
     const url = URL.createObjectURL(file);
+    // Blob URLは外部リソース。effectで生成・破棄し、生成済みURLだけを表示へ渡す。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDownloadUrl({ file, url });
     return () => URL.revokeObjectURL(url);
   }, [file]);

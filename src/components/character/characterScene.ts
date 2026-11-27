@@ -1,6 +1,23 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+export const SCENE_BG_COLOR = 0xf0f2ef;
+
+/**
+ * ビューアの背景と透視カメラを既存の設定で作る。
+ * @param width - 初期表示幅
+ * @param height - 初期表示高さ
+ * @returns 表示シーンと初期位置のカメラ
+ * @example const { scene, camera } = createViewerScene(width, height);
+ */
+export function createViewerScene(width: number, height: number): { scene: THREE.Scene; camera: THREE.PerspectiveCamera } {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(SCENE_BG_COLOR);
+  const camera = new THREE.PerspectiveCamera(38, width / height, 0.01, 500);
+  camera.position.set(0, 1.2, 3.4);
+  return { scene, camera };
+}
+
 /**
  * ビューア共通の4灯を既存の色・強度・位置で追加する。
  * @param scene - 表示シーン

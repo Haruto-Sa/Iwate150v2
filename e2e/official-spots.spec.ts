@@ -10,7 +10,7 @@ for (const spot of officialSpots) test(`${spot.name}を地域とジャンルで�
   const card = page.getByRole("article");
   await expect(card.getByRole("heading", { name: spot.name, exact: true })).toBeVisible();
   await expect(card.locator("img")).toHaveCount(0);
-  await card.getByRole("link").first().click();
+  await card.getByRole("link", { name: `${spot.name}の詳細を見る`, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/spots/${spot.mockId}$`));
   await expect(page.getByRole("heading", { name: spot.name, exact: true })).toBeVisible();
   await page.getByRole("button", { name: "関連サイトを見る", exact: true }).click();

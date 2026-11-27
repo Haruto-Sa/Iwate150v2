@@ -15,6 +15,15 @@ describe("個別スポット統計の照合", () => {
     expect(findSpotVisitorStatistic({ name: "龍泉洞" }, "盛岡市")).toBeNull();
     expect(findSpotVisitorStatistic({ name: "龍泉洞" })).toBeNull();
   });
+  it("歴史文化館の施設入場者数を別施設や別自治体へ流用しない", () => {
+    expect(findSpotVisitorStatistic({ name: "もりおか歴史文化館" }, "盛岡市")).toMatchObject({
+      count: 249188, period: "2024年度", metric: "入場者数", unit: "人", sourcePage: 1,
+      sourceUrl: "https://www.city.morioka.iwate.jp/_res/projects/default_project/_page_/001/039/501/R6_shiminnoseikatsu.pdf#page=1",
+    });
+    expect(findSpotVisitorStatistic({ name: "もりおか歴史文化館" }, "岩泉町")).toBeNull();
+    expect(findSpotVisitorStatistic({ name: "盛岡市子ども科学館" }, "盛岡市")).toBeNull();
+    expect(findSpotVisitorStatistic({ name: "盛岡城跡公園" }, "盛岡市")).toBeNull();
+  });
   it("未掲載はゼロとして補完しない", () => {
     expect(findSpotVisitorStatistic({ name: "中尊寺 金色堂" }, "平泉町")).toBeNull();
   });

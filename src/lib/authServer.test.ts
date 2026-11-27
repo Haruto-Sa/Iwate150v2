@@ -20,6 +20,30 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("プロフィールを保存しないユーザー同期", () => {
+  it("削除済みプロフィールは書き込まず毎回DBの現在の権限を返す", async () => {
+    const existing = { id: 1, role: "admin", email: null, display_name: "Traveler" };
+    db.single.mockResolvedValue({ data: existing, error: null });
+    db.maybeSingle.mockResolvedValueOnce({ data: existing, error: null })
+      .mockResolvedValueOnce({ data: { ...existing, role: "user" }, error: null });
+    expect((await syncAppUserFromIdentity({ identityId: "oauth:google:123" }))?.role).toBe("admin");
+    expect(db.update).not.toHaveBeenCalled();
+    expect((await syncAppUserFromIdentity({ identityId: "oauth:google:123" }))?.role).toBe("user");
+    expect(db.maybeSingle).toHaveBeenCalledTimes(2);
+    expect(db.update).not.toHaveBeenCalled();
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { email: "old@example.com", display_name: "Traveler" },
+    { email: null, display_name: "Old Name" },
+  ])("一方のプロフィールだけが残っていても削除する: %j", async (profile) => {
+    const existing = { id: 1, role: "user", ...profile };
+    db.maybeSingle.mockResolvedValue({ data: existing, error: null });
+    db.single.mockResolvedValue({ data: { ...existing, email: null, display_name: "Traveler" }, error: null });
+    await syncAppUserFromIdentity({ identityId: "oauth:google:123" });
+    expect(db.update).toHaveBeenCalledWith({ email: null, display_name: "Traveler" });
+  });
+
   it("新規登録では識別子・固定表示名・一般ロールだけを保存する", async () => {
     db.maybeSingle.mockResolvedValue({ data: null, error: null });
     db.single.mockResolvedValue({ data: { id: 1, role: "user" }, error: null });

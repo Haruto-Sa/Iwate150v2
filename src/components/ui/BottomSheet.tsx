@@ -13,6 +13,8 @@ type Props = {
   onClose: () => void;
   children: React.ReactNode;
   className?: string;
+  lang?: string;
+  closeLabel?: string;
 };
 
 /**
@@ -29,6 +31,8 @@ export function BottomSheet({
   onClose,
   children,
   className = "",
+  lang,
+  closeLabel,
 }: Props) {
   const isMobileViewport = useIsMobileViewport();
   const shouldRender = open && isMobileViewport;
@@ -42,6 +46,7 @@ export function BottomSheet({
 
   return (
     <dialog
+      lang={lang}
       ref={dialogRef}
       aria-labelledby={titleId}
       onCancel={(event) => {
@@ -62,13 +67,14 @@ export function BottomSheet({
             {title}
           </h2>
           <Button
-            aria-label={`${title} を閉じる`}
+            iconOnly
+            aria-label={closeLabel ?? `${title} を閉じる`}
             variant="ghost"
             size="sm"
             className="rounded-full border border-emerald-900/10 bg-white/70"
             onClick={onClose}
           >
-            <X className="h-4 w-4" />
+            <X aria-hidden="true" className="h-4 w-4" />
           </Button>
         </div>
         {children}

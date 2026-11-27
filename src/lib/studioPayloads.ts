@@ -1,3 +1,5 @@
+import { ApiError } from "@/lib/apiGuards";
+
 import type {
   AdminEventCreateInput,
   AdminEventUpdateInput,
@@ -12,6 +14,9 @@ import {
   parseRequiredNumber,
   parseRequiredString,
 } from "@/lib/studioApi";
+
+export const SPOT_FIELDS = ["name", "description", "city_id", "genre_id", "lat", "lng", "image_thumb_path", "image_path", "model_path", "reference_url"] as const;
+export const EVENT_FIELDS = ["title", "location", "start_date", "end_date", "city_id"] as const;
 
 /**
  * スポット作成入力を検証する。
@@ -60,7 +65,7 @@ export function parseSpotUpdateInput(input: Record<string, unknown>): AdminSpotU
   if ("reference_url" in input) payload.reference_url = parseOptionalString(input.reference_url);
 
   if (Object.keys(payload).length === 0) {
-    throw new Error("At least one field is required for update.");
+    throw new ApiError(400, "At least one field is required for update.");
   }
   return payload;
 }
@@ -110,7 +115,7 @@ export function parseEventUpdateInput(
   if ("end_date" in input) payload.end_date = parseOptionalDate(input.end_date, "end_date");
 
   if (Object.keys(payload).length === 0) {
-    throw new Error("At least one field is required for update.");
+    throw new ApiError(400, "At least one field is required for update.");
   }
 
   assertEventDateOrder(payload.start_date ?? current.start_date ?? null, payload.end_date ?? current.end_date ?? null);
@@ -129,7 +134,7 @@ export function parseEventUpdateInput(
  */
 function assertEventDateOrder(startDate: string | null, endDate: string | null): void {
   if (startDate && endDate && endDate < startDate) {
-    throw new Error("end_date must be on or after start_date.");
+    throw new ApiError(400, "end_date must be on or after start_date.");
   }
 }
 

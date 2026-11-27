@@ -2,7 +2,8 @@
 
 import { CAPTURED_PHOTO_KEY, CAPTURED_DETECTION_KEY, CAPTURED_MODELS_KEY } from "@/lib/config";
 
-import { computeCoverTransform, computeCoverCrop } from "./coverFit";
+import { computeCoverTransform } from "./coverFit";
+import { initializeCameraScene, disposeCameraScene, getCameraFaceBounds, drawCameraFrame } from "./cameraRendering";
 import { toLocalAssetUrl } from "@/lib/modelAssets";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
@@ -19,7 +20,7 @@ import { forgetFailedFaceMeshInstance, acquireFaceMeshInstance, recreateFaceMesh
 import { createCameraStream, resolveActiveFacingMode, type CameraFacingMode } from "@/lib/cameraStream";
 import { getModelUrl } from "@/lib/storage";
 import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
-import * as THREE from "three";
+import type * as THREE from "three";
 import { loadCameraModel, disposeCameraModel, normalizeCameraModel } from "@/lib/cameraModel";
 
 import { CAMERA_VIDEO_MAX_MS } from "@/lib/cameraRecording";
@@ -118,34 +119,7 @@ export function CameraCapture() {
 
   // Initialize Three.js scene
   const initThreeScene = useCallback(() => {
-    if (!overlayCanvasRef.current) return;
-    if (sceneRef.current) return; // 既に初期化済みならスキップ
-
-    const width = overlayCanvasRef.current.clientWidth || 640;
-    const height = overlayCanvasRef.current.clientHeight || 480;
-
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 5);
-    cameraRef.current = camera;
-
-    const renderer = new THREE.WebGLRenderer({
-      canvas: overlayCanvasRef.current,
-      alpha: true,
-      antialias: true,
-    });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000, 0);
-    rendererRef.current = renderer;
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    directionalLight.position.set(2, 2, 2);
-    scene.add(directionalLight);
+    initializeCameraScene({ overlayCanvasRef, sceneRef, cameraRef, rendererRef });
   }, []);
 
   /**
@@ -199,21 +173,7 @@ export function CameraCapture() {
       setDetection(null);
       return;
     }
-    const lm = results.multiFaceLandmarks[0];
-    // 内カメ(user)はミラー表示のためx反転、外カメ(environment)はそのまま
-    const isFront = activeFacingModeRef.current === "user";
-    const xs = lm.map((p) => (isFront ? 1 - p.x : p.x));
-    const ys = lm.map((p) => p.y);
-    const minX = Math.max(0, Math.min(...xs));
-    const maxX = Math.min(1, Math.max(...xs));
-    const minY = Math.max(0, Math.min(...ys));
-    const maxY = Math.min(1, Math.max(...ys));
-    const newDetection = {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
-    };
+    const newDetection = getCameraFaceBounds(results.multiFaceLandmarks[0], activeFacingModeRef.current === "user");
     markCameraTiming("face:first-detected");
     detectionRef.current = newDetection;
     const now = performance.now();
@@ -636,9 +596,7 @@ export function CameraCapture() {
       pendingLoads.clear();
       for (const object of Object.values(modelMapRef.current)) disposeCameraModel(object);
       modelMapRef.current = {};
-      sceneRef.current?.clear();
-      rendererRef.current?.dispose();
-      rendererRef.current?.forceContextLoss();
+      disposeCameraScene({ sceneRef, rendererRef });
       faceMeshRef.current?.onResults(() => undefined);
       faceMeshRef.current = null;
     };
@@ -653,42 +611,12 @@ export function CameraCapture() {
    * @example drawCaptureFrame(canvas, true, CAMERA_VIDEO_MAX_EDGE);
    */
   function drawCaptureFrame(canvas: HTMLCanvasElement, resize: boolean, maxEdge?: number): void {
-    const video = videoRef.current;
-    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) throw new Error("Camera frame unavailable");
-    const previewWidth = video.clientWidth || 720;
-    const previewHeight = video.clientHeight || 480;
-    const sourceWidth = video.videoWidth || 1280;
-    const sourceHeight = video.videoHeight || 720;
-    const { sx, sy, sw, sh } = computeCoverCrop(
-      sourceWidth, sourceHeight,
-      resize ? previewWidth : canvas.width,
-      resize ? previewHeight : canvas.height,
-    );
-
-    if (resize) {
-      const scale = maxEdge ? Math.min(1, maxEdge / Math.max(sw, sh)) : 1;
-      canvas.width = Math.max(1, Math.round(sw * scale));
-      canvas.height = Math.max(1, Math.round(sh * scale));
-    }
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas unavailable");
-
-    if (activeFacingMode === "user") {
-      ctx.save();
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
-    } else {
-      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-    }
-
-    if (selectedModels.length > 0 && overlayCanvasRef.current && rendererRef.current && sceneRef.current && cameraRef.current) {
-      // 最新フレームを描画してから重ねる
-      rendererRef.current.render(sceneRef.current, cameraRef.current);
-      ctx.drawImage(overlayCanvasRef.current, 0, 0, canvas.width, canvas.height);
-    }
-
+    drawCameraFrame({
+      video: videoRef.current, canvas, resize, maxEdge,
+      mirrored: activeFacingMode === "user", hasSelectedModels: selectedModels.length > 0,
+      overlayCanvas: overlayCanvasRef.current, renderer: rendererRef.current,
+      scene: sceneRef.current, camera: cameraRef.current,
+    });
   }
 
   /**

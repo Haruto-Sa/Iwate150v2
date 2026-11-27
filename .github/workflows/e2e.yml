@@ -15,11 +15,17 @@ concurrency:
 
 jobs:
   playwright:
-    name: playwright (${{ matrix.project }})
+    name: playwright (${{ matrix.project }}, ${{ matrix.shard }}/${{ matrix.total }})
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium, screenshots, webkit-ui, iphone, android]
+        include:
+          - { project: chromium, shard: 1, total: 1 }
+          - { project: screenshots, shard: 1, total: 1 }
+          - { project: webkit-ui, shard: 1, total: 2 }
+          - { project: webkit-ui, shard: 2, total: 2 }
+          - { project: iphone, shard: 1, total: 1 }
+          - { project: android, shard: 1, total: 1 }
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # bun.lockのPlaywrightと揃え、毎回のOS依存ダウンロードを避ける。
@@ -33,12 +39,12 @@ jobs:
           node-version-file: .node-version
       - run: npm install --global bun@1.3.4
       - run: bun install --frozen-lockfile
-      - run: bunx playwright test --project=${{ matrix.project }} --workers=1
+      - run: bunx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.total }} --workers=1
       - name: Upload E2E diagnostics
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: playwright-${{ matrix.project }}-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             playwright-report/
             test-results/

@@ -83,7 +83,7 @@ export function ShareButton({ title, text, url }: Props) {
         /* Web Share API 対応環境 */
         <button
           onClick={handleNativeShare}
-          className="interactive-lift inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white shadow-md transition duration-200 hover:bg-emerald-800"
+          className="interactive-lift inline-flex min-h-11 items-center gap-2 rounded-2xl bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white shadow-md transition duration-200 hover:bg-emerald-800"
         >
           <Share2 className="h-4 w-4" />
           シェアする
@@ -96,7 +96,7 @@ export function ShareButton({ title, text, url }: Props) {
             href={twitterHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="interactive-lift inline-flex items-center gap-2 rounded-2xl border border-[#1d9bf0]/30 bg-[#1d9bf0]/10 px-4 py-2 text-sm font-medium text-[#1d9bf0] transition duration-200 hover:bg-[#1d9bf0]/20"
+            className="interactive-lift inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[#1d9bf0]/30 bg-[#1d9bf0]/10 px-4 py-2 text-sm font-medium text-app-info transition duration-200 hover:bg-[#1d9bf0]/20"
             aria-label="X(Twitter) でシェア"
           >
             <Twitter className="h-4 w-4" />
@@ -108,7 +108,7 @@ export function ShareButton({ title, text, url }: Props) {
             href={lineHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="interactive-lift inline-flex items-center gap-2 rounded-2xl border border-[#06C755]/30 bg-[#06C755]/10 px-4 py-2 text-sm font-medium text-[#06C755] transition duration-200 hover:bg-[#06C755]/20"
+            className="interactive-lift inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[#06C755]/30 bg-[#06C755]/10 px-4 py-2 text-sm font-medium text-app-accent-ink transition duration-200 hover:bg-[#06C755]/20"
             aria-label="LINE でシェア"
           >
             <span className="font-bold text-xs leading-none">LINE</span>
@@ -118,7 +118,7 @@ export function ShareButton({ title, text, url }: Props) {
           {/* URLコピー */}
           <button
             onClick={handleCopy}
-            className="interactive-lift inline-flex items-center gap-2 rounded-2xl border border-app-line/20 bg-app-surface/80 px-4 py-2 text-sm font-medium text-app-ink transition duration-200 hover:bg-app-surface"
+            className="interactive-lift inline-flex min-h-11 items-center gap-2 rounded-2xl border border-app-line/20 bg-app-surface/80 px-4 py-2 text-sm font-medium text-app-ink transition duration-200 hover:bg-app-surface"
             aria-label="URLをコピー"
           >
             {copied ? (

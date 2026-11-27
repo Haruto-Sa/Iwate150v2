@@ -253,7 +253,7 @@ export default function CharacterPage() {
               >
                 <div className="min-w-0">
                   <p className="break-words text-sm font-semibold leading-tight">{character.name}</p>
-                  <p className="break-words text-xs opacity-70">{character.region}</p>
+                  <p className="break-words text-xs opacity-80">{character.region}</p>
                 </div>
               </Button>
             );

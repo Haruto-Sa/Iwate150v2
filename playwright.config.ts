@@ -60,7 +60,7 @@ export default defineConfig({
     },
     {
       name: "webkit-ui",
-      testMatch: ["**/public-focus.spec.ts", "**/integration-appearance.spec.ts", "**/color-theme.spec.ts", "**/page-guides.spec.ts", "**/menu-language.spec.ts", "**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/spot-detail.spec.ts", "**/character-assets.spec.ts", "**/camera-capture.spec.ts", "**/photo-sharing.spec.ts", "**/official-spots.spec.ts", "**/spot-statistics.spec.ts", "**/delete-own-data.spec.ts", "**/private-api.spec.ts", "**/app-icons.spec.ts"],
+      testMatch: ["**/public-accessibility.spec.ts", "**/public-focus.spec.ts", "**/integration-appearance.spec.ts", "**/color-theme.spec.ts", "**/page-guides.spec.ts", "**/menu-language.spec.ts", "**/screenshots.spec.ts", "**/dialogs.spec.ts", "**/favorites.spec.ts", "**/stamps.spec.ts", "**/spot-detail.spec.ts", "**/character-assets.spec.ts", "**/camera-capture.spec.ts", "**/photo-sharing.spec.ts", "**/official-spots.spec.ts", "**/spot-statistics.spec.ts", "**/delete-own-data.spec.ts", "**/private-api.spec.ts", "**/app-icons.spec.ts"],
       use: { ...devices["Desktop Safari"] },
     },
   ],

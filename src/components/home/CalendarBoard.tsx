@@ -154,7 +154,7 @@ export function CalendarBoard({ events }: Props) {
               </span>
               <span
                 aria-hidden="true"
-                className={`mt-1 h-1 w-1 rounded-full ${count ? (isSelected ? "bg-app-surface" : "bg-[#a14432]") : "bg-transparent"}`}
+                className={`mt-1 h-1 w-1 rounded-full ${count ? (isSelected ? "bg-white" : "bg-app-highlight") : "bg-transparent"}`}
               />
             </button>
           );

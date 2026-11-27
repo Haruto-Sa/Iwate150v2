@@ -36,7 +36,7 @@ jobs:
       - run: bunx playwright test --project=${{ matrix.project }} --workers=1
       - name: Upload E2E diagnostics
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-${{ matrix.project }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |

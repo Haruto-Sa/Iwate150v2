@@ -1,5 +1,8 @@
 "use client";
 
+import { CAPTURED_PHOTO_KEY, CAPTURED_DETECTION_KEY, CAPTURED_MODELS_KEY } from "@/lib/config";
+
+import { computeCoverTransform, computeCoverCrop } from "./coverFit";
 import { toLocalAssetUrl } from "@/lib/modelAssets";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
@@ -9,8 +12,8 @@ import { Button } from "@/components/ui/Button";
 import { characterModelCatalog, characters } from "@/lib/characters";
 import { useCaptureTimer, type CaptureDelay } from "@/hooks/useCaptureTimer";
 import { markCameraTiming, resetCameraTimings } from "@/lib/cameraTimings";
-import { createCameraFaceWorker, type CameraFaceTracker, type CameraFaceResults } from "@/lib/cameraFaceWorker";
-import { createCameraStream } from "@/lib/cameraStream";
+import { forgetFailedFaceMeshInstance, acquireFaceMeshInstance, recreateFaceMeshInstance, isFaceMeshModuleArgumentsError, type FaceMeshInstance, type FaceMeshResults, type FaceResultsHandler } from "./faceMesh";
+import { createCameraStream, resolveActiveFacingMode, type CameraFacingMode } from "@/lib/cameraStream";
 import { getModelUrl } from "@/lib/storage";
 import { resolveClientStorageUrl } from "@/lib/storageSignedClient";
 import * as THREE from "three";
@@ -22,147 +25,9 @@ import { layoutCameraModels } from "@/lib/cameraModelLayout";
 
 type Detection = { x: number; y: number; width: number; height: number } | null;
 
-type FaceMeshInstance = CameraFaceTracker;
-type FaceMeshResults = CameraFaceResults;
 type CameraStream = ReturnType<typeof createCameraStream>;
-type FaceResultsHandler = (results: FaceMeshResults) => void;
 type ModelLoadStatus = "idle" | "loading" | "ready" | "error";
 type ModelSource = { modelUrl: string; mtlUrl: string | null };
-type FaceMeshConstructor = typeof import("@mediapipe/face_mesh").FaceMesh;
-type CameraFacingMode = "user" | "environment";
-
-const MEDIAPIPE_FACE_MESH_ASSET_BASE =
-  process.env.NEXT_PUBLIC_MEDIAPIPE_FACE_MESH_ASSET_BASE ?? "/mediapipe/face_mesh";
-
-/**
- * MediaPipe の locateFile で利用するアセットURLを組み立てる。
- *
- * SIMD 版で不安定になる環境向けに non-SIMD バイナリへ寄せる。
- *
- * @param file - MediaPipe から要求されるファイル名
- * @returns 配信先 URL
- * @example
- * const url = resolveFaceMeshAssetUrl("face_mesh_solution_simd_wasm_bin.js");
- */
-function resolveFaceMeshAssetUrl(file: string): string {
-  const normalizedFile = file
-    .replace("face_mesh_solution_simd_wasm_bin.js", "face_mesh_solution_wasm_bin.js")
-    .replace("face_mesh_solution_simd_wasm_bin.wasm", "face_mesh_solution_wasm_bin.wasm");
-  return `${MEDIAPIPE_FACE_MESH_ASSET_BASE}/${normalizedFile}`;
-}
-
-/**
- * MediaPipe Solutions のグローバル関数を初期化前にリセットする。
- *
- * HMR や再初期化時に古いインスタンス状態が残るのを防ぐ。
- *
- * @returns なし
- * @example
- * resetMediaPipeSolutionGlobals();
- */
-function resetMediaPipeSolutionGlobals(): void {
-  const globalScope = globalThis as typeof globalThis & Record<string, unknown>;
-  globalScope.createMediapipeSolutionsWasm = undefined;
-  globalScope.createMediapipeSolutionsPackedAssets = undefined;
-}
-
-/**
- * MediaPipe モジュールから実体の export を解決する。
- *
- * bundler によって named export が `default` や `module.exports` 配下へ
- * ぶら下がるため、その差を吸収する。
- *
- * @param moduleNamespace - dynamic import の戻り値
- * @param exportName - 取り出したい export 名
- * @returns 見つかった export。未検出時は null
- * @example
- * const FaceMeshCtor = resolveMediaPipeExport(moduleNamespace, "FaceMesh");
- */
-function resolveMediaPipeExport<T>(
-  moduleNamespace: unknown,
-  exportName: string
-): T | null {
-  if (!moduleNamespace || (typeof moduleNamespace !== "object" && typeof moduleNamespace !== "function")) {
-    return readMediaPipeGlobalExport<T>(exportName);
-  }
-
-  const namespaceRecord = moduleNamespace as Record<string, unknown>;
-  const direct = namespaceRecord[exportName];
-  if (direct) return direct as T;
-
-  const defaultNamespace = namespaceRecord.default;
-  if (defaultNamespace && (typeof defaultNamespace === "object" || typeof defaultNamespace === "function")) {
-    const defaultRecord = defaultNamespace as Record<string, unknown>;
-    const defaultExport = defaultRecord[exportName];
-    if (defaultExport) return defaultExport as T;
-    if (typeof defaultNamespace === "function" && defaultNamespace.name === exportName) {
-      return defaultNamespace as T;
-    }
-  }
-
-  const commonJsNamespace = namespaceRecord["module.exports"];
-  if (commonJsNamespace && (typeof commonJsNamespace === "object" || typeof commonJsNamespace === "function")) {
-    const commonJsRecord = commonJsNamespace as Record<string, unknown>;
-    const commonJsExport = commonJsRecord[exportName];
-    if (commonJsExport) return commonJsExport as T;
-    if (typeof commonJsNamespace === "function" && commonJsNamespace.name === exportName) {
-      return commonJsNamespace as T;
-    }
-  }
-
-  return readMediaPipeGlobalExport<T>(exportName);
-}
-
-/**
- * MediaPipe が global へ公開した constructor を読む。
- *
- * 一部の UMD ビルドは import namespace へ export を返さず、
- * 副作用で `window.FaceMesh` / `window.Camera` を生やすだけなので、
- * 最後のフォールバックとして global を参照する。
- *
- * @param exportName - 取り出したい export 名
- * @returns 見つかった export。未検出時は null
- * @example
- * const CameraCtor = readMediaPipeGlobalExport("Camera");
- */
-function readMediaPipeGlobalExport<T>(exportName: string): T | null {
-  const globalScope = globalThis as typeof globalThis & Record<string, unknown>;
-  const globalExport = globalScope[exportName];
-  return globalExport ? (globalExport as T) : null;
-}
-
-/**
- * ブラウザが返した facingMode がアプリ定義の値か判定する。
- *
- * @param value - 判定対象
- * @returns `user` または `environment` の場合 true
- * @example
- * isCameraFacingMode("user");
- */
-function isCameraFacingMode(value: unknown): value is CameraFacingMode {
-  return value === "user" || value === "environment";
-}
-
-/**
- * 起動した stream から実際に有効な facingMode を解決する。
- *
- * `getUserMedia` が要求どおりに切り替えられなかった環境では、
- * track settings を優先し、取得できない場合のみ要求値へフォールバックする。
- *
- * @param stream - 起動済み MediaStream
- * @param requestedFacingMode - 要求した facingMode
- * @returns 実際に採用された facingMode
- * @example
- * const activeFacingMode = resolveActiveFacingMode(stream, "environment");
- */
-function resolveActiveFacingMode(
-  stream: MediaStream,
-  requestedFacingMode: CameraFacingMode
-): CameraFacingMode {
-  const actualFacingMode = stream.getVideoTracks()[0]?.getSettings().facingMode;
-  return isCameraFacingMode(actualFacingMode) ? actualFacingMode : requestedFacingMode;
-}
-
 /**
  * キャラクターIDから表示名を解決する。
  *
@@ -175,102 +40,6 @@ function getCharacterNameById(id: string): string {
   return characters.find((character) => character.id === id)?.name ?? id;
 }
 
-let sharedFaceMesh: FaceMeshInstance | null = null;
-let sharedFaceMeshPromise: Promise<FaceMeshInstance> | null = null;
-
-/**
- * `Module.arguments` 系の Emscripten RuntimeError か判定する。
- *
- * @param error - 捕捉した例外
- * @returns 対象エラーなら true
- * @example
- * if (isFaceMeshModuleArgumentsError(error)) { ... }
- */
-function isFaceMeshModuleArgumentsError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return /module\.arguments/i.test(message);
-}
-
-/**
- * FaceMesh インスタンスを新規生成する。
- *
- * @returns 初期化済み FaceMesh
- * @example
- * const faceMesh = await createFaceMeshInstance();
- */
-async function createFaceMeshInstance(): Promise<FaceMeshInstance> {
-  if (typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined" && typeof createImageBitmap !== "undefined") {
-    try {
-      return await createCameraFaceWorker(MEDIAPIPE_FACE_MESH_ASSET_BASE);
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "NotSupportedError")) throw error;
-      markCameraTiming("face:worker-unavailable");
-    }
-  }
-  markCameraTiming("face:import:start");
-  resetMediaPipeSolutionGlobals();
-  const moduleNamespace = await import("@mediapipe/face_mesh");
-  markCameraTiming("face:import:end");
-  const FaceMesh = resolveMediaPipeExport<FaceMeshConstructor>(moduleNamespace, "FaceMesh");
-  if (!FaceMesh) {
-    throw new Error("FaceMesh constructor is unavailable in @mediapipe/face_mesh");
-  }
-  const faceMesh = new FaceMesh({
-    locateFile: (file) => resolveFaceMeshAssetUrl(file),
-  });
-  if (typeof faceMesh.initialize === "function") {
-    markCameraTiming("face:initialize:start");
-    await faceMesh.initialize();
-    markCameraTiming("face:initialize:end");
-  }
-  faceMesh.setOptions({
-    maxNumFaces: 1,
-    refineLandmarks: false,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5,
-  });
-  return faceMesh;
-}
-
-/**
- * 共有 FaceMesh インスタンスを取得する（single-flight）。
- *
- * @returns FaceMesh インスタンス
- * @example
- * const faceMesh = await acquireFaceMeshInstance();
- */
-async function acquireFaceMeshInstance(): Promise<FaceMeshInstance> {
-  if (sharedFaceMesh) return sharedFaceMesh;
-  if (!sharedFaceMeshPromise) {
-    sharedFaceMeshPromise = createFaceMeshInstance()
-      .then((instance) => {
-        sharedFaceMesh = instance;
-        return instance;
-      })
-      .catch((error) => {
-        sharedFaceMeshPromise = null;
-        throw error;
-      });
-  }
-  return sharedFaceMeshPromise;
-}
-
-/**
- * 共有 FaceMesh を破棄して再生成する。
- *
- * @returns 再生成済み FaceMesh
- * @example
- * const recovered = await recreateFaceMeshInstance();
- */
-async function recreateFaceMeshInstance(): Promise<FaceMeshInstance> {
-  if (sharedFaceMesh && typeof sharedFaceMesh.close === "function") {
-    sharedFaceMesh.close();
-  }
-  sharedFaceMesh = null;
-  sharedFaceMeshPromise = null;
-  return acquireFaceMeshInstance();
-}
-
 /**
  * カメラ映像へ岩手のキャラクターを重ねて撮影する。
  * @returns 撮影プレビューと操作・エラー案内
@@ -281,7 +50,6 @@ export function CameraCapture() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -605,10 +373,7 @@ export function CameraCapture() {
               }
               return;
             }
-            if (sharedFaceMesh === faceMeshRef.current) {
-              sharedFaceMesh = null;
-              sharedFaceMeshPromise = null;
-            }
+            forgetFailedFaceMeshInstance(faceMeshRef.current);
             void faceMeshRef.current?.close();
             faceMeshRef.current = null;
             detectionRef.current = null;
@@ -858,21 +623,9 @@ export function CameraCapture() {
       if (videoRef.current && overlayCanvasRef.current) {
         const videoW = videoRef.current.videoWidth || 1280;
         const videoH = videoRef.current.videoHeight || 720;
-        const videoAspect = videoW / videoH;
         const canvasW = overlayCanvasRef.current.clientWidth || 640;
         const canvasH = overlayCanvasRef.current.clientHeight || 480;
-        const displayAspect = canvasW / canvasH;
-        if (videoAspect > displayAspect) {
-          // ビデオが横長 → 左右がクロップされる
-          const visibleFraction = displayAspect / videoAspect;
-          scaleX = 1 / visibleFraction;
-          offsetX = (1 - visibleFraction) / 2;
-        } else {
-          // ビデオが縦長 → 上下がクロップされる
-          const visibleFraction = videoAspect / displayAspect;
-          scaleY = 1 / visibleFraction;
-          offsetY = (1 - visibleFraction) / 2;
-        }
+        ({ scaleX, scaleY, offsetX, offsetY } = computeCoverTransform(videoW, videoH, canvasW, canvasH));
       }
 
       const loadedModels = models.filter((id) => modelMapRef.current[id]);
@@ -926,7 +679,6 @@ export function CameraCapture() {
       startInProgressRef.current = false;
       // streamと描画資源を同じcleanupで解放する
       stopStream();
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       for (const controller of pendingLoads.values()) controller.abort();
       pendingLoads.clear();
       for (const object of Object.values(modelMapRef.current)) disposeCameraModel(object);
@@ -954,20 +706,11 @@ export function CameraCapture() {
     const previewHeight = video.clientHeight || 480;
     const sourceWidth = video.videoWidth || 1280;
     const sourceHeight = video.videoHeight || 720;
-    const previewAspect = resize ? previewWidth / previewHeight : canvas.width / canvas.height;
-    const sourceAspect = sourceWidth / sourceHeight;
-
-    let sx = 0;
-    let sy = 0;
-    let sw = sourceWidth;
-    let sh = sourceHeight;
-    if (sourceAspect > previewAspect) {
-      sw = Math.round(sourceHeight * previewAspect);
-      sx = Math.round((sourceWidth - sw) / 2);
-    } else if (sourceAspect < previewAspect) {
-      sh = Math.round(sourceWidth / previewAspect);
-      sy = Math.round((sourceHeight - sh) / 2);
-    }
+    const { sx, sy, sw, sh } = computeCoverCrop(
+      sourceWidth, sourceHeight,
+      resize ? previewWidth : canvas.width,
+      resize ? previewHeight : canvas.height,
+    );
 
     if (resize) {
       const scale = maxEdge ? Math.min(1, maxEdge / Math.max(sw, sh)) : 1;
@@ -1081,10 +824,10 @@ export function CameraCapture() {
     try {
       const dataUrl = canvas.toDataURL("image/png");
       // 前の写真の顔位置を次の撮影へ持ち越さない。
-      sessionStorage.removeItem("capturedDetection");
-      sessionStorage.setItem("capturedModels", JSON.stringify(selectedModels));
-      if (detection) sessionStorage.setItem("capturedDetection", JSON.stringify(detection));
-      sessionStorage.setItem("capturedPhoto", dataUrl);
+      sessionStorage.removeItem(CAPTURED_DETECTION_KEY);
+      sessionStorage.setItem(CAPTURED_MODELS_KEY, JSON.stringify(selectedModels));
+      if (detection) sessionStorage.setItem(CAPTURED_DETECTION_KEY, JSON.stringify(detection));
+      sessionStorage.setItem(CAPTURED_PHOTO_KEY, dataUrl);
     } catch {
       setErrorMessage("撮影した写真を一時保存できませんでした。ブラウザの空き容量や保存設定を確認して、もう一度撮影してください。");
       return false;

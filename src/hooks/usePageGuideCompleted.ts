@@ -5,6 +5,8 @@ import { completeOnboarding } from "./useOnboardingCompleted";
 import type { GuidePath } from "@/lib/pageGuides";
 
 const EVENT = "voja-page-guide-change";
+const VISIBLE_EVENT = "voja-page-guide-visibility-change";
+const visiblePageGuides = new Set<GuidePath>();
 const completedInMemory = new Set<GuidePath>();
 
 /** ページ別の既読キー。@param path - 対象画面 @returns 保存キー @example pageGuideKey("/camera"); */
@@ -40,4 +42,23 @@ export function completePageGuide(path: GuidePath): void {
     if (path === "/") completeOnboarding();
   } catch { completedInMemory.add(path); }
   window.dispatchEvent(new Event(EVENT));
+}
+
+/** 現在表示中のガイドを購読し、インストール案内と重ならないようにする。 */
+function subscribeVisibility(listener: () => void) {
+  window.addEventListener(VISIBLE_EVENT, listener);
+  return () => window.removeEventListener(VISIBLE_EVENT, listener);
+}
+
+/** 永続化された既読状態とは独立した、画面上の案内表示状態。 */
+export function usePageGuideVisible(path: GuidePath | null): boolean {
+  return useSyncExternalStore(subscribeVisibility, () => path !== null && visiblePageGuides.has(path), () => false);
+}
+
+/** 開閉を通知する。ページ遷移・アンマウント時にもfalseへ戻す。 */
+export function setPageGuideVisible(path: GuidePath, visible: boolean): void {
+  if (visiblePageGuides.has(path) === visible) return;
+  if (visible) visiblePageGuides.add(path);
+  else visiblePageGuides.delete(path);
+  window.dispatchEvent(new Event(VISIBLE_EVENT));
 }

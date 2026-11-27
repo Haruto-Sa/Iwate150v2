@@ -1,5 +1,6 @@
 "use client";
 
+import { applyRenderProfile } from "./characterRenderProfile";
 import { applyLegacyMeshFixes } from "@/lib/characterMaterials";
 import { loadModelFromCandidates, type ModelLoadError, type ModelLoadSuccess } from "./characterModelLoader";
 
@@ -39,39 +40,6 @@ const DEFAULT_CANDIDATE_RETRY_COUNT = 2;
 const DEFAULT_AUTO_RETRY_COUNT = 1;
 /** 初期化を遅延するマウントサイズ判定の待機フレーム上限（約6秒相当） */
 const MAX_WAIT_FRAMES_FOR_VIEWPORT_READY = 360;
-
-/**
- * legacy互換のモデル別チューニングを反映する。
- *
- * @param object - 3Dオブジェクト
- * @param profile - モデル表示プロファイル
- * @returns センタリング後に加算する位置オフセット
- * @example
- * const offset = applyRenderProfile(object, profile);
- */
-function applyRenderProfile(
-  object: THREE.Object3D,
-  profile: CharacterRenderProfile | undefined,
-): THREE.Vector3 {
-  if (!profile) return new THREE.Vector3();
-
-  const scaleMultiplier = profile.scaleMultiplier ?? 1;
-  if (scaleMultiplier !== 1) {
-    object.scale.multiplyScalar(scaleMultiplier);
-  }
-
-  if (profile.rotation) {
-    object.rotation.x += profile.rotation.x ?? 0;
-    object.rotation.y += profile.rotation.y ?? 0;
-    object.rotation.z += profile.rotation.z ?? 0;
-  }
-
-  return new THREE.Vector3(
-    profile.positionOffset?.x ?? 0,
-    profile.positionOffset?.y ?? 0,
-    profile.positionOffset?.z ?? 0,
-  );
-}
 
 export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function CharacterViewer(
   {

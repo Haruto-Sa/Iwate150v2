@@ -108,16 +108,15 @@ export type AdminDashboardEventSummary = Pick<Event, "id" | "title" | "city_id" 
 };
 
 export type AdminDashboardStats = {
-  totalUsers: number;
-  newUsersLast7Days: number;
-  totalSpots: number;
-  totalEvents: number;
-  totalAdmins: number;
+  totalUsers: number | null;
+  totalSpots: number | null;
+  totalEvents: number | null;
+  totalAdmins: number | null;
   latestSpots: AdminDashboardSpotSummary[];
   latestEvents: AdminDashboardEventSummary[];
 };
 
-export type AdminUserSummary = Pick<User, "id" | "auth_id" | "email" | "display_name" | "role" | "created_at">;
+export type AdminUserSummary = Pick<User, "id" | "auth_id" | "email" | "display_name" | "role">;
 
 export type AdminSpotCreateInput = Omit<Spot, "id">;
 

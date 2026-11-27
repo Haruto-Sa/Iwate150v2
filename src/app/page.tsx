@@ -6,7 +6,7 @@ import { HomeCalendarSwitcher } from "@/components/home/HomeCalendarSwitcher";
 import { SpotCard } from "@/components/ui/SpotCard";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { getImageUrl, resolveServerStorageUrls } from "@/lib/storage";
-import { buildPageMetadata, buildHomeJsonLd } from "@/lib/seo";
+import { buildPageMetadata, buildHomeJsonLd, serializeJsonLd } from "@/lib/seo";
 
 export const revalidate = 60;
 export const metadata = buildPageMetadata({
@@ -37,7 +37,7 @@ export default async function Home() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(buildHomeJsonLd(events)),
+          __html: serializeJsonLd(buildHomeJsonLd(events)),
         }}
       />
       <section className="grid overflow-hidden rounded-[1.5rem] border border-emerald-900/15 bg-[#eeeee4] md:grid-cols-[.9fr_1.1fr]">

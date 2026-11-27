@@ -17,6 +17,17 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
 /**
+ * DBエラーはコードだけ記録し、詳細を呼び出し元へ渡さない。
+ * @param error - PostgRESTエラー（結果が空の場合はnull）
+ * @returns 例外により戻らない
+ * @example throwAdminDatabaseError(error);
+ */
+function throwAdminDatabaseError(error: PostgrestError | null): never {
+  console.warn("[adminServer] database operation failed", { code: error?.code ?? "missing_result" });
+  throw new Error("管理データの処理に失敗しました。");
+}
+
+/**
  * 管理サーバー設定不備を表すエラー。
  */
 export class AdminServerConfigError extends Error {
@@ -345,7 +356,7 @@ export async function fetchAdminSpotsPage(
     .range(from, to);
 
   if (error) {
-    throw new Error(error.message);
+    throwAdminDatabaseError(error);
   }
 
   const items = (data ?? []).map((row) => mapSpotListItem(row as Record<string, unknown>));
@@ -368,7 +379,7 @@ export async function fetchAdminSpotById(id: number): Promise<Spot | null> {
 
   const { data, error } = await client.from("spots").select("*").eq("id", id).maybeSingle();
   if (error) {
-    throw new Error(error.message);
+    throwAdminDatabaseError(error);
   }
   return (data as Spot | null) ?? null;
 }
@@ -390,7 +401,7 @@ export async function createSpot(input: AdminSpotCreateInput): Promise<Spot> {
     .single();
 
   if (error || !data) {
-    throw new Error(error?.message ?? "スポットの作成に失敗しました。");
+    throwAdminDatabaseError(error);
   }
   return data as Spot;
 }
@@ -419,7 +430,7 @@ export async function updateSpot(id: number, input: AdminSpotUpdateInput): Promi
     if (isNotFoundError(error)) {
       throw new AdminServerNotFoundError("更新対象のスポットが見つかりません。");
     }
-    throw new Error(error.message);
+    throwAdminDatabaseError(error);
   }
   if (!data) {
     throw new AdminServerNotFoundError("更新対象のスポットが見つかりません。");
@@ -449,7 +460,7 @@ export async function deleteSpot(id: number): Promise<void> {
     if (isNotFoundError(error)) {
       throw new AdminServerNotFoundError("削除対象のスポットが見つかりません。");
     }
-    throw new Error(error.message);
+    throwAdminDatabaseError(error);
   }
   if (!data) {
     throw new AdminServerNotFoundError("削除対象のスポットが見つかりません。");
@@ -487,7 +498,7 @@ export async function fetchAdminEventsPage(
     .range(from, to);
 
   if (error) {
-    throw new Error(error.message);
+    throwAdminDatabaseError(error);
   }
 
   const items = (data ?? []).map((row) => mapEventListItem(row as Record<string, unknown>));
@@ -510,7 +521,7 @@ export async function fetchAdminEventById(id: number): Promise<Event | null> {
 
   const { data, error } = await client.from("events").select("*").eq("id", id).maybeSingle();
   if (error) {
-    throw new Error(error.message);
+    throwAdminDatabaseError(error);
   }
   return (data as Event | null) ?? null;
 }
@@ -532,7 +543,7 @@ export async function createEvent(input: AdminEventCreateInput): Promise<Event> 
     .single();
 
   if (error || !data) {
-    throw new Error(error?.message ?? "イベントの作成に失敗しました。");
+    throwAdminDatabaseError(error);
   }
   return data as Event;
 }
@@ -561,7 +572,7 @@ export async function updateEvent(id: number, input: AdminEventUpdateInput): Pro
     if (isNotFoundError(error)) {
       throw new AdminServerNotFoundError("更新対象のイベントが見つかりません。");
     }
-    throw new Error(error.message);
+    throwAdminDatabaseError(error);
   }
   if (!data) {
     throw new AdminServerNotFoundError("更新対象のイベントが見つかりません。");
@@ -591,7 +602,7 @@ export async function deleteEvent(id: number): Promise<void> {
     if (isNotFoundError(error)) {
       throw new AdminServerNotFoundError("削除対象のイベントが見つかりません。");
     }
-    throw new Error(error.message);
+    throwAdminDatabaseError(error);
   }
   if (!data) {
     throw new AdminServerNotFoundError("削除対象のイベントが見つかりません。");

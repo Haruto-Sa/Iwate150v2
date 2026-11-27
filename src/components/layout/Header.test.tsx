@@ -15,6 +15,8 @@ vi.mock("next/link", () => ({
 }));
 
 beforeEach(() => {
+  localStorage.clear();
+  for (const path of ["/", "/camera", "/search", "/map", "/stamps", "/character", "/favorites"]) localStorage.setItem(`voja_page_guide:${path}`, "true");
   mockPathname.mockReturnValue("/");
   mockSession.mockReturnValue({ user: null, signOut: vi.fn() });
   vi.spyOn(window, "scrollTo").mockImplementation(() => {});

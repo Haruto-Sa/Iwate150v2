@@ -181,3 +181,16 @@ export function buildSpotJsonLd(spot: Spot): Record<string, unknown> {
     ],
   };
 }
+
+/**
+ * JSON-LDをHTMLのscript要素へ安全に埋め込める文字列に変換する。
+ * HTMLパーサーによる終了タグ・コメント開始の解釈を防ぎ、JSONとしての値は保持する。
+ *
+ * @param data - JSONに変換可能なJSON-LDオブジェクト
+ * @returns script要素内に埋め込むJSON文字列
+ * @example
+ * serializeJsonLd(buildSpotJsonLd(spot));
+ */
+export function serializeJsonLd(data: Record<string, unknown>): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}

@@ -13,13 +13,14 @@ export class ApiError extends Error {
 }
 
 /**
- * 信頼するアプリURLと送信元を比較する。AUTH_URL未設定時は既存のrequest URL基準を維持する。
+ * Auth.jsと同じURL設定の優先順位で送信元を比較する。両URL未設定時は既存のrequest URL基準を維持する。
  * @param request - HTTP request
  * @returns なし
  * @example assertSameOrigin(request);
  */
 export function assertSameOrigin(request: Request): void {
-  const expectedOrigin = process.env.AUTH_URL ? new URL(process.env.AUTH_URL).origin : new URL(request.url).origin;
+  const authUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL;
+  const expectedOrigin = authUrl ? new URL(authUrl).origin : new URL(request.url).origin;
   if (request.headers.get("origin") !== expectedOrigin) throw new ApiError(403, "送信元を確認できません。");
 }
 

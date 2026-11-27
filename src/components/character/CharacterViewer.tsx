@@ -1,5 +1,6 @@
 "use client";
 
+import { fitObjectToView } from "./characterViewFit";
 import { applyRenderProfile } from "./characterRenderProfile";
 import { applyLegacyMeshFixes } from "@/lib/characterMaterials";
 import { loadModelFromCandidates, type ModelLoadError, type ModelLoadSuccess } from "./characterModelLoader";
@@ -222,54 +223,20 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       const activeControls = controlsInstanceRef.current;
       if (!activeCamera || !activeControls) return;
 
-      if (hasBaseTransformRef.current) {
-        object.position.copy(basePositionRef.current);
-        object.quaternion.copy(baseQuaternionRef.current);
-        object.scale.copy(baseScaleVectorRef.current);
-      }
-      object.updateMatrixWorld(true);
-
-      const initialBox = new THREE.Box3().setFromObject(object);
-      const initialSize = initialBox.getSize(new THREE.Vector3());
-      const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z) || 1;
-      const targetSize = 3.2;
-      const fittedScale = targetSize / maxDim;
       setZoom(1);
-      object.scale.copy(baseScaleVectorRef.current).multiplyScalar(fittedScale);
-      baseScaleRef.current = object.scale.x;
-
-      object.updateMatrixWorld(true);
-      const scaledBox = new THREE.Box3().setFromObject(object);
-      const center = scaledBox.getCenter(new THREE.Vector3());
-      object.position.sub(center);
-
-      object.updateMatrixWorld(true);
-      const centeredBox = new THREE.Box3().setFromObject(object);
-      const centeredSize = centeredBox.getSize(new THREE.Vector3());
-      const centeredSphere = centeredBox.getBoundingSphere(new THREE.Sphere());
-      const radius = Math.max(centeredSphere.radius, 0.1);
-      const fovRad = THREE.MathUtils.degToRad(activeCamera.fov);
-      const distanceByFov = radius / Math.sin(fovRad / 2);
-      let distance = Math.max(3.8, distanceByFov * 1.22);
-      if (reason === "post-load") {
-        distance = Math.max(distance, initialCameraDistanceRef.current);
-      } else {
-        initialCameraDistanceRef.current = distance;
-      }
-      activeCamera.near = Math.max(0.01, radius / 200);
-      activeCamera.far = Math.max(120, distance + radius * 24);
-      activeCamera.updateProjectionMatrix();
-      activeCamera.position.set(0, 0, distance);
-      activeControls.target.set(0, 0, 0);
-      activeControls.minDistance = distance * 0.55;
-      activeControls.maxDistance = distance * 3;
-      activeCamera.lookAt(0, 0, 0);
-
-      if (profileOffsetRef.current.lengthSq() > 0) {
-        object.position.add(profileOffsetRef.current);
-        object.updateMatrixWorld(true);
-      }
-      activeControls.update();
+      const { distance, scale, centeredSize } = fitObjectToView({
+        object, camera: activeCamera, controls: activeControls,
+        baseTransform: {
+          position: basePositionRef.current,
+          quaternion: baseQuaternionRef.current,
+          scale: baseScaleVectorRef.current,
+          restore: hasBaseTransformRef.current,
+        },
+        profileOffset: profileOffsetRef.current,
+        minDistance: reason === "post-load" ? initialCameraDistanceRef.current : 0,
+      });
+      baseScaleRef.current = scale;
+      if (reason !== "post-load") initialCameraDistanceRef.current = distance;
       console.info("[CharacterViewer] fit and center complete", {
         characterId,
         reason,

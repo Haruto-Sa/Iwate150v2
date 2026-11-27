@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { characters } from "../src/lib/characters";
 
@@ -40,6 +41,11 @@ test("モデル失敗時も別キャラクターへ置換せず再試行でき�
   const before = requested.length;
   await page.getByRole("button", { name: "再試行", exact: true }).click();
   await expect.poll(() => requested.length).toBeGreaterThan(before);
+  await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toBeVisible();
+  await page.unroute(/\.(?:obj|mtl|fbx)(?:\?|$)/);
+  await page.getByRole("button", { name: "再試行", exact: true }).click();
+  await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toHaveCount(0);
+  await expect.poll(async () => (await readViewerFrame(page)).painted, { timeout: 20000 }).toBeGreaterThan(0.01);
 });
 
 test("カリンの画像がモデルより遅れても描画色を変えない", async ({ page }) => {
@@ -84,7 +90,24 @@ test("カリンの画像がモデルより遅れても描画色を変えない",
     await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "リセット", exact: true }).click();
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-    const frame = await page.locator("canvas").evaluate(canvas => new Promise<{ url: string; painted: number }>(resolve => requestAnimationFrame(() => {
+    const frame = await readViewerFrame(page);
+    expect(frame.painted).toBeGreaterThan(0.01);
+    renders.push(frame.url);
+    page.off("console", listener);
+    await page.unrouteAll({ behavior: "wait" });
+  }
+  expect(renders[0].length).toBeGreaterThan(1000);
+  expect(renders[1]).toBe(renders[0]);
+});
+
+/**
+ * WebGL描画直後のCanvasからモデル画素と画像を取得する。
+ * @param page - ビューアを表示中のページ
+ * @returns 背景以外の画素比率とPNG
+ * @example const frame = await readViewerFrame(page);
+ */
+async function readViewerFrame(page: Page) {
+  return await page.locator("canvas").evaluate(canvas => new Promise<{ url: string; painted: number }>(resolve => requestAnimationFrame(() => {
       const source = canvas as HTMLCanvasElement;
       const copy = document.createElement("canvas");
       copy.width = source.width;
@@ -98,11 +121,30 @@ test("カリンの画像がモデルより遅れても描画色を変えない",
       }
       resolve({ url: copy.toDataURL(), painted: painted / (copy.width * copy.height) });
     })));
-    expect(frame.painted).toBeGreaterThan(0.01);
-    renders.push(frame.url);
-    page.off("console", listener);
-    await page.unrouteAll({ behavior: "wait" });
+}
+
+test("全5モデルを表示し拡大・縮小・回転・リセットできる", async ({ page }, info) => {
+  test.setTimeout(120_000);
+  await page.goto("/character");
+  for (const character of characters) {
+    await page.getByRole("button", { name: `${character.name} ${character.region}`, exact: true }).click();
+    await expect(page.getByText("3Dモデルを読み込み中...", { exact: true })).toHaveCount(0, { timeout: 30000 });
+    await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "リセット", exact: true }).click();
+    await expect.poll(async () => (await readViewerFrame(page)).painted).toBeGreaterThan(0.01);
+    const initial = await readViewerFrame(page);
+    await page.getByRole("button", { name: "拡大", exact: true }).click();
+    await expect.poll(async () => (await readViewerFrame(page)).painted).toBeGreaterThan(initial.painted);
+    await page.getByRole("button", { name: "リセット", exact: true }).click();
+    await page.getByRole("button", { name: "縮小", exact: true }).click();
+    await expect.poll(async () => (await readViewerFrame(page)).painted).toBeLessThan(initial.painted);
+    await page.getByRole("button", { name: "回転", exact: true }).click();
+    await expect(page.getByRole("button", { name: "停止", exact: true })).toBeVisible();
+    const rotating = await readViewerFrame(page);
+    await expect.poll(async () => (await readViewerFrame(page)).url).not.toBe(rotating.url);
+    await page.getByRole("button", { name: "リセット", exact: true }).click();
+    await expect(page.getByRole("button", { name: "回転", exact: true })).toBeVisible();
+    expect(Math.abs((await readViewerFrame(page)).painted - initial.painted)).toBeLessThan(0.02);
+    await page.screenshot({ path: info.outputPath(`viewer-${character.id}.png`), animations: "disabled" });
   }
-  expect(renders[0].length).toBeGreaterThan(1000);
-  expect(renders[1]).toBe(renders[0]);
 });

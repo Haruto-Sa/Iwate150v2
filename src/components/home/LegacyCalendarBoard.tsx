@@ -61,25 +61,27 @@ export function LegacyCalendarBoard({ events }: Props) {
         </div>
         <div className="flex items-center gap-2 rounded-full border border-app-line/10 bg-app-surface-soft px-2 py-1 text-sm text-app-ink/80">
           <Button
+            iconOnly
             variant="ghost"
             onClick={() =>
               setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
             }
             aria-label="previous month"
-            className="h-11 w-11 rounded-full p-0 hover:bg-app-surface-tint"
+            className="rounded-full hover:bg-app-surface-tint"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft aria-hidden="true" className="h-5 w-5" />
           </Button>
           <span className="px-2 font-semibold text-app-ink">{monthLabel}</span>
           <Button
+            iconOnly
             variant="ghost"
             onClick={() =>
               setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
             }
             aria-label="next month"
-            className="h-11 w-11 rounded-full p-0 hover:bg-app-surface-tint"
+            className="rounded-full hover:bg-app-surface-tint"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight aria-hidden="true" className="h-5 w-5" />
           </Button>
         </div>
       </div>

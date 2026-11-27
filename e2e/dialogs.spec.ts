@@ -86,6 +86,7 @@ test("インストール案内はナビより上に開き、閉じると元の�
   expect(await dialog.evaluate((element) => element.matches(":modal"))).toBe(
     true,
   );
+
   if (isIosSafari) {
     await expect(dialog.getByText(/Safari の共有メニュー/)).toBeVisible();
     await dialog.getByRole("button", { name: "ホーム画面に追加 を閉じる", exact: true }).click();

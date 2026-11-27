@@ -44,3 +44,15 @@ jobs:
             test-results/
           retention-days: 7
           if-no-files-found: ignore
+
+  playwright-required:
+    name: playwright
+    needs: playwright
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require every browser project to pass
+        env:
+          MATRIX_RESULT: ${{ needs.playwright.result }}
+        run: test "$MATRIX_RESULT" = success

@@ -116,4 +116,20 @@ describe("adminServer", () => {
       AdminServerNotFoundError
     );
   });
+  it("DB失敗のコードだけを記録し内部メッセージを渡さない", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockGetServerAdminClient.mockReturnValue({
+      from: () => ({ update: () => ({ eq: () => ({ select: () => ({
+        maybeSingle: async () => ({ data: null, error: {
+          code: "23505", message: "private user@example.com", details: "private detail", hint: "private hint",
+        } }),
+      }) }) }) }),
+    });
+    try {
+      await expect(updateEvent(1, { title: "更新" })).rejects.toThrow("管理データの処理に失敗しました。");
+      expect(warn).toHaveBeenCalledWith("[adminServer] database operation failed", { code: "23505" });
+      expect(JSON.stringify(warn.mock.calls)).not.toContain("private");
+    } finally { warn.mockRestore(); }
+  });
+
 });

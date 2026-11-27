@@ -27,6 +27,7 @@ jobs:
         with:
           node-version-file: .node-version
       - run: bun install --frozen-lockfile
+      - run: bun run icons:check
       - run: bun run lint
       - run: bun run typecheck
       - run: bun run test

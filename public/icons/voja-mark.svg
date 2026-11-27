@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>VOJA IWATE</title>
+  <rect width="512" height="512" fill="#234f40"/>
+  <path d="M112 274 200 150 254 224 304 158 400 274" fill="none" stroke="#f6f5ef" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M112 324C160 292 208 356 256 324S352 292 400 324" fill="none" stroke="#a4c39c" stroke-width="28" stroke-linecap="round"/>
+  <path d="M208 382C208 350 304 352 304 314C304 284 256 294 256 264" fill="none" stroke="#f6f5ef" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="366" cy="166" r="22" fill="#dc775b"/>
+</svg>

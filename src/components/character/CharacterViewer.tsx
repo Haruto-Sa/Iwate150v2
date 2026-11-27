@@ -1,14 +1,14 @@
 "use client";
 
+import { addViewerLights, createViewerControls } from "./characterScene";
+import { fitObjectToView } from "./characterViewFit";
+import { applyRenderProfile } from "./characterRenderProfile";
 import { applyLegacyMeshFixes } from "@/lib/characterMaterials";
-import { extractFileStem, resolveModelFormat } from "@/lib/modelAssets";
+import { loadModelFromCandidates, type ModelLoadError, type ModelLoadSuccess } from "./characterModelLoader";
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
-import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Minus, Plus, RotateCw, RefreshCw, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CharacterRenderProfile } from "@/lib/types";
@@ -32,297 +32,16 @@ type Props = {
   autoRetryCount?: number;
 };
 
-type ModelLoadAttemptFailure = {
-  modelUrl: string;
-  mtlUrl: string | null;
-  stage: "mtl+obj" | "obj" | "fbx";
-  error: unknown;
-};
-
-type ModelLoadSuccess = {
-  object: THREE.Group;
-  modelUrl: string;
-  mtlUrl: string | null;
-  stage: "mtl+obj" | "obj" | "fbx";
-};
-
-type ModelLoadError = Error & {
-  failures?: ModelLoadAttemptFailure[];
-};
-
 type ViewerErrorType = "model" | "webgl";
 
 /** シーン背景色（純白を避けて白モデルでも視認できるようにする） */
 const SCENE_BG_COLOR = 0xf0f2ef;
-/** ローカル配信モデルの読み込みタイムアウト（ミリ秒） */
-const LOCAL_LOAD_TIMEOUT_MS = 45_000;
-/** リモート配信モデルの読み込みタイムアウト（ミリ秒） */
-const REMOTE_LOAD_TIMEOUT_MS = 12_000;
 /** 各候補URLに対するデフォルトリトライ回数 */
 const DEFAULT_CANDIDATE_RETRY_COUNT = 2;
 /** 読み込み失敗時のデフォルト自動再試行回数 */
 const DEFAULT_AUTO_RETRY_COUNT = 1;
 /** 初期化を遅延するマウントサイズ判定の待機フレーム上限（約6秒相当） */
 const MAX_WAIT_FRAMES_FOR_VIEWPORT_READY = 360;
-
-/**
- * Promise にタイムアウトを設定する。
- *
- * @param promise - 元の Promise
- * @param ms - タイムアウト（ミリ秒）
- * @param label - エラーメッセージ用ラベル
- * @returns タイムアウト付き Promise
- * @example
- * const result = await withTimeout(fetch(url), 10000, "fetch");
- */
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`timeout (${ms}ms): ${label}`)), ms);
-    promise.then(
-      (value) => { clearTimeout(timer); resolve(value); },
-      (error) => { clearTimeout(timer); reject(error); },
-    );
-  });
-}
-
-/**
- * 候補URLがローカル配信かどうかを推定する。
- *
- * @param url - モデル/MTL URL
- * @returns ローカル配信なら true
- * @example
- * const local = isLikelyLocalAssetUrl("/models/wanko1.obj");
- */
-function isLikelyLocalAssetUrl(url: string): boolean {
-  if (url.startsWith("/")) return true;
-  try {
-    const parsed = new URL(url);
-    if (typeof window === "undefined") return false;
-    return parsed.origin === window.location.origin;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * 候補URLに応じた読み込みタイムアウト値を返す。
- *
- * @param url - モデル/MTL URL
- * @returns タイムアウト（ミリ秒）
- * @example
- * const timeout = getLoadTimeoutMs("/models/wanko1.obj");
- */
-function getLoadTimeoutMs(url: string): number {
-  return isLikelyLocalAssetUrl(url) ? LOCAL_LOAD_TIMEOUT_MS : REMOTE_LOAD_TIMEOUT_MS;
-}
-
-/**
- * 失敗時に一定回数まで再試行する。
- *
- * @param task - 実行する非同期処理
- * @param retryCount - リトライ回数（初回実行を除く）
- * @returns 実行結果
- * @example
- * const value = await withRetries(() => fetcher(), 2);
- */
-async function withRetries<T>(
-  task: () => Promise<T>,
-  retryCount: number,
-): Promise<T> {
-  let lastError: unknown = null;
-  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
-    try {
-      return await task();
-    } catch (error) {
-      lastError = error;
-      if (attempt >= retryCount) break;
-    }
-  }
-  throw lastError;
-}
-
-/**
- * MTL ファイルをロードする。
- *
- * @param url - MTL URL
- * @param timeoutMs - タイムアウト（ミリ秒）
- * @returns material creator
- * @example
- * const materials = await loadMtlMaterials("/models/a.mtl", 30000);
- */
-function loadMtlMaterials(
-  url: string,
-  timeoutMs: number,
-): Promise<MTLLoader.MaterialCreator> {
-  return withTimeout(
-    new Promise((resolve, reject) => {
-      const loader = new MTLLoader();
-      loader.load(url, resolve, undefined, reject);
-    }),
-    timeoutMs,
-    `MTL ${url}`,
-  );
-}
-
-/**
- * OBJ ファイルをロードする。
- *
- * @param modelUrl - OBJ URL
- * @param timeoutMs - タイムアウト（ミリ秒）
- * @param materials - 事前ロード済み MTL
- * @returns OBJ group
- * @example
- * const obj = await loadObjModel("/models/a.obj", 30000, materials);
- */
-function loadObjModel(
-  modelUrl: string,
-  timeoutMs: number,
-  materials?: MTLLoader.MaterialCreator
-): Promise<THREE.Group> {
-  return withTimeout(
-    new Promise((resolve, reject) => {
-      const loader = new OBJLoader();
-      if (materials) {
-        materials.preload();
-        loader.setMaterials(materials);
-      }
-      loader.load(modelUrl, resolve, undefined, reject);
-    }),
-    timeoutMs,
-    `OBJ ${modelUrl}`,
-  );
-}
-
-/**
- * FBX ファイルをロードする。
- *
- * @param modelUrl - FBX URL
- * @param timeoutMs - タイムアウト（ミリ秒）
- * @returns FBX group
- * @example
- * const object = await loadFbxModel("/models/character.fbx", 45000);
- */
-function loadFbxModel(modelUrl: string, timeoutMs: number): Promise<THREE.Group> {
-  return withTimeout(
-    new Promise((resolve, reject) => {
-      const loader = new FBXLoader();
-      loader.load(modelUrl, resolve, undefined, reject);
-    }),
-    timeoutMs,
-    `FBX ${modelUrl}`,
-  );
-}
-
-/**
- * モデル候補を順に試行して最初に読める組み合わせを返す。
- *
- * @param modelCandidates - モデル候補
- * @param mtlCandidates - MTL候補
- * @param retryCount - 候補ごとのリトライ回数
- * @returns 読み込み済みオブジェクト
- * @example
- * const object = await loadModelFromCandidates(models, mtls, 2);
- */
-async function loadModelFromCandidates(
-  modelCandidates: string[],
-  mtlCandidates: string[],
-  retryCount: number,
-): Promise<ModelLoadSuccess> {
-  let lastError: unknown = null;
-  const failures: ModelLoadAttemptFailure[] = [];
-
-  for (const modelUrl of modelCandidates) {
-    const modelFormat = resolveModelFormat(modelUrl);
-    const modelTimeout = getLoadTimeoutMs(modelUrl);
-
-    if (modelFormat === "fbx") {
-      try {
-        const object = await withRetries(
-          () => loadFbxModel(modelUrl, modelTimeout),
-          retryCount,
-        );
-        return { object, modelUrl, mtlUrl: null, stage: "fbx" };
-      } catch (error) {
-        lastError = error;
-        failures.push({ modelUrl, mtlUrl: null, stage: "fbx", error });
-        console.warn("[CharacterViewer] candidate failed", { stage: "fbx", modelUrl, error });
-      }
-      continue;
-    }
-
-    const modelStem = extractFileStem(modelUrl);
-    const matchedMtlCandidates =
-      modelStem === null
-        ? []
-        : mtlCandidates.filter((mtlUrl) => extractFileStem(mtlUrl) === modelStem);
-    if (matchedMtlCandidates.length > 0) {
-      for (const mtlUrl of matchedMtlCandidates) {
-        const timeoutMs = Math.max(modelTimeout, getLoadTimeoutMs(mtlUrl));
-        try {
-          const object = await withRetries(async () => {
-            const materials = await loadMtlMaterials(mtlUrl, timeoutMs);
-            return await loadObjModel(modelUrl, timeoutMs, materials);
-          }, retryCount);
-          return { object, modelUrl, mtlUrl, stage: "mtl+obj" };
-        } catch (error) {
-          lastError = error;
-          failures.push({ modelUrl, mtlUrl, stage: "mtl+obj", error });
-          console.warn("[CharacterViewer] candidate failed", { stage: "mtl+obj", modelUrl, mtlUrl, error });
-        }
-      }
-    }
-
-    try {
-      const object = await withRetries(
-        () => loadObjModel(modelUrl, modelTimeout),
-        retryCount,
-      );
-      return { object, modelUrl, mtlUrl: null, stage: "obj" };
-    } catch (error) {
-      lastError = error;
-      failures.push({ modelUrl, mtlUrl: null, stage: "obj", error });
-      console.warn("[CharacterViewer] candidate failed", { stage: "obj", modelUrl, error });
-    }
-  }
-
-  const modelError = new Error("No valid model candidate") as ModelLoadError;
-  modelError.cause = lastError ?? undefined;
-  modelError.failures = failures;
-  throw modelError;
-}
-
-/**
- * legacy互換のモデル別チューニングを反映する。
- *
- * @param object - 3Dオブジェクト
- * @param profile - モデル表示プロファイル
- * @returns センタリング後に加算する位置オフセット
- * @example
- * const offset = applyRenderProfile(object, profile);
- */
-function applyRenderProfile(
-  object: THREE.Object3D,
-  profile: CharacterRenderProfile | undefined,
-): THREE.Vector3 {
-  if (!profile) return new THREE.Vector3();
-
-  const scaleMultiplier = profile.scaleMultiplier ?? 1;
-  if (scaleMultiplier !== 1) {
-    object.scale.multiplyScalar(scaleMultiplier);
-  }
-
-  if (profile.rotation) {
-    object.rotation.x += profile.rotation.x ?? 0;
-    object.rotation.y += profile.rotation.y ?? 0;
-    object.rotation.z += profile.rotation.z ?? 0;
-  }
-
-  return new THREE.Vector3(
-    profile.positionOffset?.x ?? 0,
-    profile.positionOffset?.y ?? 0,
-    profile.positionOffset?.z ?? 0,
-  );
-}
 
 export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function CharacterViewer(
   {
@@ -395,7 +114,8 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
   }, [isRotating]);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const mount = mountRef.current;
+    if (!mount) return;
     if (normalizedModelCandidates.length === 0) {
       setErrorType("model");
       setErrorMessage("モデルデータを確認できませんでした。");
@@ -406,8 +126,8 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     setStatus("loading");
     setErrorType(null);
     setErrorMessage(null);
-    const initialWidth = mountRef.current.clientWidth;
-    const initialHeight = mountRef.current.clientHeight;
+    const initialWidth = mount.clientWidth;
+    const initialHeight = mount.clientHeight;
     if (initialWidth <= 0 || initialHeight <= 0) {
       let waitFrame = 0;
       let frameId = 0;
@@ -474,24 +194,10 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(SCENE_BG_COLOR, 1);
-    mountRef.current.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement);
 
-    const light = new THREE.HemisphereLight(0xffffff, 0xe9edf0, 1.35);
-    scene.add(light);
-    const directional = new THREE.DirectionalLight(0xffffff, 1.2);
-    directional.position.set(2.5, 3.5, 2);
-    scene.add(directional);
-    const fill = new THREE.DirectionalLight(0xffffff, 0.7);
-    fill.position.set(-2.5, 2.2, -2);
-    scene.add(fill);
-    const back = new THREE.DirectionalLight(0xffffff, 0.45);
-    back.position.set(0, 2.8, -3);
-    scene.add(back);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.enablePan = false;
-    controls.target.set(0, 0, 0);
+    addViewerLights(scene);
+    const controls = createViewerControls(camera, renderer.domElement);
     controlsInstanceRef.current = controls;
 
     let cancelled = false;
@@ -505,54 +211,20 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       const activeControls = controlsInstanceRef.current;
       if (!activeCamera || !activeControls) return;
 
-      if (hasBaseTransformRef.current) {
-        object.position.copy(basePositionRef.current);
-        object.quaternion.copy(baseQuaternionRef.current);
-        object.scale.copy(baseScaleVectorRef.current);
-      }
-      object.updateMatrixWorld(true);
-
-      const initialBox = new THREE.Box3().setFromObject(object);
-      const initialSize = initialBox.getSize(new THREE.Vector3());
-      const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z) || 1;
-      const targetSize = 3.2;
-      const fittedScale = targetSize / maxDim;
       setZoom(1);
-      object.scale.copy(baseScaleVectorRef.current).multiplyScalar(fittedScale);
-      baseScaleRef.current = object.scale.x;
-
-      object.updateMatrixWorld(true);
-      const scaledBox = new THREE.Box3().setFromObject(object);
-      const center = scaledBox.getCenter(new THREE.Vector3());
-      object.position.sub(center);
-
-      object.updateMatrixWorld(true);
-      const centeredBox = new THREE.Box3().setFromObject(object);
-      const centeredSize = centeredBox.getSize(new THREE.Vector3());
-      const centeredSphere = centeredBox.getBoundingSphere(new THREE.Sphere());
-      const radius = Math.max(centeredSphere.radius, 0.1);
-      const fovRad = THREE.MathUtils.degToRad(activeCamera.fov);
-      const distanceByFov = radius / Math.sin(fovRad / 2);
-      let distance = Math.max(3.8, distanceByFov * 1.22);
-      if (reason === "post-load") {
-        distance = Math.max(distance, initialCameraDistanceRef.current);
-      } else {
-        initialCameraDistanceRef.current = distance;
-      }
-      activeCamera.near = Math.max(0.01, radius / 200);
-      activeCamera.far = Math.max(120, distance + radius * 24);
-      activeCamera.updateProjectionMatrix();
-      activeCamera.position.set(0, 0, distance);
-      activeControls.target.set(0, 0, 0);
-      activeControls.minDistance = distance * 0.55;
-      activeControls.maxDistance = distance * 3;
-      activeCamera.lookAt(0, 0, 0);
-
-      if (profileOffsetRef.current.lengthSq() > 0) {
-        object.position.add(profileOffsetRef.current);
-        object.updateMatrixWorld(true);
-      }
-      activeControls.update();
+      const { distance, scale, centeredSize } = fitObjectToView({
+        object, camera: activeCamera, controls: activeControls,
+        baseTransform: {
+          position: basePositionRef.current,
+          quaternion: baseQuaternionRef.current,
+          scale: baseScaleVectorRef.current,
+          restore: hasBaseTransformRef.current,
+        },
+        profileOffset: profileOffsetRef.current,
+        minDistance: reason === "post-load" ? initialCameraDistanceRef.current : 0,
+      });
+      baseScaleRef.current = scale;
+      if (reason !== "post-load") initialCameraDistanceRef.current = distance;
       console.info("[CharacterViewer] fit and center complete", {
         characterId,
         reason,
@@ -661,7 +333,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined") {
       resizeObserver = new ResizeObserver(() => handleResize());
-      resizeObserver.observe(mountRef.current);
+      resizeObserver.observe(mount);
     } else {
       window.addEventListener("resize", handleResize);
     }
@@ -687,8 +359,8 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
         scene.remove(objectRef.current);
         objectRef.current = null;
       }
-      if (mountRef.current?.contains(renderer.domElement)) {
-        mountRef.current.removeChild(renderer.domElement);
+      if (mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- candidatesKey は normalizedModel/MtlCandidates の値ベースのキー

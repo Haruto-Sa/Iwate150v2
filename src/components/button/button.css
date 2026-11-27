@@ -10,7 +10,6 @@
 
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   vertical-align: middle;
   border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 100em;
@@ -58,7 +57,46 @@
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: var(--button-gap);
+}
+
+/* Layout utilities on the public Button must also reach its content wrapper.
+   Keep these defaults below Tailwind utilities, including the vertical controls. */
+@layer components {
+  [data-lk-component="button"] {
+    justify-content: center;
+  }
+
+  [data-lk-button-content-wrap="true"] {
+    gap: var(--button-gap);
+  }
+
+  [data-ui-button="true"] {
+    gap: var(--button-gap);
+  }
+
+  [data-ui-button="true"] > [data-lk-button-content-wrap="true"] {
+    width: 100%;
+    justify-content: inherit;
+    gap: inherit;
+  }
+}
+
+[data-ui-button="true"] > [data-lk-button-content-wrap="true"] > svg {
+  flex-shrink: 0;
+}
+
+/* Center the visible glyph without shrinking the touch target. */
+[data-ui-icon-only="true"] {
+  flex-shrink: 0;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+[data-ui-icon-only="true"][data-lk-button-size="lg"] {
+  width: 52px;
+  height: 52px;
 }
 
 /* TODO: Remove entirely */

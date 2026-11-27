@@ -17,6 +17,7 @@ async function capturePreviews(): Promise<void> {
     page.setDefaultTimeout(30_000);
     await page.addInitScript(() => {
       localStorage.setItem("onboarding_completed", "true");
+      localStorage.setItem("voja_page_guide:/character", "true");
       localStorage.setItem("voja_install_prompt_dismiss_until", String(Date.now() + 86400000));
     });
     const loaded = new Map<string, string>();

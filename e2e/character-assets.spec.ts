@@ -125,9 +125,17 @@ async function readViewerFrame(page: Page) {
 
 test("全5モデルを表示し拡大・縮小・回転・リセットできる", async ({ page }, info) => {
   test.setTimeout(120_000);
+  const loaded = new Map<string, string>();
+  page.on("console", async message => {
+    if (!message.text().startsWith("[CharacterViewer] candidate load succeeded")) return;
+    const result = await message.args()[1]?.jsonValue() as { characterId: string; modelUrl: string } | undefined;
+    if (result) loaded.set(result.characterId, result.modelUrl);
+  });
   await page.goto("/character");
   for (const character of characters) {
     await page.getByRole("button", { name: `${character.name} ${character.region}`, exact: true }).click();
+    const expectedModel = character.model_path?.startsWith("/") ? character.model_path : `/${character.model_path}`;
+    await expect.poll(() => loaded.get(character.id), { timeout: 30000 }).toBe(expectedModel);
     await expect(page.getByText("3Dモデルを読み込み中...", { exact: true })).toHaveCount(0, { timeout: 30000 });
     await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "リセット", exact: true }).click();

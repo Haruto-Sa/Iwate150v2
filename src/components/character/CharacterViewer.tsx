@@ -1,5 +1,6 @@
 "use client";
 
+import { addViewerLights, createViewerControls } from "./characterScene";
 import { fitObjectToView } from "./characterViewFit";
 import { applyRenderProfile } from "./characterRenderProfile";
 import { applyLegacyMeshFixes } from "@/lib/characterMaterials";
@@ -7,7 +8,7 @@ import { loadModelFromCandidates, type ModelLoadError, type ModelLoadSuccess } f
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Minus, Plus, RotateCw, RefreshCw, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CharacterRenderProfile } from "@/lib/types";
@@ -113,7 +114,8 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
   }, [isRotating]);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const mount = mountRef.current;
+    if (!mount) return;
     if (normalizedModelCandidates.length === 0) {
       setErrorType("model");
       setErrorMessage("モデルデータを確認できませんでした。");
@@ -124,8 +126,8 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     setStatus("loading");
     setErrorType(null);
     setErrorMessage(null);
-    const initialWidth = mountRef.current.clientWidth;
-    const initialHeight = mountRef.current.clientHeight;
+    const initialWidth = mount.clientWidth;
+    const initialHeight = mount.clientHeight;
     if (initialWidth <= 0 || initialHeight <= 0) {
       let waitFrame = 0;
       let frameId = 0;
@@ -192,24 +194,10 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(SCENE_BG_COLOR, 1);
-    mountRef.current.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement);
 
-    const light = new THREE.HemisphereLight(0xffffff, 0xe9edf0, 1.35);
-    scene.add(light);
-    const directional = new THREE.DirectionalLight(0xffffff, 1.2);
-    directional.position.set(2.5, 3.5, 2);
-    scene.add(directional);
-    const fill = new THREE.DirectionalLight(0xffffff, 0.7);
-    fill.position.set(-2.5, 2.2, -2);
-    scene.add(fill);
-    const back = new THREE.DirectionalLight(0xffffff, 0.45);
-    back.position.set(0, 2.8, -3);
-    scene.add(back);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.enablePan = false;
-    controls.target.set(0, 0, 0);
+    addViewerLights(scene);
+    const controls = createViewerControls(camera, renderer.domElement);
     controlsInstanceRef.current = controls;
 
     let cancelled = false;
@@ -345,7 +333,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined") {
       resizeObserver = new ResizeObserver(() => handleResize());
-      resizeObserver.observe(mountRef.current);
+      resizeObserver.observe(mount);
     } else {
       window.addEventListener("resize", handleResize);
     }
@@ -371,8 +359,8 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
         scene.remove(objectRef.current);
         objectRef.current = null;
       }
-      if (mountRef.current?.contains(renderer.domElement)) {
-        mountRef.current.removeChild(renderer.domElement);
+      if (mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- candidatesKey は normalizedModel/MtlCandidates の値ベースのキー

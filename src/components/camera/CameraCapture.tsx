@@ -50,7 +50,6 @@ export function CameraCapture() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -670,7 +669,6 @@ export function CameraCapture() {
       startInProgressRef.current = false;
       // streamと描画資源を同じcleanupで解放する
       stopStream();
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       for (const controller of pendingLoads.values()) controller.abort();
       pendingLoads.clear();
       for (const object of Object.values(modelMapRef.current)) disposeCameraModel(object);

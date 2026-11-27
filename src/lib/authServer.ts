@@ -71,6 +71,7 @@ export async function fetchAppUserByIdentity(identityId: string): Promise<User |
 
 /**
  * 認証ユーザーを `public.users` と同期する。
+ * プロフィール削除済みの既存行は書き込まず、読み取った現在の権限を返す。
  *
  * @param payload - identity 情報
  * @returns 同期後ユーザー。Supabase 未設定・失敗時は null
@@ -86,6 +87,8 @@ export async function syncAppUserFromIdentity(payload: IdentityPayload): Promise
   if (!client) return existing;
 
   if (existing) {
+    if (existing.email === null && existing.display_name === "Traveler") return existing;
+
     const { data, error } = await client
       .from("users")
       .update({

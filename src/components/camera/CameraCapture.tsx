@@ -2,6 +2,7 @@
 
 import { CAPTURED_PHOTO_KEY, CAPTURED_DETECTION_KEY, CAPTURED_MODELS_KEY } from "@/lib/config";
 
+import { computeCoverTransform, computeCoverCrop } from "./coverFit";
 import { toLocalAssetUrl } from "@/lib/modelAssets";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
@@ -613,21 +614,9 @@ export function CameraCapture() {
       if (videoRef.current && overlayCanvasRef.current) {
         const videoW = videoRef.current.videoWidth || 1280;
         const videoH = videoRef.current.videoHeight || 720;
-        const videoAspect = videoW / videoH;
         const canvasW = overlayCanvasRef.current.clientWidth || 640;
         const canvasH = overlayCanvasRef.current.clientHeight || 480;
-        const displayAspect = canvasW / canvasH;
-        if (videoAspect > displayAspect) {
-          // ビデオが横長 → 左右がクロップされる
-          const visibleFraction = displayAspect / videoAspect;
-          scaleX = 1 / visibleFraction;
-          offsetX = (1 - visibleFraction) / 2;
-        } else {
-          // ビデオが縦長 → 上下がクロップされる
-          const visibleFraction = videoAspect / displayAspect;
-          scaleY = 1 / visibleFraction;
-          offsetY = (1 - visibleFraction) / 2;
-        }
+        ({ scaleX, scaleY, offsetX, offsetY } = computeCoverTransform(videoW, videoH, canvasW, canvasH));
       }
 
       const loadedModels = models.filter((id) => modelMapRef.current[id]);
@@ -709,20 +698,11 @@ export function CameraCapture() {
     const previewHeight = video.clientHeight || 480;
     const sourceWidth = video.videoWidth || 1280;
     const sourceHeight = video.videoHeight || 720;
-    const previewAspect = resize ? previewWidth / previewHeight : canvas.width / canvas.height;
-    const sourceAspect = sourceWidth / sourceHeight;
-
-    let sx = 0;
-    let sy = 0;
-    let sw = sourceWidth;
-    let sh = sourceHeight;
-    if (sourceAspect > previewAspect) {
-      sw = Math.round(sourceHeight * previewAspect);
-      sx = Math.round((sourceWidth - sw) / 2);
-    } else if (sourceAspect < previewAspect) {
-      sh = Math.round(sourceWidth / previewAspect);
-      sy = Math.round((sourceHeight - sh) / 2);
-    }
+    const { sx, sy, sw, sh } = computeCoverCrop(
+      sourceWidth, sourceHeight,
+      resize ? previewWidth : canvas.width,
+      resize ? previewHeight : canvas.height,
+    );
 
     if (resize) {
       const scale = maxEdge ? Math.min(1, maxEdge / Math.max(sw, sh)) : 1;

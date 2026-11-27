@@ -19,3 +19,7 @@ Supabaseテーブルの変更や追加のセットアップはない。
 ## カメラの向きと写真引き渡しキー
 
 `isCameraFacingMode` / `resolveActiveFacingMode`と型を`src/lib/cameraStream.ts`へ移動。実際のtrack設定を要求値より優先し、不明・未対応・トラックなしでは要求値を使う挙動を維持する。撮影画面と編集画面は`src/lib/config.ts`のsessionStorageキーを参照し、`capturedPhoto` / `capturedDetection` / `capturedModels`の文字列は変更しない。
+
+## object-coverの計算
+
+`src/components/camera/coverFit.ts`に正規化座標補正と整数ピクセル切り抜きを別関数で分離。寸法の既定値、動画の初回/継続フレームで参照する縦横比、出力サイズ制限、鏡像処理は呼び出し側に残す。横長・縦長・同比率と端数の丸めをテストする。

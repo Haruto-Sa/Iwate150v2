@@ -87,6 +87,18 @@ describe("本人の保存データを全削除", () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it("NEXTAUTH_URLに合わせた送信元でのみ削除する", async () => {
+    vi.stubEnv("NEXTAUTH_URL", "https://trusted.test/api/auth");
+    expect((await deleteOwnData(request("DELETE", { confirmation: "delete" }))).status).toBe(403);
+    expect(records.users).toHaveLength(2);
+    expect((await deleteOwnData(request("DELETE", { confirmation: "delete" }, "https://trusted.test"))).status).toBe(200);
+    expect(records.users.map(user => user.auth_id)).toEqual(["oauth:google:B"]);
+  });
+  it.each(["AUTH_URL", "NEXTAUTH_URL"])("不正な%sでは削除しない", async key => {
+    vi.stubEnv(key, "not-a-url");
+    expect((await deleteOwnData(request("DELETE", { confirmation: "delete" }))).status).toBe(503);
+    expect(records.users).toHaveLength(2);
+  });
   it("Aの登録と記録だけを削除し、Bを保持して再送も成功する", async () => {
     records.stamps.push({ id: 2, user_id: 1, spot_id: 30 });
     for (let attempt = 0; attempt < 2; attempt++) {

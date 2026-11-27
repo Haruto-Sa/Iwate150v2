@@ -23,7 +23,7 @@
     "@mediapipe/camera_utils": "^0.3.1640029074",
     "@mediapipe/face_mesh": "^0.4.1633559619",
     "@serwist/next": "9.6.0",
-    "@supabase/supabase-js": "^2.87.1",
+    "@supabase/supabase-js": "^2.119.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "leaflet": "^1.9.4",

@@ -4,12 +4,19 @@ test("カメラ不在でも警告ダイアログを開かず関連ページへ�
   const dialogs: string[] = [];
   page.on("dialog", async (dialog) => { dialogs.push(dialog.message()); await dialog.dismiss(); });
   await page.addInitScript(() => {
-    Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
-      value: async () => { throw new DOMException("Requested device not found", "NotFoundError"); },
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: async () => {
+          document.documentElement.dataset.missingCameraRequested = "true";
+          throw new DOMException("Requested device not found", "NotFoundError");
+        },
+      },
     });
   });
   await page.goto("/camera");
   await expect(page.getByRole("main").getByRole("alert")).toContainText("カメラが見つかりません");
+  expect(await page.evaluate(() => document.documentElement.dataset.missingCameraRequested)).toBe("true");
   await page.getByRole("link", { name: "キャラクターを見る", exact: true }).click();
   await expect(page).toHaveURL(/\/character$/);
   expect(dialogs).toEqual([]);
@@ -92,4 +99,55 @@ test("ファイル共有非対応でもPNGを保存できる", async ({ page }) 
   const download = await downloadEvent;
   expect(download.suggestedFilename()).toBe("iwate-memory.png");
   expect(await download.failure()).toBeNull();
+});
+
+test("写真上の文字とスタンプを移動・拡大でき、指を離すと操作が終わる", async ({ page }) => {
+  await page.addInitScript(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 600;
+    canvas.getContext("2d")!.fillRect(0, 0, 800, 600);
+    sessionStorage.setItem("capturedPhoto", canvas.toDataURL("image/png"));
+  });
+  await page.goto("/camera/edit");
+  const photo = page.getByRole("img", { name: "撮影した岩手旅の写真" });
+  const caption = page.getByText("Iwate Trip!", { exact: true });
+  await expect(caption).toBeVisible();
+  await caption.scrollIntoViewIfNeeded();
+  const bounds = (await photo.boundingBox())!;
+  const textBounds = (await caption.boundingBox())!;
+  await page.mouse.move(textBounds.x + textBounds.width / 2, textBounds.y + textBounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width * 0.35, bounds.y + bounds.height * 0.4, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(() => caption.evaluate(el => Number.parseFloat((el as HTMLElement).style.left))).toBeCloseTo(35, 0);
+  await expect.poll(() => caption.evaluate(el => Number.parseFloat((el as HTMLElement).style.top))).toBeCloseTo(40, 0);
+
+  await page.getByRole("button", { name: "サイズ", exact: true }).click();
+  await caption.scrollIntoViewIfNeeded();
+  const before = await caption.evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize));
+  const resizedBounds = (await caption.boundingBox())!;
+  const photoBounds = (await photo.boundingBox())!;
+  const centerX = resizedBounds.x + resizedBounds.width / 2;
+  const centerY = resizedBounds.y + resizedBounds.height / 2;
+  await page.mouse.move(centerX, centerY);
+  await page.mouse.down();
+  await page.mouse.move(centerX, centerY - photoBounds.height * 0.1, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(() => caption.evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThan(before + 4);
+  const after = await caption.evaluate(el => (el as HTMLElement).style.fontSize);
+  await page.mouse.move(centerX, centerY);
+  expect(await caption.evaluate(el => (el as HTMLElement).style.fontSize)).toBe(after);
+
+  await page.getByRole("button", { name: "移動", exact: true }).click();
+  const sticker = page.getByText("✨", { exact: true });
+  await sticker.scrollIntoViewIfNeeded();
+  const stickerBounds = (await sticker.boundingBox())!;
+  const target = (await photo.boundingBox())!;
+  await page.mouse.move(stickerBounds.x + stickerBounds.width / 2, stickerBounds.y + stickerBounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(target.x + target.width * 0.65, target.y + target.height * 0.3, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(() => sticker.evaluate(el => Number.parseFloat((el as HTMLElement).style.left))).toBeCloseTo(65, 0);
+  await expect.poll(() => sticker.evaluate(el => Number.parseFloat((el as HTMLElement).style.top))).toBeCloseTo(30, 0);
 });

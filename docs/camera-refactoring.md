@@ -31,3 +31,9 @@ Supabaseテーブルの変更や追加のセットアップはない。
 Step 1〜4の本番ビルドと撮影・編集E2E68件が成功（4.8分、1 worker）。以前失敗したAndroid相当の顔検出復帰も成功した。編集E2Eは従来Chromiumのみだったため、編集の分割に先立ち他3プロファイルにも追加し、文字・スタンプの移動、文字のサイズ変更、pointerup後の操作終了を検証する。実機確認とは区別する。
 
 編集分割前の4プロファイル20件が成功（41.6秒）。WebKitでは既存のカメラ不在fixtureが実際の権限エラーを返していたため、navigator.mediaDevices全体の差し替えと呼び出し確認を追加し、同じNotFoundErrorを確実に再現するよう修正した。
+
+## 編集画像の書き出し
+
+`camera/editor/types.ts`に装飾・操作モードの型、`renderEditedPhoto.ts`にPNG合成を移動した。`generateImage`は最新のphoto/stickers/textsを渡す。画像decode、フォント準備待ち、crossOrigin、元画像寸法、正規化座標、描画順、PNG形式を維持している。
+
+PNG合成の移動後は、インデント以外の処理が変更前と一致。単体735件・型・lint（0 errors / 5 warnings）・本番ビルド・編集20件が成功（43.6秒）。

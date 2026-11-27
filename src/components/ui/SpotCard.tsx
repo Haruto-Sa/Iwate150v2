@@ -38,7 +38,7 @@ export function SpotCard({
           {spot.description}
         </p>
         {visitorStatistic && (
-          <div className="mt-3 border-t border-emerald-900/10 pt-3 text-sm text-emerald-900" aria-label={`${visitorStatistic.spotName}の観光統計`}>
+          <div className="mt-3 border-t border-app-line/10 pt-3 text-sm text-app-ink" aria-label={`${visitorStatistic.spotName}の観光統計`}>
             <p>{visitorStatistic.period} {visitorStatistic.metric}</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">{visitorStatistic.count.toLocaleString("ja-JP")}{visitorStatistic.unit}</p>
             <a href={visitorStatistic.sourceUrl} className="mt-1 inline-flex min-h-11 items-center text-xs underline underline-offset-4">

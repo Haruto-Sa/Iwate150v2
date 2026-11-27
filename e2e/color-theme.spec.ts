@@ -73,3 +73,27 @@ for (const theme of ["light", "dark"] as const) test(`${theme}の主要画面と
   await info.attach("browser-errors", { body: JSON.stringify(errors, null, 2), contentType: "application/json" });
   expect(errors.filter(message => /hydration|Minified React error/i.test(message))).toEqual([]);
 });
+
+test("ダークテーマでも観光統計と出典を読める", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("voja_color_theme", "dark"));
+  await page.goto("/search");
+  await page.getByRole("textbox", { name: "スポット・イベントのキーワード" }).fill("龍泉洞");
+  const statistics = page.getByLabel("龍泉洞の観光統計", { exact: true });
+  await expect(statistics).toBeVisible();
+  const contrast = await statistics.evaluate(element => {
+    const card = element.closest("article")!;
+    const luminance = (color: string) => {
+      const values = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(value => {
+        const channel = value / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return values[0] * 0.2126 + values[1] * 0.7152 + values[2] * 0.0722;
+    };
+    const background = luminance(getComputedStyle(card).backgroundColor);
+    return [element, element.querySelector("a")!].map(node => {
+      const foreground = luminance(getComputedStyle(node).color);
+      return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+    });
+  });
+  for (const ratio of contrast) expect(ratio).toBeGreaterThanOrEqual(4.5);
+});

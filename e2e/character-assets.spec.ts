@@ -116,8 +116,14 @@ test("カリンの画像がモデルより遅れても描画色を変えない",
  * @example const frame = await readViewerFrame(page);
  */
 async function readViewerFrame(page: Page) {
-  return await page.locator("canvas").evaluate(canvas => new Promise<{ fingerprint: string; painted: number }>((resolve, reject) => requestAnimationFrame(() => {
-      const source = canvas as HTMLCanvasElement;
+  return await page.evaluate(() => new Promise<{ fingerprint: string; painted: number }>((resolve, reject) => requestAnimationFrame(() => {
+      // 描画後の同一コールバックでCanvasを取得し、各画素比較の前の重複DOM待機を避ける。
+      const canvases = document.querySelectorAll("canvas");
+      const source = canvases[0];
+      if (canvases.length !== 1 || !(source instanceof HTMLCanvasElement)) {
+        reject(new Error(`モデル表示のCanvasは1つ必要です（${canvases.length}個）`));
+        return;
+      }
       const copy = document.createElement("canvas");
       copy.width = source.width;
       copy.height = source.height;

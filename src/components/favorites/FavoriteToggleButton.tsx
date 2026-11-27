@@ -16,7 +16,7 @@ type Props = {
 /**
  * スポット詳細用のお気に入りトグル。
  *
- * @param props - 対象 spot id
+ * @param props - 対象spot IDと閲覧用サンプルかどうか
  * @returns FavoriteToggleButton
  * @example
  * <FavoriteToggleButton spotId={12} />

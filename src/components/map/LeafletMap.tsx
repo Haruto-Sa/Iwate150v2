@@ -316,7 +316,7 @@ export function LeafletMap({
                 )}
                 {spot.reference_url && (
                   <ConfirmedExternalLink
-                    className="text-app-accent-ink underline underline-offset-2"
+                    className="text-emerald-700 underline underline-offset-2"
                     href={spot.reference_url}
                   >
                     関連リンク
@@ -325,7 +325,7 @@ export function LeafletMap({
                 <div className="flex items-center gap-2">
                   {showDetailLinks && (
                     <a
-                      className="text-app-accent-ink underline text-sm"
+                      className="text-emerald-700 underline text-sm"
                       href={getSpotHref(spot)}
                     >
                       詳細を見る
@@ -352,7 +352,7 @@ export function LeafletMap({
         })}
         {userPos && userIcon && (
           <MapMarker position={[userPos.lat, userPos.lng]} icon={userIcon}>
-            <div className="text-sm font-semibold text-app-accent-ink">現在地</div>
+            <div className="text-sm font-semibold text-emerald-700">現在地</div>
           </MapMarker>
         )}
       </MapContainer>

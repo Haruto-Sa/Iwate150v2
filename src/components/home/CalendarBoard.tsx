@@ -82,9 +82,9 @@ export function CalendarBoard({ events }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex w-full items-center justify-between gap-1 text-sm">
           <Button
+            iconOnly
             variant="ghost"
             aria-label="前の月"
-            className="h-11 w-11 !p-0"
             onClick={() => {
               setCurrentMonth(
                 new Date(
@@ -96,15 +96,15 @@ export function CalendarBoard({ events }: Props) {
               setPopupDate(null);
             }}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft aria-hidden="true" className="h-4 w-4" />
           </Button>
           <span className="font-medium tabular-nums" aria-live="polite">
             {monthLabel}
           </span>
           <Button
+            iconOnly
             variant="ghost"
             aria-label="次の月"
-            className="h-11 w-11 !p-0"
             onClick={() => {
               setCurrentMonth(
                 new Date(
@@ -116,7 +116,7 @@ export function CalendarBoard({ events }: Props) {
               setPopupDate(null);
             }}
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight aria-hidden="true" className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -154,7 +154,7 @@ export function CalendarBoard({ events }: Props) {
               </span>
               <span
                 aria-hidden="true"
-                className={`mt-1 h-1 w-1 rounded-full ${count ? (isSelected ? "bg-app-surface" : "bg-[#a14432]") : "bg-transparent"}`}
+                className={`mt-1 h-1 w-1 rounded-full ${count ? (isSelected ? "bg-white" : "bg-app-highlight") : "bg-transparent"}`}
               />
             </button>
           );

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 const state = vi.hoisted(() => ({ identity: "oauth:google:A" as string | null, unavailable: false, failure: false }));
@@ -50,13 +50,40 @@ function request(method = "GET", body?: unknown, origin = "https://app.test"): R
 }
 
 beforeEach(() => {
-  delete process.env.AUTH_URL;
+  vi.stubEnv("AUTH_URL", undefined);
+  vi.stubEnv("NEXTAUTH_URL", undefined);
   state.identity = "oauth:google:A"; state.unavailable = false; state.failure = false;
   records.favorites = [{ id: 1, user_id: 1, spot_id: 10 }, { id: 2, user_id: 2, spot_id: 20 }];
   records.stamps = [{ id: 1, user_id: 2, spot_id: 20 }];
 });
 
+afterEach(() => vi.unstubAllEnvs());
+
 describe("本人API", () => {
+  it("NEXTAUTH_URLだけでも設定済みoriginからの更新を受理する", async () => {
+    vi.stubEnv("NEXTAUTH_URL", "https://trusted.test/api/auth");
+    expect((await PUT(request("PUT", { spotId: 30 }, "https://trusted.test"))).status).toBe(200);
+    expect(records.favorites).toContainEqual({ id: 3, user_id: 1, spot_id: 30 });
+  });
+  it("NEXTAUTH_URLがある場合はrequest URLと一致しても別originの更新を拒否する", async () => {
+    vi.stubEnv("NEXTAUTH_URL", "https://trusted.test");
+    expect((await PUT(request("PUT", { spotId: 30 }))).status).toBe(403);
+    expect(records.favorites).toHaveLength(2);
+  });
+  it("Auth.jsと同じくAUTH_URLをNEXTAUTH_URLより優先する", async () => {
+    vi.stubEnv("AUTH_URL", "https://app.test");
+    vi.stubEnv("NEXTAUTH_URL", "https://legacy.test");
+    expect((await PUT(request("PUT", { spotId: 30 }, "https://legacy.test"))).status).toBe(403);
+    expect((await PUT(request("PUT", { spotId: 30 }))).status).toBe(200);
+  });
+  it.each(["AUTH_URL", "NEXTAUTH_URL"])("不正な%sをrequest URLへフォールバックしない", async key => {
+    vi.stubEnv(key, "not-a-url");
+    const response = await PUT(request("PUT", { spotId: 30 }));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: "保存サービスを利用できません。" });
+    expect(records.favorites).toHaveLength(2);
+  });
+
   it("全操作で未認証を401にしキャッシュを禁止する", async () => {
     state.identity = null;
     for (const [handler, method] of [[GET, "GET"], [PUT, "PUT"], [POST, "POST"], [DELETE, "DELETE"], [getStamps, "GET"], [postStamp, "POST"]] as const) {

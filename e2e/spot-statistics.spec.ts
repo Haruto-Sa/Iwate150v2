@@ -39,3 +39,38 @@ test("操作の準備前は検索条件を変更させず、準備後の入力�
     await expect(page.getByRole("heading", { name: "龍泉洞", exact: true })).toBeVisible();
   } finally { release(); }
 });
+
+
+test("歴史文化館に施設入場者数の年度・単位・公式出典を表示する", async ({ page }, testInfo) => {
+  await page.goto("/search");
+  const keyword = page.getByRole("textbox", { name: "スポット・イベントのキーワード" });
+  await keyword.fill("もりおか歴史文化館");
+  await expect(keyword).toHaveValue("もりおか歴史文化館");
+  const card = page.getByRole("article").filter({ has: page.getByRole("heading", { name: "もりおか歴史文化館", exact: true }) });
+  await expect(page.getByRole("article")).toHaveCount(1);
+  await expect(card.getByText("2024年度 入場者数", { exact: true })).toBeVisible();
+  await expect(card.getByText("249,188人", { exact: true })).toBeVisible();
+  await expect(card.getByRole("link", { name: /出典 盛岡市統計書/ })).toHaveAttribute("href", "https://www.city.morioka.iwate.jp/_res/projects/default_project/_page_/001/039/501/R6_shiminnoseikatsu.pdf#page=1");
+  await expect(card.getByText("観光客入込数", { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("morioka-statistic.png"), fullPage: true });
+});
+
+
+test("編集おすすめを来訪統計と区別して表示する", async ({ page }, testInfo) => {
+  await page.goto("/search");
+  const keyword = page.getByRole("textbox", { name: "スポット・イベントのキーワード" });
+  for (const name of ["御所野遺跡", "鉄の歴史館", "奥州宇宙遊学館"]) {
+    await keyword.fill(name);
+    await expect(page.getByRole("article")).toHaveCount(1);
+    const card = page.getByRole("article").filter({ has: page.getByRole("heading", { name, exact: true }) });
+    await expect(card.getByText("編集おすすめ", { exact: true })).toBeVisible();
+    await expect(card.getByText(/観光客入込数|入場者数|0人/)).toHaveCount(0);
+  }
+  await page.getByRole("article").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("editorial-pick.png") });
+  await keyword.fill("龍泉洞");
+  await expect(page.getByRole("heading", { name: "龍泉洞", exact: true })).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(1);
+  await expect(page.getByRole("article").getByText("編集おすすめ", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("145,201人", { exact: true })).toBeVisible();
+});

@@ -14,7 +14,8 @@ export type SpotVisitorStatistic = {
   checkedAt: string;
 };
 
-// 原資料57ページの令和4年度「総数」。書籍の刊行年度と集計年度を混同しない。
+// 書籍の刊行年度と集計年度を混同せず、施設ごとの指標名を保持する。
+// 龍泉洞は原資料57ページの令和4年度「総数」。
 const statistics: readonly SpotVisitorStatistic[] = [{
   cityName: "岩泉町",
   spotName: "龍泉洞",
@@ -26,6 +27,17 @@ const statistics: readonly SpotVisitorStatistic[] = [{
   sourceUrl: "https://www.town.iwaizumi.lg.jp/docs/2024052000014/file_contents/07.pdf#page=3",
   sourcePage: 57,
   checkedAt: "2026-10-24",
+}, {
+  cityName: "盛岡市",
+  spotName: "もりおか歴史文化館",
+  period: "2024年度",
+  metric: "入場者数",
+  count: 249188,
+  unit: "人",
+  sourceTitle: "盛岡市統計書（令和6年版）市民の生活",
+  sourceUrl: "https://www.city.morioka.iwate.jp/_res/projects/default_project/_page_/001/039/501/R6_shiminnoseikatsu.pdf#page=1",
+  sourcePage: 1,
+  checkedAt: "2026-11-28",
 }];
 
 /**

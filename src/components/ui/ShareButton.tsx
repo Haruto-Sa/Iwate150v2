@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Share2, Twitter, Link2, Check } from "lucide-react";
 import { ToastContainer } from "@/components/ui/Toast";
 import { useToast } from "@/hooks/useToast";
+
+/**
+ * 共有APIの有無はページ滞在中に変わらないため購読は不要。
+ * @returns 購読解除処理
+ * @example useSyncExternalStore(subscribeShareCapability, getSnapshot, getServerSnapshot)
+ */
+function subscribeShareCapability() {
+  return () => {};
+}
 
 type Props = {
   /** シェア時のタイトル */
@@ -61,16 +70,15 @@ export function ShareButton({ title, text, url }: Props) {
   const twitterHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
   const lineHref = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 
-  /** Web Share API 対応チェック（SSR 対応のため typeof チェック） */
-  const canNativeShare =
-    typeof navigator !== "undefined" && typeof navigator.share === "function";
+  // サーバーと初回描画を揃え、hydration後に端末の共有APIへ切り替える。
+  const canNativeShare = useSyncExternalStore(
+    subscribeShareCapability,
+    () => typeof navigator.share === "function",
+    () => false,
+  );
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold uppercase tracking-widest text-emerald-900/60">
-        この場所をシェア
-      </p>
-
       {canNativeShare ? (
         /* Web Share API 対応環境 */
         <button

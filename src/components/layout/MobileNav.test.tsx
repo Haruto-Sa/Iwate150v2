@@ -48,11 +48,9 @@ describe("MobileNav", () => {
     expect(screen.getByRole("link", { name: "地図" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "検索" })).toBeInTheDocument();
     const cameraLink = screen.getByRole("link", { name: "カメラ" });
-    expect(homeLink.className).toContain("bg-[#0f3a3a]");
-    expect(homeLink.className).toContain("-mt-6");
+    expect(homeLink).toHaveAttribute("aria-current", "page");
     expect(cameraLink).toBeInTheDocument();
-    expect(cameraLink.className).not.toContain("bg-[#0f3a3a]");
-    expect(cameraLink.className).not.toContain("-mt-6");
+    expect(cameraLink).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("link", { name: "スタンプ" })).toHaveAttribute("href", "/stamps");
     expect(screen.queryByRole("button", { name: "その他" })).not.toBeInTheDocument();
   });
@@ -61,15 +59,14 @@ describe("MobileNav", () => {
     mockUsePathname.mockReturnValue("/map");
     render(<MobileNav />);
 
-    expect(screen.getByRole("link", { name: "地図" }).className).toContain("bg-[#0f3a3a]");
-    expect(screen.getByRole("link", { name: "カメラ" }).className).not.toContain("bg-[#0f3a3a]");
+    expect(screen.getByRole("link", { name: "地図" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "カメラ" })).not.toHaveAttribute("aria-current");
   });
 
   it("スタンプを選択中の下部タブとして表示する", () => {
     mockUsePathname.mockReturnValue("/stamps");
     render(<MobileNav />);
     expect(screen.getByRole("link", { name: "スタンプ" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "スタンプ" }).className).toContain("bg-[#0f3a3a]");
   });
 
   it("Studioでは下部ナビを表示しない", () => {

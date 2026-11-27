@@ -1,11 +1,8 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { IWATE_PUBLIC_BOUNDS } from "./config";
-import { mockCities, mockEvents, mockGenres, mockSpots } from "./mockData";
+import { mockCities, mockEvents, mockGenres, mockSpots, mockStampCatalog } from "./mockData";
 import { getCurrentDateKey, getUpcomingEvents, sortEventsForTimeline } from "./eventFilters";
 import {
-  AdminDashboardEventSummary,
-  AdminDashboardSpotSummary,
-  AdminDashboardStats,
   AdminEventCreateInput,
   AdminSpotCreateInput,
   AdminUserSummary,
@@ -15,6 +12,7 @@ import {
   Genre,
   Spot,
   Stamp,
+  StampCatalog,
   User,
   UserRole,
 } from "./types";
@@ -601,113 +599,6 @@ export async function fetchCurrentAppUser(): Promise<User | null> {
 }
 
 /**
- * 管理ダッシュボード表示用の集計値を取得する。
- *
- * @returns 管理ダッシュボード統計。Supabase未接続/取得失敗時はゼロ値
- * @example
- * const stats = await fetchAdminDashboardStats();
- */
-export async function fetchAdminDashboardStats(): Promise<AdminDashboardStats> {
-  const fallback: AdminDashboardStats = {
-    totalUsers: 0,
-    newUsersLast7Days: 0,
-    totalSpots: 0,
-    totalEvents: 0,
-    totalAdmins: 0,
-    latestSpots: [],
-    latestEvents: [],
-  };
-
-  if (!client) return fallback;
-
-  const writableClient = getWritableClient();
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-  const [
-    totalUsersRes,
-    newUsersRes,
-    totalSpotsRes,
-    totalEventsRes,
-    totalAdminsRes,
-    latestSpotsRes,
-    latestEventsRes,
-  ] = await Promise.all([
-    writableClient.from("users").select("*", { head: true, count: "exact" }),
-    writableClient.from("users").select("*", { head: true, count: "exact" }).gte("created_at", sevenDaysAgo),
-    writableClient.from("spots").select("*", { head: true, count: "exact" }),
-    writableClient.from("events").select("*", { head: true, count: "exact" }),
-    writableClient
-      .from("users")
-      .select("*", { head: true, count: "exact" })
-      .in("role", ["admin", "super_admin"]),
-    writableClient.from("spots").select("id,name,city_id").order("id", { ascending: false }).limit(5),
-    writableClient
-      .from("events")
-      .select("id,title,city_id,start_date")
-      .order("id", { ascending: false })
-      .limit(5),
-  ]);
-
-  const hasError = [
-    totalUsersRes.error,
-    newUsersRes.error,
-    totalSpotsRes.error,
-    totalEventsRes.error,
-    totalAdminsRes.error,
-    latestSpotsRes.error,
-    latestEventsRes.error,
-  ].some(Boolean);
-
-  if (hasError) {
-    console.warn("[supabase] admin dashboard stats fetch error", {
-      totalUsersError: totalUsersRes.error?.message,
-      newUsersError: newUsersRes.error?.message,
-      totalSpotsError: totalSpotsRes.error?.message,
-      totalEventsError: totalEventsRes.error?.message,
-      totalAdminsError: totalAdminsRes.error?.message,
-      latestSpotsError: latestSpotsRes.error?.message,
-      latestEventsError: latestEventsRes.error?.message,
-    });
-    return fallback;
-  }
-
-  return {
-    totalUsers: totalUsersRes.count ?? 0,
-    newUsersLast7Days: newUsersRes.count ?? 0,
-    totalSpots: totalSpotsRes.count ?? 0,
-    totalEvents: totalEventsRes.count ?? 0,
-    totalAdmins: totalAdminsRes.count ?? 0,
-    latestSpots: (latestSpotsRes.data ?? []) as AdminDashboardSpotSummary[],
-    latestEvents: (latestEventsRes.data ?? []) as AdminDashboardEventSummary[],
-  };
-}
-
-/**
- * 管理対象ユーザー一覧を取得する。
- *
- * @param limit - 最大件数
- * @returns 管理対象ユーザー配列
- * @example
- * const users = await fetchManageableUsers(200);
- */
-export async function fetchManageableUsers(limit = 200): Promise<AdminUserSummary[]> {
-  if (!client) return [];
-  const writableClient = getWritableClient();
-  const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 500);
-  const { data, error } = await writableClient
-    .from("users")
-    .select("id,auth_id,email,display_name,role,created_at")
-    .order("created_at", { ascending: false })
-    .limit(safeLimit);
-
-  if (error) {
-    console.warn("[supabase] manageable users fetch error:", error);
-    return [];
-  }
-  return (data ?? []) as AdminUserSummary[];
-}
-
-/**
  * 管理画面から新規スポットを作成する。
  *
  * @param input - 作成パラメータ
@@ -950,4 +841,83 @@ export async function mergeFavorites(identity: string, spotIds: number[]): Promi
   if (!spotIds.length) return [];
   const result = await requestPrivateData<{ persistedSpotIds: number[] }>("favorites", identity, "POST", { spotIds });
   return result.persistedSpotIds;
+}
+
+
+/**
+ * ID順に公開対象を最後まで取得する。途中失敗・制限超過時は部分一覧を返さない。
+ * @param db - 公開データ用クライアント
+ * @param signal - カタログ全体のタイムアウト
+ * @returns 全対象。取得を完了できなかった場合はnull
+ * @example const spots = await loadAllStampSpots(db, controller.signal);
+ */
+async function loadAllStampSpots(db: SupabaseClient, signal: AbortSignal): Promise<Spot[] | null> {
+  const spots: Spot[] = [];
+  let lastId: number | undefined;
+  // メモリとリクエスト数を制限し、極端に大きい一覧でも無制限に取得しない。
+  for (let page = 0; page < 100; page += 1) {
+    if (signal.aborted) return null;
+    let query = db.from("spots").select("*")
+      .not("city_id", "is", null).not("genre_id", "is", null)
+      .gte("lat", IWATE_PUBLIC_BOUNDS.minLat).lte("lat", IWATE_PUBLIC_BOUNDS.maxLat)
+      .gte("lng", IWATE_PUBLIC_BOUNDS.minLng).lte("lng", IWATE_PUBLIC_BOUNDS.maxLng)
+      .order("id").limit(500);
+    if (lastId !== undefined) query = query.gt("id", lastId);
+    const { data, error } = await query.abortSignal(signal);
+    if (error || !data || signal.aborted) return null;
+    if (!data.length) return spots;
+    const rows = data as Spot[];
+    const nextId = rows[rows.length - 1].id;
+    if (!Number.isSafeInteger(nextId) || (lastId !== undefined && nextId <= lastId)) return null;
+    spots.push(...rows);
+    lastId = nextId;
+    // サーバー側の件数上限が500未満でも、空ページを得るまで次のIDを取得する。
+  }
+  return null;
+}
+
+/**
+ * 公開スタンプ対象を同じ取得結果の市町村と組にして読み込む。
+ * @returns データの出所を含む対象。障害時は保存不可のサンプル
+ * @example const catalog = await loadStampCatalog();
+ */
+export async function loadStampCatalog(): Promise<StampCatalog> {
+  if (!client) return mockStampCatalog;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const [spots, cities] = await Promise.all([
+      loadAllStampSpots(client, controller.signal),
+      client.from("cities").select("*").order("id").limit(100).abortSignal(controller.signal),
+    ]);
+    if (!spots || cities.error || controller.signal.aborted) return mockStampCatalog;
+    return { spots, cities: (cities.data ?? []) as City[], isSample: false };
+  } catch {
+    return mockStampCatalog;
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
+  }
+}
+
+/**
+ * 出所情報を保った公開スタンプカタログを同一オリジンから取得する。
+ * @returns 公開対象。通信失敗時は閲覧専用サンプル
+ * @example const catalog = await fetchStampCatalog();
+ */
+export async function fetchStampCatalog(): Promise<StampCatalog> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch("/api/stamps/catalog", { cache: "no-store", signal: controller.signal });
+    if (!response.ok) return mockStampCatalog;
+    const catalog = await response.json() as StampCatalog;
+    if (!Array.isArray(catalog.spots) || !Array.isArray(catalog.cities) || typeof catalog.isSample !== "boolean") return mockStampCatalog;
+    return catalog;
+  } catch {
+    return mockStampCatalog;
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
+  }
 }

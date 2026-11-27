@@ -1,10 +1,11 @@
 "use client";
 
+import { PageHeading } from "@/components/ui/PageHeading";
+
 import { useEffect, useMemo, useState } from "react";
 import { characters } from "@/lib/characters";
-import { SectionTitle } from "@/components/ui/SectionTitle";
 import { Button } from "@/components/ui/Button";
-import { Sparkles, Image as ImageIcon, MapPin } from "lucide-react";
+import { Image as ImageIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { CharacterViewer } from "@/components/character/CharacterViewer";
 import { getImageUrl } from "@/lib/storage";
@@ -250,10 +251,7 @@ export default function CharacterPage() {
   if (!selected) {
     return (
       <div className="space-y-6">
-        <SectionTitle
-          label="Character"
-          description="旅をいっしょに楽しむキャラクター情報を準備中です。"
-          icon={Sparkles}
+        <PageHeading title="キャラクター"
         />
       </div>
     );
@@ -261,14 +259,11 @@ export default function CharacterPage() {
 
   return (
     <div className="space-y-6">
-      <SectionTitle
-        label="Character"
-        description="旅をもっと楽しくしてくれるキャラクターを選んで、3D でじっくり眺められます。"
-        icon={Sparkles}
+      <PageHeading title="キャラクター"
       />
 
-      <section className="rounded-3xl border border-emerald-900/10 bg-white p-4 shadow-xl ring-1 ring-emerald-900/10 sm:p-5">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem),1fr] lg:items-start">
+      <section className="rounded-3xl border border-emerald-900/10 bg-white p-4 sm:p-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,24rem)_1fr] lg:items-start">
           <div className="mx-auto w-full max-w-sm space-y-3 lg:mx-0">
             <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-emerald-900/10 bg-gradient-to-b from-[#eef3f1] to-emerald-50">
               <CharacterViewer
@@ -283,9 +278,6 @@ export default function CharacterPage() {
                 className="h-full min-h-0"
               />
             </div>
-            <p className="text-center text-xs leading-relaxed text-emerald-900/65 lg:text-left">
-              画面下のボタンで拡大・縮小・回転・リセットを操作できます。気になるキャラクターは気軽に切り替えて見比べられます。
-            </p>
           </div>
 
           <div className="min-w-0 space-y-4">
@@ -339,6 +331,7 @@ export default function CharacterPage() {
                 key={character.id}
                 variant={active ? "primary" : "outline"}
                 size="sm"
+                aria-pressed={active}
                 onClick={() => setSelectedId(character.id)}
                 className="h-full min-h-14 text-left"
               >

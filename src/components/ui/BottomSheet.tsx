@@ -67,13 +67,14 @@ export function BottomSheet({
             {title}
           </h2>
           <Button
+            iconOnly
             aria-label={closeLabel ?? `${title} を閉じる`}
             variant="ghost"
             size="sm"
             className="rounded-full border border-emerald-900/10 bg-white/70"
             onClick={onClose}
           >
-            <X className="h-4 w-4" />
+            <X aria-hidden="true" className="h-4 w-4" />
           </Button>
         </div>
         {children}

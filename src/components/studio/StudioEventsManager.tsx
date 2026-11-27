@@ -3,7 +3,7 @@
 import { buildStudioPageHref, readStudioErrorMessage } from "./studioClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState, useTransition } from "react";
+import { FormEvent, useState, useTransition } from "react";
 import { CalendarDays, PencilLine, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { AdminEventListItem, City, Event } from "@/lib/types";
@@ -100,10 +100,13 @@ export function StudioEventsManager({
   const [isPending, startTransition] = useTransition();
   const isBusy = isMutating || isPending;
 
-  useEffect(() => {
+  const [previousEditingEvent, setPreviousEditingEvent] = useState(editingEvent);
+  // 対象変更時は古いフォームをDOMへ反映する前に同期する。
+  if (editingEvent !== previousEditingEvent) {
+    setPreviousEditingEvent(editingEvent);
     setFormValues(editingEvent ? createEventFormValues(editingEvent) : createEmptyEventForm());
     setErrorMessage(null);
-  }, [editingEvent]);
+  }
 
   /**
    * 単一フィールドを更新する。

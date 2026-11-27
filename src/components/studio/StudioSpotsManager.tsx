@@ -3,7 +3,7 @@
 import { buildStudioPageHref, readStudioErrorMessage } from "./studioClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState, useTransition } from "react";
+import { FormEvent, useState, useTransition } from "react";
 import { MapPinned, PencilLine, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { AdminSpotListItem, City, Genre, Spot } from "@/lib/types";
@@ -116,10 +116,13 @@ export function StudioSpotsManager({
   const [isPending, startTransition] = useTransition();
   const isBusy = isMutating || isPending;
 
-  useEffect(() => {
+  const [previousEditingSpot, setPreviousEditingSpot] = useState(editingSpot);
+  // 対象変更時は古いフォームをDOMへ反映する前に同期する。
+  if (editingSpot !== previousEditingSpot) {
+    setPreviousEditingSpot(editingSpot);
     setFormValues(editingSpot ? createSpotFormValues(editingSpot) : createEmptySpotForm());
     setErrorMessage(null);
-  }, [editingSpot]);
+  }
 
   /**
    * 単一フィールドを更新する。

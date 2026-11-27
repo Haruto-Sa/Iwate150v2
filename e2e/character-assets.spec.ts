@@ -41,3 +41,68 @@ test("モデル失敗時も別キャラクターへ置換せず再試行でき�
   await page.getByRole("button", { name: "再試行", exact: true }).click();
   await expect.poll(() => requested.length).toBeGreaterThan(before);
 });
+
+test("カリンの画像がモデルより遅れても描画色を変えない", async ({ page }) => {
+  const renders: string[] = [];
+  for (const imageFirst of [true, false]) {
+    let loaded = false;
+    let modelReady!: () => void;
+    const ready = new Promise<void>(resolve => { modelReady = resolve; });
+    const listener = async (message: import("@playwright/test").ConsoleMessage) => {
+      if (!message.text().startsWith("[CharacterViewer] candidate load succeeded")) return;
+      const info = await message.args()[1]?.jsonValue();
+      if (info?.characterId === "karin") { loaded = true; modelReady(); }
+    };
+    page.on("console", listener);
+    await page.addInitScript(() => {
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src")!;
+      Object.defineProperty(HTMLImageElement.prototype, "src", {
+        ...descriptor,
+        set(value: string) {
+          if (value.includes("karin-color.png")) this.addEventListener("load", () => {
+            document.documentElement.dataset.karinTextureLoaded = "true";
+          }, { once: true });
+          descriptor.set!.call(this, value);
+        },
+      });
+    });
+    await page.route("**/assets/characters/karin/karin-color.png", async route => {
+      const response = await route.fetch();
+      if (!imageFirst) await ready;
+      await route.fulfill({ response });
+    });
+    await page.route("**/assets/characters/karin/karin.obj", async route => {
+      const response = await route.fetch();
+      if (imageFirst) await page.waitForFunction(() => document.documentElement.dataset.karinTextureLoaded === "true");
+      await route.fulfill({ response });
+    });
+    await page.goto("/character");
+    await page.getByRole("button", { name: "カリンちゃん 遠野", exact: true }).click();
+    await expect.poll(async () => page.getByText("3Dモデルを読み込み中...", { exact: true }).count()).toBe(0);
+    await page.waitForFunction(() => document.documentElement.dataset.karinTextureLoaded === "true");
+    await expect.poll(() => loaded).toBe(true);
+    await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "リセット", exact: true }).click();
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    const frame = await page.locator("canvas").evaluate(canvas => new Promise<{ url: string; painted: number }>(resolve => requestAnimationFrame(() => {
+      const source = canvas as HTMLCanvasElement;
+      const copy = document.createElement("canvas");
+      copy.width = source.width;
+      copy.height = source.height;
+      const context = copy.getContext("2d")!;
+      context.drawImage(source, 0, 0);
+      const pixels = context.getImageData(0, 0, copy.width, copy.height).data;
+      let painted = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index + 3] > 0 && Math.abs(pixels[index] - 240) + Math.abs(pixels[index + 1] - 242) + Math.abs(pixels[index + 2] - 239) > 40) painted++;
+      }
+      resolve({ url: copy.toDataURL(), painted: painted / (copy.width * copy.height) });
+    })));
+    expect(frame.painted).toBeGreaterThan(0.01);
+    renders.push(frame.url);
+    page.off("console", listener);
+    await page.unrouteAll({ behavior: "wait" });
+  }
+  expect(renders[0].length).toBeGreaterThan(1000);
+  expect(renders[1]).toBe(renders[0]);
+});

@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
-import { beforeEach, expect, it, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { LeafletMap } from "./LeafletMap";
 import { mockStampCatalog } from "@/lib/mockData";
 
@@ -13,7 +13,7 @@ vi.mock("next/dynamic", async () => {
 });
 vi.mock("react-leaflet", () => ({
   MapContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  Marker: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  Marker: ({ children, position }: { children: ReactNode; position: number[] }) => <div data-testid="marker" data-position={position.join(",")}>{children}</div>,
   Popup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   TileLayer: () => null,
   useMap: () => ({ setView: vi.fn(), fitBounds: vi.fn(), getMaxZoom: () => 18 }),
@@ -44,4 +44,21 @@ it("通常の地図では従来どおり画像と詳細リンクを表示する"
   expect(await screen.findByRole("link", { name: "詳細を見る" })).toHaveAttribute("href", expect.stringContaining("/spots/"));
   expect(screen.getByRole("img", { name: spot.name })).toHaveAttribute("src", "https://images.example/spots/thumb.jpg");
   expect(resolveImages).toHaveBeenCalledWith(["spots/thumb.jpg"], "image");
+});
+
+afterEach(() => { vi.unstubAllGlobals(); });
+
+it("親の現在地を優先し、取り下げ後に古い位置取得結果を表示しない", async () => {
+  const getCurrentPosition = vi.fn();
+  vi.stubGlobal("navigator", { geolocation: { getCurrentPosition } });
+  const { rerender } = render(<Suspense><LeafletMap center={spot} spots={[]} /></Suspense>);
+  expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+  const staleCallback = getCurrentPosition.mock.calls[0][0];
+  rerender(<Suspense><LeafletMap center={spot} spots={[]} userPosition={{ lat: 40, lng: 142 }} /></Suspense>);
+  expect(await screen.findByTestId("marker")).toHaveAttribute("data-position", "40,142");
+  expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+  act(() => staleCallback({ coords: { latitude: 30, longitude: 130 } }));
+  expect(screen.getByTestId("marker")).toHaveAttribute("data-position", "40,142");
+  rerender(<Suspense><LeafletMap center={spot} spots={[]} showUser={false} userPosition={null} /></Suspense>);
+  expect(screen.queryByTestId("marker")).toBeNull();
 });

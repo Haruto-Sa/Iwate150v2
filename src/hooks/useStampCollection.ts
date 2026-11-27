@@ -46,10 +46,27 @@ export function useStampCollection() {
   } | null>(null);
   const [revision, setRevision] = useState(0);
 
-  useEffect(() => {
-    let cancelled = false;
+  const [previousRevision, setPreviousRevision] = useState(revision);
+  if (revision !== previousRevision) {
+    setPreviousRevision(revision);
     setPublicLoading(true);
     setPublicError(null);
+  }
+  const privateLoadKey = JSON.stringify([identity, status, revision]);
+  const [previousPrivateLoadKey, setPreviousPrivateLoadKey] = useState(privateLoadKey);
+  if (privateLoadKey !== previousPrivateLoadKey) {
+    setPreviousPrivateLoadKey(privateLoadKey);
+    setBusy(false);
+    setLoadedIdentity(undefined);
+    setStamps([]);
+    setPrivateError(null);
+    setLocation(null);
+    setLocationError(null);
+    setMessage(null);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
     fetchStampCatalog()
       .then((catalog) => {
         if (!cancelled) {
@@ -75,13 +92,6 @@ export function useStampCollection() {
   useEffect(() => {
     const current = ++generation.current;
     busyRef.current = false;
-    setBusy(false);
-    setLoadedIdentity(undefined);
-    setStamps([]);
-    setPrivateError(null);
-    setLocation(null);
-    setLocationError(null);
-    setMessage(null);
     if (status !== "loading") {
       (identity ? fetchUserStamps(identity) : Promise.resolve([]))
         .then((records) => {

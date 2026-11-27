@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { City, Event, Genre, Spot } from "@/lib/types";
 import { Search, LocateFixed, Navigation, Image as ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -37,6 +37,17 @@ type Props = {
 };
 
 const PAGE_SIZE = 50;
+
+/**
+ * hydration後に変化しないクライアント状態の購読口。
+ * @returns 購読解除用の空処理
+ * @example useSyncExternalStore(subscribeInteractive, clientInteractive, serverInteractive);
+ */
+function subscribeInteractive() { return () => {}; }
+/** @returns クライアントでの操作可否 @example clientInteractive(); */
+function clientInteractive() { return true; }
+/** @returns SSR・hydration中の操作可否 @example serverInteractive(); */
+function serverInteractive() { return false; }
 
 /**
  * 検索 API クエリ文字列を作成する。
@@ -76,8 +87,7 @@ function buildSearchQuery(params: {
  * <SearchSurface cities={cities} genres={genres} />
  */
 export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, initialTab = "spot" }: Props) {
-  const [interactive, setInteractive] = useState(false);
-  useEffect(() => { setInteractive(true); }, []);
+  const interactive = useSyncExternalStore(subscribeInteractive, clientInteractive, serverInteractive);
   const [tab, setTab] = useState<SearchTab>(initialTab);
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
@@ -115,26 +125,25 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
     };
   }, [keyword]);
 
-  useEffect(() => {
+  const filterKey = JSON.stringify([tab, selectedCityId, selectedGenreId, debouncedKeyword]);
+  const [previousFilterKey, setPreviousFilterKey] = useState(filterKey);
+  if (filterKey !== previousFilterKey) {
+    setPreviousFilterKey(filterKey);
     setPage(1);
-  }, [tab, selectedCityId, selectedGenreId, debouncedKeyword]);
+  }
+  const requestKey = JSON.stringify([filterKey, page]);
+  const [previousRequestKey, setPreviousRequestKey] = useState(requestKey);
+  if (requestKey !== previousRequestKey) {
+    setPreviousRequestKey(requestKey);
+    setIsLoading(!isIdleState);
+    setErrorMessage(null);
+  }
 
   useEffect(() => {
-    if (tab !== "event") return;
-    if (selectedGenreId !== "all") setSelectedGenreId("all");
-  }, [selectedGenreId, tab]);
-
-  useEffect(() => {
-    if (isIdleState) {
-      setIsLoading(false);
-      setErrorMessage(null);
-      return;
-    }
+    if (isIdleState) return;
 
     const controller = new AbortController();
     const run = async () => {
-      setIsLoading(true);
-      setErrorMessage(null);
       try {
         const query = buildSearchQuery({
           tab,
@@ -152,6 +161,7 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
           throw new Error(`search api error: ${response.status}`);
         }
         const payload = await response.json();
+        if (controller.signal.aborted) return;
         if (tab === "spot") {
           setSpotResult(payload as SpotSearchResponse);
         } else {
@@ -306,7 +316,10 @@ export function SearchSurface({ cities, genres, defaultSpots, defaultEvents, ini
             variant={tab === item.key ? "primary" : "ghost"}
             size="sm"
             aria-pressed={tab === item.key}
-            onClick={() => setTab(item.key as SearchTab)}
+            onClick={() => {
+              setTab(item.key as SearchTab);
+              if (item.key === "event") setSelectedGenreId("all");
+            }}
             className="flex-1 justify-center gap-2"
           >
             <item.icon className="h-4 w-4" />

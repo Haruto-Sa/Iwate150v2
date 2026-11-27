@@ -151,9 +151,10 @@ export function LeafletMap({
 }: Props) {
   const [tileFailed, setTileFailed] = useState(false);
   const markers = useMemo(() => spots ?? [], [spots]);
-  const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(
+  const [locatedUserPos, setLocatedUserPos] = useState<{ lat: number; lng: number } | null>(
     null,
   );
+  const userPos = userPosition ?? locatedUserPos;
   const [defaultIcon, setDefaultIcon] = useState<Icon | null>(null);
   const [stampIcons, setStampIcons] = useState<{
     target: DivIcon;
@@ -215,22 +216,20 @@ export function LeafletMap({
   }, []);
 
   useEffect(() => {
-    if (userPosition) {
-      // 親から現在地が渡された場合はその値を優先表示する。
-      setUserPos(userPosition);
-      return;
-    }
+    if (userPosition) return;
     if (!showUser || typeof navigator === "undefined" || !navigator.geolocation)
       return;
+    let cancelled = false;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        if (!cancelled) setLocatedUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
       () => {
         // silently ignore
       },
       { enableHighAccuracy: true, timeout: 5000 },
     );
+    return () => { cancelled = true; };
   }, [showUser, userPosition]);
 
   const markerPointsKey = useMemo(

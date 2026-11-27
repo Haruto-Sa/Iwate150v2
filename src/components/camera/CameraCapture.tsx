@@ -300,6 +300,7 @@ export function CameraCapture() {
   const activeFacingModeRef = useRef<CameraFacingMode>("user");
 
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const selectedModelsRef = useRef<string[]>(selectedModels);
   const [detection, setDetection] = useState<Detection>(null);
   const [renderedModels, setRenderedModels] = useState<string[]>([]);
   const renderedModelsRef = useRef<string[]>([]);
@@ -342,6 +343,8 @@ export function CameraCapture() {
   }, []);
 
   useEffect(() => {
+    // SSRでは存在しないMediaRecorderの対応状況をマウント後に確認する。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVideoSupported(getCameraRecordingMime() !== null);
     /** バックグラウンドの未完成動画を破棄する。@returns なし @example onHidden(); */
     function onHidden() { if (document.hidden) cancelRecording(); }
@@ -774,6 +777,8 @@ export function CameraCapture() {
 
   // Auto start camera on mount
   useEffect(() => {
+    // カメラ・WebGLの外部リソース開始と開始中表示を同じライフサイクルで同期する。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (status === "idle") startCamera();
   }, [status, startCamera]);
 
@@ -813,14 +818,19 @@ export function CameraCapture() {
 
 
   // selectedModelsをrefで保持（render loop内で参照するため）
-  const selectedModelsRef = useRef<string[]>(selectedModels);
+  const [previousSelectedModels, setPreviousSelectedModels] = useState(selectedModels);
+  if (selectedModels !== previousSelectedModels) {
+    setPreviousSelectedModels(selectedModels);
+    if (selectedModels.length === 0) {
+      setDetection(null);
+      setFaceHasResult(false);
+    }
+  }
   useEffect(() => {
     selectedModelsRef.current = selectedModels;
     if (selectedModels.length === 0) {
       detectionRef.current = null;
-      setDetection(null);
       faceHasResultRef.current = false;
-      setFaceHasResult(false);
     }
   }, [selectedModels]);
 

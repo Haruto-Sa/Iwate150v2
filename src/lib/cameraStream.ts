@@ -1,3 +1,37 @@
+export type CameraFacingMode = "user" | "environment";
+
+/**
+ * ブラウザが返した facingMode がアプリ定義の値か判定する。
+ *
+ * @param value - 判定対象
+ * @returns `user` または `environment` の場合 true
+ * @example
+ * isCameraFacingMode("user");
+ */
+export function isCameraFacingMode(value: unknown): value is CameraFacingMode {
+  return value === "user" || value === "environment";
+}
+
+/**
+ * 起動した stream から実際に有効な facingMode を解決する。
+ *
+ * `getUserMedia` が要求どおりに切り替えられなかった環境では、
+ * track settings を優先し、取得できない場合のみ要求値へフォールバックする。
+ *
+ * @param stream - 起動済み MediaStream
+ * @param requestedFacingMode - 要求した facingMode
+ * @returns 実際に採用された facingMode
+ * @example
+ * const activeFacingMode = resolveActiveFacingMode(stream, "environment");
+ */
+export function resolveActiveFacingMode(
+  stream: MediaStream,
+  requestedFacingMode: CameraFacingMode
+): CameraFacingMode {
+  const actualFacingMode = stream.getVideoTracks()[0]?.getSettings().facingMode;
+  return isCameraFacingMode(actualFacingMode) ? actualFacingMode : requestedFacingMode;
+}
+
 type CameraOptions = {
   facingMode: "user" | "environment";
   onFrame: () => Promise<void>;

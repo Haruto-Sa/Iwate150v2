@@ -60,3 +60,10 @@ export const INSTALL_PROMPT_VISIT_KEY = "voja_install_prompt_visits";
 export const INSTALL_PROMPT_DISMISS_UNTIL_KEY = "voja_install_prompt_dismiss_until";
 export const ONBOARDING_COMPLETED_KEY = "onboarding_completed";
 export const GUEST_FAVORITES_KEY = "voja_guest_favorites";
+
+/** 撮影画面から編集画面へ写真を渡すsessionStorageキー。 */
+export const CAPTURED_PHOTO_KEY = "capturedPhoto";
+/** 撮影時の顔検出領域を渡すsessionStorageキー。 */
+export const CAPTURED_DETECTION_KEY = "capturedDetection";
+/** 撮影時の選択キャラクターを渡すsessionStorageキー。 */
+export const CAPTURED_MODELS_KEY = "capturedModels";

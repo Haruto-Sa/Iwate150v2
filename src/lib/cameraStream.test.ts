@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { createCameraStream } from "./cameraStream";
+import { createCameraStream, isCameraFacingMode, resolveActiveFacingMode } from "./cameraStream";
 
 const getUserMedia = vi.fn();
 const trackStop = vi.fn();
@@ -98,4 +98,20 @@ it("stops and reports a failed frame", async () => {
   await vi.mocked(requestAnimationFrame).mock.calls[0][0](0);
   expect(onError).toHaveBeenCalledWith(error);
   expect(trackStop).toHaveBeenCalledTimes(1);
+});
+
+it.each(["user", "environment"] as const)("uses actual camera facing %s instead of a different request", (actual) => {
+  const stream = { getVideoTracks: () => [{ getSettings: () => ({ facingMode: actual }) }] } as unknown as MediaStream;
+  expect(resolveActiveFacingMode(stream, actual === "user" ? "environment" : "user")).toBe(actual);
+});
+
+it.each([undefined, "left", "right", null, 1])("falls back to requested facing for unsupported setting %s", (actual) => {
+  const stream = { getVideoTracks: () => [{ getSettings: () => ({ facingMode: actual }) }] } as unknown as MediaStream;
+  expect(isCameraFacingMode(actual)).toBe(false);
+  expect(resolveActiveFacingMode(stream, "environment")).toBe("environment");
+});
+
+it("falls back to requested facing when the stream has no video tracks", () => {
+  const stream = { getVideoTracks: () => [] } as unknown as MediaStream;
+  expect(resolveActiveFacingMode(stream, "user")).toBe("user");
 });

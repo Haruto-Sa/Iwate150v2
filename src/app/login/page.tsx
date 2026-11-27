@@ -12,7 +12,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="rounded-[28px] border border-emerald-900/10 bg-white p-6 text-sm text-emerald-900/70 shadow-sm">
+        <div className="rounded-[28px] border border-app-line/10 bg-app-surface p-6 text-sm text-app-ink-muted shadow-sm">
           ログイン画面を準備しています...
         </div>
       }

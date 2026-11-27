@@ -1,0 +1,320 @@
+{
+  "commit": "1181ba91233dc0d18d733c6ffa8ecead58f8d20d",
+  "instrumentedWorkingTree": true,
+  "recordedAt": "2026-10-23T17:41:31.794Z",
+  "scope": "macOS engine/device profiles; public portrait canvas stream, translated in moving-face. CPU render submission, not GPU completion or physical device. limited-bandwidth uses a shared 8 Mbps HTTP response-body budget with Service Worker unavailable. One sample per condition.",
+  "results": [
+    {
+      "environment": "android",
+      "scenario": "limited-bandwidth",
+      "visit": "cold",
+      "serviceWorker": false,
+      "bandwidth": {
+        "bytesPerSecond": 1000000,
+        "bytesThisVisit": 10703960,
+        "cumulativeBytes": 10703960,
+        "transferWindowMs": 10921.695624999998
+      },
+      "delayedRequests": 0,
+      "firstVideoObserved": 1004.9000000059605,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 821.1999999880791,
+        "offsetX": 0,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "uiPulse": {
+        "ticks": 107,
+        "maxGapMs": 296.7999999821186
+      },
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 799.5999999940395
+        },
+        {
+          "name": "camera:playing",
+          "time": 854.9000000059605
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 854.9000000059605
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 872.9000000059605
+        },
+        {
+          "name": "urls:start",
+          "time": 872.9000000059605
+        },
+        {
+          "name": "urls:end",
+          "time": 873.1999999880791
+        },
+        {
+          "name": "face:initialize:start",
+          "time": 873.5999999940395
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 1015.0999999940395
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 1016.9000000059605
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 1116
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 1117.199999988079
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 10944.40000000596
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 10944.799999982119
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 10945.199999988079
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 11064.5
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 11064.699999988079
+        },
+        {
+          "name": "face:initialize:end",
+          "time": 11073.699999988079
+        },
+        {
+          "name": "face:ready",
+          "time": 11073.799999982119
+        },
+        {
+          "name": "face:first-send",
+          "time": 11076.799999982119
+        },
+        {
+          "name": "face:first-result",
+          "time": 11543.5
+        },
+        {
+          "name": "face:first-detected",
+          "time": 11543.799999982119
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 11543.90000000596
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 11544
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 11563
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 1019.7999999821186,
+          "duration": -107.2999999821186,
+          "transferSize": 1162,
+          "decodedBodySize": 1986
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 1118.5,
+          "duration": 9821,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 1118.7999999821186,
+          "duration": 61.30000001192093,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    },
+    {
+      "environment": "android",
+      "scenario": "limited-bandwidth",
+      "visit": "revisit",
+      "serviceWorker": false,
+      "bandwidth": {
+        "bytesPerSecond": 1000000,
+        "bytesThisVisit": 881618,
+        "cumulativeBytes": 11601953,
+        "transferWindowMs": 13706.925416999999
+      },
+      "delayedRequests": 0,
+      "firstVideoObserved": 13121.5,
+      "fixture": {
+        "width": 640,
+        "height": 480,
+        "created": 13045,
+        "offsetX": 0,
+        "videoWidth": 640
+      },
+      "visible": true,
+      "uiPulse": {
+        "ticks": 5,
+        "maxGapMs": 386.90000000596046
+      },
+      "marks": [
+        {
+          "name": "camera:start",
+          "time": 13041.90000000596
+        },
+        {
+          "name": "camera:playing",
+          "time": 13047.40000000596
+        },
+        {
+          "name": "renderer:initialize:start",
+          "time": 13047.40000000596
+        },
+        {
+          "name": "renderer:initialize:end",
+          "time": 13056.59999999404
+        },
+        {
+          "name": "urls:start",
+          "time": 13056.59999999404
+        },
+        {
+          "name": "urls:end",
+          "time": 13056.699999988079
+        },
+        {
+          "name": "face:ready",
+          "time": 13056.799999982119
+        },
+        {
+          "name": "face:first-send",
+          "time": 13059.09999999404
+        },
+        {
+          "name": "renderer:first-submit:start",
+          "time": 13134.299999982119
+        },
+        {
+          "name": "renderer:first-submit:end",
+          "time": 13134.699999988079
+        },
+        {
+          "name": "face:first-result",
+          "time": 13148.799999982119
+        },
+        {
+          "name": "face:first-detected",
+          "time": 13148.90000000596
+        },
+        {
+          "name": "face:first-send-end",
+          "time": 13149
+        },
+        {
+          "name": "sobacchi:selected",
+          "time": 13191.199999988079
+        },
+        {
+          "name": "sobacchi:load:start",
+          "time": 13191.90000000596
+        },
+        {
+          "name": "sobacchi:material-parse:start",
+          "time": 13408.09999999404
+        },
+        {
+          "name": "sobacchi:material-parse:end",
+          "time": 13408.09999999404
+        },
+        {
+          "name": "sobacchi:parse:start",
+          "time": 13408.299999982119
+        },
+        {
+          "name": "sobacchi:parse:end",
+          "time": 13522
+        },
+        {
+          "name": "sobacchi:object-ready",
+          "time": 13522
+        },
+        {
+          "name": "sobacchi:visible-submit:start",
+          "time": 13530.40000000596
+        },
+        {
+          "name": "sobacchi:visible-submit:end",
+          "time": 13538
+        }
+      ],
+      "resources": [
+        {
+          "name": "/mediapipe/face_mesh/worker.js",
+          "start": 1019.7999999821186,
+          "duration": -107.2999999821186,
+          "transferSize": 1162,
+          "decodedBodySize": 1986
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 1118.5,
+          "duration": 9821,
+          "transferSize": 3971986,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 1118.7999999821186,
+          "duration": 61.30000001192093,
+          "transferSize": 1917,
+          "decodedBodySize": 1617
+        },
+        {
+          "name": "/models/wanko1.obj",
+          "start": 13192.59999999404,
+          "duration": 187,
+          "transferSize": 300,
+          "decodedBodySize": 3971686
+        },
+        {
+          "name": "/models/wanko1.mtl",
+          "start": 13193.09999999404,
+          "duration": 188.59999999403954,
+          "transferSize": 300,
+          "decodedBodySize": 1617
+        }
+      ],
+      "capture": {
+        "png": true,
+        "models": [
+          "sobacchi"
+        ]
+      }
+    }
+  ]
+}

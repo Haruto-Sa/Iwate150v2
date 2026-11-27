@@ -21,7 +21,7 @@ export default function OfflinePage() {
     <div className="mx-auto max-w-2xl space-y-6 py-8">
       <PageHeading title="オフライン" />
       <div>
-        <p className="text-sm leading-7 text-emerald-900/75">
+        <p className="text-sm leading-7 text-app-ink/75">
           インターネット接続を確認してから、もう一度ページを開いてください。
         </p>
       </div>

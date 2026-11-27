@@ -15,15 +15,15 @@ const iconMap: Record<ToastType, React.ElementType> = {
 };
 
 const colorMap: Record<ToastType, string> = {
-  success: "border-emerald-200 bg-white text-emerald-900",
-  error: "border-red-200 bg-white text-red-900",
-  info: "border-sky-200 bg-white text-sky-900",
+  success: "border-app-line-soft bg-app-surface text-app-ink",
+  error: "border-app-danger/30 bg-app-surface text-app-danger",
+  info: "border-app-info/30 bg-app-surface text-app-info",
 };
 
 const iconColorMap: Record<ToastType, string> = {
-  success: "text-emerald-500",
-  error: "text-red-500",
-  info: "text-sky-500",
+  success: "text-app-accent-ink",
+  error: "text-app-danger",
+  info: "text-app-info",
 };
 
 /**

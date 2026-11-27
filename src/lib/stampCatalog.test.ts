@@ -142,7 +142,7 @@ it("公開APIが失敗・不正形式の場合も保存可能な対象へ変換�
       json: async () => ({ spots: [], cities: [] }),
     });
   vi.stubGlobal("fetch", fetch);
-  const { fetchStampCatalog } = await import("./supabaseClient");
+  const { fetchStampCatalog } = await import("./privateUserClient");
   expect(await fetchStampCatalog()).toEqual(mockStampCatalog);
   expect(await fetchStampCatalog()).toEqual(mockStampCatalog);
 });

@@ -118,11 +118,11 @@ export function ShareButton({ title, text, url }: Props) {
           {/* URLコピー */}
           <button
             onClick={handleCopy}
-            className="interactive-lift inline-flex items-center gap-2 rounded-2xl border border-emerald-900/20 bg-white/80 px-4 py-2 text-sm font-medium text-emerald-900 transition duration-200 hover:bg-white"
+            className="interactive-lift inline-flex items-center gap-2 rounded-2xl border border-app-line/20 bg-app-surface/80 px-4 py-2 text-sm font-medium text-app-ink transition duration-200 hover:bg-app-surface"
             aria-label="URLをコピー"
           >
             {copied ? (
-              <Check className="h-4 w-4 text-emerald-500" />
+              <Check className="h-4 w-4 text-app-accent-ink" />
             ) : (
               <Link2 className="h-4 w-4" />
             )}

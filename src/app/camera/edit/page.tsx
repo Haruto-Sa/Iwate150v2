@@ -338,7 +338,7 @@ export default function CameraEditPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 pb-8">
-      <Link href="/camera" className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-900"><ArrowLeft aria-hidden="true" className="h-4 w-4" />カメラに戻る</Link>
+      <Link href="/camera" className="inline-flex min-h-11 items-center gap-2 text-sm text-app-ink"><ArrowLeft aria-hidden="true" className="h-4 w-4" />カメラに戻る</Link>
       <PageHeading title="写真を編集" />
       {/* プレビューエリア */}
       <div
@@ -348,7 +348,7 @@ export default function CameraEditPage() {
           setActiveItemId(null);
           setActiveItemType(null);
         }}
-        className="relative overflow-hidden rounded-2xl border border-emerald-900/10 bg-white shadow-lg"
+        className="relative overflow-hidden rounded-2xl border border-app-line/10 bg-app-surface shadow-lg"
 
       >
         <div className="relative flex w-full items-center justify-center" style={{ aspectRatio: photoAspect }}>
@@ -404,8 +404,8 @@ export default function CameraEditPage() {
               ))}
             </div>
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[#f6f5ee]">
-              <p className="text-sm text-emerald-900/70">写真がありません</p>
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-app-canvas">
+              <p className="text-sm text-app-ink-muted">写真がありません</p>
               <Link href="/camera" className="inline-flex min-h-11 items-center rounded-full bg-[#173f35] px-5 text-sm text-white">写真を撮りに行く</Link>
             </div>
           )}
@@ -416,7 +416,7 @@ export default function CameraEditPage() {
 
       {photo && <>
       {/* 編集モード切り替え */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-900/10 bg-white p-2">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-app-line/10 bg-app-surface p-2">
         <Button
           variant={editMode === "move" ? "primary" : "ghost"}
           aria-pressed={editMode === "move"}
@@ -443,7 +443,7 @@ export default function CameraEditPage() {
             variant="ghost"
             size="sm"
             onClick={deleteActiveItem}
-            className="gap-1.5 !text-red-700 hover:!bg-red-50"
+            className="gap-1.5 !text-app-danger hover:!bg-app-danger-surface"
           >
             <X className="h-3.5 w-3.5" />
             削除
@@ -491,13 +491,13 @@ export default function CameraEditPage() {
 
       {/* 展開パネル：スタンプ */}
       {activeToolPanel === "sticker" && (
-        <div className="rounded-xl border border-emerald-900/10 bg-white p-3 shadow-sm">
+        <div className="rounded-xl border border-app-line/10 bg-app-surface p-3 shadow-sm">
           <div className="grid grid-cols-6 gap-2">
             {stickerPalette.map((s) => (
               <button
                 key={s}
                 onClick={() => addSticker(s)}
-                className="flex aspect-square items-center justify-center rounded-lg border border-emerald-900/10 bg-white text-xl transition hover:border-emerald-300 hover:bg-emerald-50 active:scale-95"
+                className="flex aspect-square items-center justify-center rounded-lg border border-app-line/10 bg-app-surface text-xl transition hover:border-app-line-soft hover:bg-app-surface-soft active:scale-95"
               >
                 {s}
               </button>
@@ -508,7 +508,7 @@ export default function CameraEditPage() {
 
       {/* 展開パネル：テキスト */}
       {activeToolPanel === "text" && (
-        <div className="space-y-3 rounded-xl border border-emerald-900/10 bg-white p-3 shadow-sm">
+        <div className="space-y-3 rounded-xl border border-app-line/10 bg-app-surface p-3 shadow-sm">
           <Button
             variant="outline"
             size="sm"
@@ -520,9 +520,9 @@ export default function CameraEditPage() {
           </Button>
           
           {activeText && (
-            <div className="space-y-2 border-t border-emerald-100 pt-3">
+            <div className="space-y-2 border-t border-app-line-soft pt-3">
               <input
-                className="w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm text-emerald-900 outline-none ring-emerald-200 focus:ring-2"
+                className="w-full rounded-lg border border-app-line/15 bg-app-surface px-3 py-2 text-sm text-app-ink outline-none ring-app-line-soft focus:ring-2"
                 value={activeText.text}
                 onChange={(e) =>
                   setTexts((prev) =>
@@ -534,7 +534,7 @@ export default function CameraEditPage() {
               />
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-emerald-700" />
+                  <Palette className="h-4 w-4 text-app-accent-ink" />
                   <input
                     aria-label="文字の色"
                     type="color"
@@ -546,11 +546,11 @@ export default function CameraEditPage() {
                         )
                       )
                     }
-                    className="h-8 w-8 cursor-pointer rounded border border-emerald-200"
+                    className="h-8 w-8 cursor-pointer rounded border border-app-line-soft"
                   />
                 </div>
                 <select
-                  className="flex-1 rounded-lg border border-emerald-900/15 bg-white px-2 py-1.5 text-xs text-emerald-900"
+                  className="flex-1 rounded-lg border border-app-line/15 bg-app-surface px-2 py-1.5 text-xs text-app-ink"
                   aria-label="文字の書体"
                   value={activeText.font}
                   onChange={(e) =>
@@ -572,8 +572,8 @@ export default function CameraEditPage() {
           )}
           
           {activeSticker && (
-            <div className="border-t border-emerald-100 pt-3">
-              <p className="text-xs text-emerald-700">
+            <div className="border-t border-app-line-soft pt-3">
+              <p className="text-xs text-app-accent-ink">
                 選択中のスタンプ: {activeSticker.char}
               </p>
             </div>

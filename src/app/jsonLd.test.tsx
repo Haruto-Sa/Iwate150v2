@@ -15,6 +15,8 @@ vi.mock("@/lib/supabaseClient", () => ({
 }));
 vi.mock("@/lib/storage", () => ({
   getImageUrl: () => null,
+}));
+vi.mock("@/lib/storageServer", () => ({
   resolveServerStorageUrls: async () => new Map(),
 }));
 vi.mock("@/components/home/HomeCalendarSwitcher", () => ({ HomeCalendarSwitcher: () => null }));

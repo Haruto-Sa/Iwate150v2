@@ -1,5 +1,8 @@
 "use client";
 
+import { applyLegacyMeshFixes } from "@/lib/characterMaterials";
+import { extractFileStem, resolveModelFormat } from "@/lib/modelAssets";
+
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -49,9 +52,6 @@ type ModelLoadError = Error & {
 
 type ViewerErrorType = "model" | "webgl";
 
-const FALLBACK_DARK_GRAY = 0x555555;
-/** 白背景でも識別しやすいよう、近白色マテリアルに割り当てる色 */
-const FALLBACK_LIGHT_GRAY = 0x888888;
 /** シーン背景色（純白を避けて白モデルでも視認できるようにする） */
 const SCENE_BG_COLOR = 0xf0f2ef;
 /** ローカル配信モデルの読み込みタイムアウト（ミリ秒） */
@@ -64,26 +64,6 @@ const DEFAULT_CANDIDATE_RETRY_COUNT = 2;
 const DEFAULT_AUTO_RETRY_COUNT = 1;
 /** 初期化を遅延するマウントサイズ判定の待機フレーム上限（約6秒相当） */
 const MAX_WAIT_FRAMES_FOR_VIEWPORT_READY = 360;
-
-type ModelFormat = "obj" | "fbx";
-
-/**
- * URL/パスから拡張子なしファイル名（小文字）を取り出す。
- *
- * @param url - URL またはパス
- * @returns ファイル名（拡張子なし）
- * @example
- * const stem = extractFileStem("/models/wanko1.obj?token=abc");
- */
-function extractFileStem(url: string): string | null {
-  const stripped = url.split("?")[0]?.split("#")[0] ?? url;
-  const segment = stripped.split("/").pop();
-  if (!segment) return null;
-  const decoded = decodeURIComponent(segment);
-  const dotIndex = decoded.lastIndexOf(".");
-  const stem = dotIndex > 0 ? decoded.slice(0, dotIndex) : decoded;
-  return stem.toLowerCase();
-}
 
 /**
  * Promise にタイムアウトを設定する。
@@ -234,19 +214,6 @@ function loadFbxModel(modelUrl: string, timeoutMs: number): Promise<THREE.Group>
 }
 
 /**
- * URL 文字列からモデル形式を推定する。
- *
- * @param modelUrl - モデルURL
- * @returns `obj` または `fbx`
- * @example
- * const format = resolveModelFormat("/models/character.fbx");
- */
-function resolveModelFormat(modelUrl: string): ModelFormat {
-  const stripped = modelUrl.split("?")[0]?.split("#")[0] ?? modelUrl;
-  return stripped.toLowerCase().endsWith(".fbx") ? "fbx" : "obj";
-}
-
-/**
  * モデル候補を順に試行して最初に読める組み合わせを返す。
  *
  * @param modelCandidates - モデル候補
@@ -322,88 +289,6 @@ async function loadModelFromCandidates(
   modelError.cause = lastError ?? undefined;
   modelError.failures = failures;
   throw modelError;
-}
-
-/**
- * モデルへ legacy 互換のメッシュ補正を適用する。
- *
- * @param object - 3Dオブジェクト
- * @param profile - モデル表示プロファイル
- * @returns なし
- * @example
- * applyLegacyMeshFixes(object, profile);
- */
-function applyLegacyMeshFixes(
-  object: THREE.Object3D,
-  profile?: CharacterRenderProfile
-): void {
-  const forceDoubleSide = profile?.forceDoubleSide ?? true;
-  const disableFrustumCulling = profile?.disableFrustumCulling ?? true;
-  const depthWrite = profile?.depthWrite ?? true;
-  const depthTest = profile?.depthTest ?? true;
-  const computeVertexNormals = profile?.computeVertexNormals ?? true;
-
-  object.traverse((child) => {
-    if (!(child as THREE.Mesh).isMesh) return;
-    const mesh = child as THREE.Mesh;
-
-    if (!mesh.material) {
-      mesh.material = new THREE.MeshLambertMaterial({
-        color: FALLBACK_DARK_GRAY,
-        side: THREE.DoubleSide,
-        transparent: false,
-        alphaTest: 0,
-        depthWrite,
-        depthTest,
-      });
-    } else {
-      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-      materials.forEach((material) => {
-        const typed = material as THREE.Material & {
-          color?: THREE.Color;
-          map?: THREE.Texture | null;
-          transparent?: boolean;
-          alphaTest?: number;
-          opacity?: number;
-          depthWrite?: boolean;
-          depthTest?: boolean;
-        };
-        if (typed.map && !("image" in typed.map)) {
-          typed.map = null;
-        }
-        const hasMap = Boolean(typed.map && typed.map.image);
-        const hasColor = Boolean(typed.color);
-        const colorLuma = hasColor && typed.color
-          ? typed.color.r * 0.299 + typed.color.g * 0.587 + typed.color.b * 0.114
-          : 0;
-        if (forceDoubleSide) material.side = THREE.DoubleSide;
-        if (hasColor && typed.color && !hasMap && colorLuma < 0.05) {
-          // 近黒色 -> ダークグレーに変換（背景色との区別）
-          typed.color.setHex(FALLBACK_DARK_GRAY);
-        } else if (hasColor && typed.color && !hasMap && colorLuma > 0.95) {
-          // 近白色 -> ライトグレーに変換（マテリアル不一致時の白飛び対策）
-          typed.color.setHex(FALLBACK_LIGHT_GRAY);
-        } else if (!hasColor && !hasMap && typed.color) {
-          typed.color.setHex(FALLBACK_DARK_GRAY);
-        }
-        if ("transparent" in material) material.transparent = false;
-        if ("alphaTest" in material) material.alphaTest = 0;
-        if ("opacity" in material) material.opacity = 1;
-        if ("depthWrite" in material) material.depthWrite = depthWrite;
-        if ("depthTest" in material) material.depthTest = depthTest;
-        material.needsUpdate = true;
-      });
-    }
-
-    if (computeVertexNormals && mesh.geometry) {
-      mesh.geometry.computeVertexNormals();
-      mesh.geometry.computeBoundingSphere();
-    }
-
-    mesh.frustumCulled = !disableFrustumCulling;
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
-  });
 }
 
 /**
@@ -893,12 +778,12 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       <div ref={mountRef} className="h-full w-full" />
       {status === "loading" && (
         <div className="absolute inset-0 grid place-items-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
-            <p className="text-xs font-medium text-emerald-900/70">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-app-surface/95 p-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-app-line-soft border-t-emerald-600" />
+            <p className="text-xs font-medium text-app-ink-muted">
               3Dモデルを読み込み中...
             </p>
-            <p className="text-[11px] text-emerald-900/45">
+            <p className="text-[11px] text-app-ink-muted">
               しばらくお待ちください
             </p>
           </div>
@@ -906,14 +791,14 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
       )}
       {status === "error" && (
         <div className="absolute inset-0 grid place-items-center">
-          <div className="rounded-2xl border border-emerald-900/10 bg-white/90 px-4 py-3 text-center text-xs font-medium text-emerald-900/80 shadow-sm">
+          <div className="rounded-2xl border border-app-line/10 bg-app-surface/90 px-4 py-3 text-center text-xs font-medium text-app-ink/80 shadow-sm">
             <p>
               {errorType === "webgl"
                 ? "この端末では3D表示を開始できませんでした"
                 : "モデルを表示できませんでした"}
             </p>
             {errorMessage && (
-              <p className="mt-1 text-[11px] text-emerald-900/70">{errorMessage}</p>
+              <p className="mt-1 text-[11px] text-app-ink-muted">{errorMessage}</p>
             )}
             {errorType === "model" && (
               <Button
@@ -936,7 +821,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
           }`}
         >
           <div
-            className={`pointer-events-auto gap-1 bg-white/85 text-emerald-900 shadow-lg shadow-emerald-200/50 backdrop-blur ${
+            className={`pointer-events-auto gap-1 bg-app-surface/85 text-app-ink shadow-lg shadow-emerald-200/50 backdrop-blur ${
               controlsPlacement === "bottom"
                 ? "grid grid-cols-4 rounded-2xl p-2"
                 : "flex rounded-full px-2 py-1"
@@ -949,7 +834,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <Minus className="h-3.5 w-3.5" />
-              <span className="text-[11px]">縮小</span>
+              <span className="text-[11px] whitespace-nowrap">縮小</span>
             </Button>
             <Button
               variant="ghost"
@@ -958,7 +843,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <RotateCw className="h-3.5 w-3.5" />
-              <span className="text-[11px]">{isRotating ? "停止" : "回転"}</span>
+              <span className="text-[11px] whitespace-nowrap">{isRotating ? "停止" : "回転"}</span>
             </Button>
             <Button
               variant="ghost"
@@ -967,7 +852,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span className="text-[11px]">拡大</span>
+              <span className="text-[11px] whitespace-nowrap">拡大</span>
             </Button>
             <Button
               variant="ghost"
@@ -976,7 +861,7 @@ export const CharacterViewer = forwardRef<CharacterViewerHandle, Props>(function
               className="justify-center !px-1 [&_[data-lk-button-content-wrap]]:flex-col [&_[data-lk-button-content-wrap]]:gap-1"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span className="text-[11px]">リセット</span>
+              <span className="text-[11px] whitespace-nowrap">リセット</span>
             </Button>
           </div>
         </div>

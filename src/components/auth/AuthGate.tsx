@@ -26,7 +26,7 @@ export function AuthGate({ children, title, description, loginLabel = "Continue 
 
   if (status === "loading") {
     return (
-      <div className="rounded-3xl border border-emerald-900/10 bg-white/80 p-6 text-sm text-emerald-900/70 shadow-sm">
+      <div className="rounded-3xl border border-app-line/10 bg-app-surface/80 p-6 text-sm text-app-ink-muted shadow-sm">
         アカウント状態を確認しています...
       </div>
     );
@@ -37,25 +37,25 @@ export function AuthGate({ children, title, description, loginLabel = "Continue 
   }
 
   return (
-    <div className="rounded-[28px] border border-emerald-900/10 bg-gradient-to-br from-[#effcf5] via-white to-[#eef6ff] p-6 shadow-sm ring-1 ring-emerald-900/10">
+    <div className="rounded-[28px] border border-app-line/10 bg-gradient-to-br from-app-surface-soft via-app-surface to-app-surface-soft p-6 shadow-sm ring-1 ring-app-line/10">
       <div className="flex items-start gap-4">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-emerald-700">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-app-surface-tint text-app-accent-ink">
           <LockKeyhole className="h-5 w-5" />
         </div>
         <div className="space-y-2">
-          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-app-accent-ink">
             <Sparkles className="h-3.5 w-3.5" />
             Save your trip
           </p>
-          <h2 className="text-xl font-semibold text-[#0f1c1a]">{title}</h2>
-          <p className="text-sm leading-6 text-emerald-900/75">{description}</p>
+          <h2 className="text-xl font-semibold text-app-ink-strong">{title}</h2>
+          <p className="text-sm leading-6 text-app-ink/75">{description}</p>
           <div className="flex flex-wrap gap-3 pt-2">
             <Link href={PUBLIC_LOGIN_PATH}>
               <Button>{loginLabel}</Button>
             </Link>
             <Link
               href="/"
-              className="inline-flex items-center rounded-full px-3 py-2 text-sm font-medium text-emerald-900/75 transition hover:bg-emerald-50"
+              className="inline-flex items-center rounded-full px-3 py-2 text-sm font-medium text-app-ink/75 transition hover:bg-app-surface-soft"
             >
               Explore first
             </Link>

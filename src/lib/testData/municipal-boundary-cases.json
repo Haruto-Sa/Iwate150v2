@@ -1,0 +1,2355 @@
+{
+  "sourceSha256": "871e3010f40d79db706cd2c686eda1c5fb0d13437e64ec36618cb8cc355a1265",
+  "shapelyVersion": "2.1.2",
+  "cases": [
+    {
+      "label": "03201-interior",
+      "lat": 39.7469504865,
+      "lng": 141.25935505678504,
+      "status": "inside",
+      "codes": [
+        "03201"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03201-vertex",
+      "lat": 39.57426736,
+      "lng": 141.379373606,
+      "status": "boundary",
+      "codes": [
+        "03201",
+        "03205"
+      ],
+      "strictBoundaryCodes": [
+        "03201",
+        "03205"
+      ]
+    },
+    {
+      "label": "03202-interior",
+      "lat": 39.63500635600005,
+      "lng": 141.6533506904584,
+      "status": "inside",
+      "codes": [
+        "03202"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03202-vertex",
+      "lat": 39.468318559,
+      "lng": 141.625,
+      "status": "boundary",
+      "codes": [
+        "03202",
+        "03208"
+      ],
+      "strictBoundaryCodes": [
+        "03202",
+        "03208"
+      ]
+    },
+    {
+      "label": "03202-island",
+      "lat": 39.670119545,
+      "lng": 141.9875790636114,
+      "status": "inside",
+      "codes": [
+        "03202"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03203-interior",
+      "lat": 39.0943781215,
+      "lng": 141.72172563306356,
+      "status": "inside",
+      "codes": [
+        "03203"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03203-vertex",
+      "lat": 39.0,
+      "lng": 141.70237946800006,
+      "status": "boundary",
+      "codes": [
+        "03203",
+        "03210"
+      ],
+      "strictBoundaryCodes": [
+        "03203",
+        "03210"
+      ]
+    },
+    {
+      "label": "03203-island",
+      "lat": 39.0366646575,
+      "lng": 141.72725269192,
+      "status": "inside",
+      "codes": [
+        "03203"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03205-interior",
+      "lat": 39.418715752,
+      "lng": 141.11900179041712,
+      "status": "inside",
+      "codes": [
+        "03205"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03205-vertex",
+      "lat": 39.333319802,
+      "lng": 141.329978716,
+      "status": "boundary",
+      "codes": [
+        "03205",
+        "03208"
+      ],
+      "strictBoundaryCodes": [
+        "03205",
+        "03208"
+      ]
+    },
+    {
+      "label": "03206-interior",
+      "lat": 39.3278290855,
+      "lng": 140.9720775520937,
+      "status": "inside",
+      "codes": [
+        "03206"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03206-vertex",
+      "lat": 39.181622721,
+      "lng": 140.856571777,
+      "status": "boundary",
+      "codes": [
+        "03206",
+        "03366"
+      ],
+      "strictBoundaryCodes": [
+        "03206",
+        "03366"
+      ]
+    },
+    {
+      "label": "03207-interior",
+      "lat": 40.1517765675,
+      "lng": 141.67272188249447,
+      "status": "inside",
+      "codes": [
+        "03207"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03207-vertex",
+      "lat": 40.023175748,
+      "lng": 141.625226809,
+      "status": "boundary",
+      "codes": [
+        "03207",
+        "03483"
+      ],
+      "strictBoundaryCodes": [
+        "03207",
+        "03483"
+      ]
+    },
+    {
+      "label": "03207-hole-514",
+      "lat": 40.289235581499995,
+      "lng": 141.80065992308596,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03207-island",
+      "lat": 40.1844311665,
+      "lng": 141.83970444783003,
+      "status": "inside",
+      "codes": [
+        "03207"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03208-interior",
+      "lat": 39.375297667,
+      "lng": 141.47919217854582,
+      "status": "inside",
+      "codes": [
+        "03208"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03208-vertex",
+      "lat": 39.240043946,
+      "lng": 141.381357808,
+      "status": "boundary",
+      "codes": [
+        "03208",
+        "03215"
+      ],
+      "strictBoundaryCodes": [
+        "03208",
+        "03215"
+      ]
+    },
+    {
+      "label": "03209-interior",
+      "lat": 38.954842365000005,
+      "lng": 141.30593565209938,
+      "status": "inside",
+      "codes": [
+        "03209"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03209-vertex",
+      "lat": 39.0,
+      "lng": 140.76403703,
+      "status": "boundary",
+      "codes": [
+        "03209"
+      ],
+      "strictBoundaryCodes": [
+        "03209"
+      ]
+    },
+    {
+      "label": "03210-interior",
+      "lat": 39.03225016650006,
+      "lng": 141.57462977267653,
+      "status": "inside",
+      "codes": [
+        "03210"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03210-vertex",
+      "lat": 38.999980441,
+      "lng": 141.702385525,
+      "status": "boundary",
+      "codes": [
+        "03203",
+        "03210"
+      ],
+      "strictBoundaryCodes": [
+        "03203",
+        "03210"
+      ]
+    },
+    {
+      "label": "03210-island",
+      "lat": 38.9381984775,
+      "lng": 141.71014959681185,
+      "status": "inside",
+      "codes": [
+        "03210"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03211-interior",
+      "lat": 39.290098973,
+      "lng": 141.7992501033022,
+      "status": "inside",
+      "codes": [
+        "03211"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03211-vertex",
+      "lat": 39.169319838,
+      "lng": 141.877892114,
+      "status": "boundary",
+      "codes": [
+        "03203",
+        "03211"
+      ],
+      "strictBoundaryCodes": [
+        "03203",
+        "03211"
+      ]
+    },
+    {
+      "label": "03211-hole-12",
+      "lat": 39.27312577500001,
+      "lng": 141.88915954944576,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03211-island",
+      "lat": 39.3060177525,
+      "lng": 141.98228919079088,
+      "status": "inside",
+      "codes": [
+        "03211"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03213-interior",
+      "lat": 40.2307574595,
+      "lng": 141.1488686208445,
+      "status": "inside",
+      "codes": [
+        "03213"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03213-vertex",
+      "lat": 40.104472027,
+      "lng": 141.125,
+      "status": "boundary",
+      "codes": [
+        "03213",
+        "03214"
+      ],
+      "strictBoundaryCodes": [
+        "03213",
+        "03214"
+      ]
+    },
+    {
+      "label": "03214-interior",
+      "lat": 40.0437277205,
+      "lng": 140.99495165566935,
+      "status": "inside",
+      "codes": [
+        "03214"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03214-vertex",
+      "lat": 40.116082468,
+      "lng": 140.871128495,
+      "status": "boundary",
+      "codes": [
+        "03214"
+      ],
+      "strictBoundaryCodes": [
+        "03214"
+      ]
+    },
+    {
+      "label": "03215-interior",
+      "lat": 39.1519430675,
+      "lng": 141.2203952024131,
+      "status": "inside",
+      "codes": [
+        "03215"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03215-vertex",
+      "lat": 39.0,
+      "lng": 140.919414423,
+      "status": "boundary",
+      "codes": [
+        "03209",
+        "03215"
+      ],
+      "strictBoundaryCodes": [
+        "03209",
+        "03215"
+      ]
+    },
+    {
+      "label": "03216-interior",
+      "lat": 39.7845824325,
+      "lng": 141.0847100751808,
+      "status": "inside",
+      "codes": [
+        "03216"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03216-vertex",
+      "lat": 39.719174748,
+      "lng": 141.016338418,
+      "status": "boundary",
+      "codes": [
+        "03216",
+        "03301"
+      ],
+      "strictBoundaryCodes": [
+        "03216",
+        "03301"
+      ]
+    },
+    {
+      "label": "03301-interior",
+      "lat": 39.701984739,
+      "lng": 140.91981943359337,
+      "status": "inside",
+      "codes": [
+        "03301"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03301-vertex",
+      "lat": 39.520120468,
+      "lng": 140.883333333,
+      "status": "boundary",
+      "codes": [
+        "03205",
+        "03301"
+      ],
+      "strictBoundaryCodes": [
+        "03205",
+        "03301"
+      ]
+    },
+    {
+      "label": "03302-interior",
+      "lat": 40.0138479595,
+      "lng": 141.42594468882083,
+      "status": "inside",
+      "codes": [
+        "03302"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03302-vertex",
+      "lat": 39.897292279,
+      "lng": 141.4,
+      "status": "boundary",
+      "codes": [
+        "03302",
+        "03303"
+      ],
+      "strictBoundaryCodes": [
+        "03302",
+        "03303"
+      ]
+    },
+    {
+      "label": "03303-interior",
+      "lat": 39.957368725500004,
+      "lng": 141.25465210370209,
+      "status": "inside",
+      "codes": [
+        "03303"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03303-vertex",
+      "lat": 39.834496865,
+      "lng": 141.315783217,
+      "status": "boundary",
+      "codes": [
+        "03201",
+        "03303"
+      ],
+      "strictBoundaryCodes": [
+        "03201",
+        "03303"
+      ]
+    },
+    {
+      "label": "03321-interior",
+      "lat": 39.545372086,
+      "lng": 141.13056559063457,
+      "status": "inside",
+      "codes": [
+        "03321"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03321-vertex",
+      "lat": 39.488520748,
+      "lng": 141.251536978,
+      "status": "boundary",
+      "codes": [
+        "03205",
+        "03321"
+      ],
+      "strictBoundaryCodes": [
+        "03205",
+        "03321"
+      ]
+    },
+    {
+      "label": "03322-interior",
+      "lat": 39.610427446,
+      "lng": 141.12224589305524,
+      "status": "inside",
+      "codes": [
+        "03322"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03322-vertex",
+      "lat": 39.579761225,
+      "lng": 141.125,
+      "status": "boundary",
+      "codes": [
+        "03321",
+        "03322"
+      ],
+      "strictBoundaryCodes": [
+        "03321",
+        "03322"
+      ]
+    },
+    {
+      "label": "03366-interior",
+      "lat": 39.384612698,
+      "lng": 140.7609094535,
+      "status": "inside",
+      "codes": [
+        "03366"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03366-vertex",
+      "lat": 39.166666667,
+      "lng": 140.830302387,
+      "status": "boundary",
+      "codes": [
+        "03215",
+        "03366"
+      ],
+      "strictBoundaryCodes": [
+        "03215",
+        "03366"
+      ]
+    },
+    {
+      "label": "03381-interior",
+      "lat": 39.1944587525,
+      "lng": 141.02434776361315,
+      "status": "inside",
+      "codes": [
+        "03381"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03381-vertex",
+      "lat": 39.141654414,
+      "lng": 141.037826939,
+      "status": "boundary",
+      "codes": [
+        "03215",
+        "03381"
+      ],
+      "strictBoundaryCodes": [
+        "03215",
+        "03381"
+      ]
+    },
+    {
+      "label": "03402-interior",
+      "lat": 38.989137559,
+      "lng": 141.1010178084157,
+      "status": "inside",
+      "codes": [
+        "03402"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03402-vertex",
+      "lat": 38.985283505,
+      "lng": 141.00646345,
+      "status": "boundary",
+      "codes": [
+        "03209",
+        "03215",
+        "03402"
+      ],
+      "strictBoundaryCodes": [
+        "03209",
+        "03215",
+        "03402"
+      ]
+    },
+    {
+      "label": "03441-interior",
+      "lat": 39.1812085725,
+      "lng": 141.53606967932484,
+      "status": "inside",
+      "codes": [
+        "03441"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03441-vertex",
+      "lat": 39.110959414,
+      "lng": 141.5,
+      "status": "boundary",
+      "codes": [
+        "03210",
+        "03441"
+      ],
+      "strictBoundaryCodes": [
+        "03210",
+        "03441"
+      ]
+    },
+    {
+      "label": "03461-interior",
+      "lat": 39.436492387499996,
+      "lng": 141.79115935942554,
+      "status": "inside",
+      "codes": [
+        "03461"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03461-vertex",
+      "lat": 39.34606689200001,
+      "lng": 141.87672844400004,
+      "status": "boundary",
+      "codes": [
+        "03211",
+        "03461"
+      ],
+      "strictBoundaryCodes": [
+        "03461"
+      ]
+    },
+    {
+      "label": "03461-island",
+      "lat": 39.380155441499994,
+      "lng": 141.9685638569628,
+      "status": "inside",
+      "codes": [
+        "03461"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03482-interior",
+      "lat": 39.481195527,
+      "lng": 141.8910909820365,
+      "status": "inside",
+      "codes": [
+        "03482"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03482-vertex",
+      "lat": 39.41623886499998,
+      "lng": 141.875,
+      "status": "boundary",
+      "codes": [
+        "03461",
+        "03482"
+      ],
+      "strictBoundaryCodes": [
+        "03461",
+        "03482"
+      ]
+    },
+    {
+      "label": "03482-hole-10",
+      "lat": 39.447312919,
+      "lng": 142.0012719588023,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03482-island",
+      "lat": 39.403094279499996,
+      "lng": 141.99812454209643,
+      "status": "inside",
+      "codes": [
+        "03482"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03483-interior",
+      "lat": 39.86239368050002,
+      "lng": 141.68840254676326,
+      "status": "inside",
+      "codes": [
+        "03483"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03483-vertex",
+      "lat": 39.747410775,
+      "lng": 141.397414942,
+      "status": "boundary",
+      "codes": [
+        "03201",
+        "03483"
+      ],
+      "strictBoundaryCodes": [
+        "03201",
+        "03483"
+      ]
+    },
+    {
+      "label": "03483-island",
+      "lat": 39.847439,
+      "lng": 141.9792501062943,
+      "status": "inside",
+      "codes": [
+        "03483"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03484-interior",
+      "lat": 39.92370576600004,
+      "lng": 141.86088949265886,
+      "status": "inside",
+      "codes": [
+        "03484"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03484-vertex",
+      "lat": 39.861310586,
+      "lng": 141.87521083,
+      "status": "boundary",
+      "codes": [
+        "03483",
+        "03484"
+      ],
+      "strictBoundaryCodes": [
+        "03484"
+      ]
+    },
+    {
+      "label": "03484-island",
+      "lat": 39.9142287115,
+      "lng": 141.94724128568453,
+      "status": "inside",
+      "codes": [
+        "03484"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03485-interior",
+      "lat": 40.008643018,
+      "lng": 141.85942048315616,
+      "status": "inside",
+      "codes": [
+        "03485"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03485-vertex",
+      "lat": 39.963767198,
+      "lng": 141.875,
+      "status": "boundary",
+      "codes": [
+        "03484",
+        "03485"
+      ],
+      "strictBoundaryCodes": [
+        "03485"
+      ]
+    },
+    {
+      "label": "03485-island",
+      "lat": 39.9952948335,
+      "lng": 141.94587450400854,
+      "status": "inside",
+      "codes": [
+        "03485"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03501-interior",
+      "lat": 40.299032,
+      "lng": 141.47113197349756,
+      "status": "inside",
+      "codes": [
+        "03501"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03501-vertex",
+      "lat": 40.333333333,
+      "lng": 141.356453385,
+      "status": "boundary",
+      "codes": [
+        "03501"
+      ],
+      "strictBoundaryCodes": [
+        "03501"
+      ]
+    },
+    {
+      "label": "03503-interior",
+      "lat": 40.074516162,
+      "lng": 141.78354779698185,
+      "status": "inside",
+      "codes": [
+        "03503"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03503-vertex",
+      "lat": 40.031770865,
+      "lng": 141.757099805,
+      "status": "boundary",
+      "codes": [
+        "03207",
+        "03483",
+        "03503"
+      ],
+      "strictBoundaryCodes": [
+        "03207",
+        "03483",
+        "03503"
+      ]
+    },
+    {
+      "label": "03503-island",
+      "lat": 40.0690998965,
+      "lng": 141.8405048155912,
+      "status": "inside",
+      "codes": [
+        "03503"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03506-interior",
+      "lat": 40.1918437745,
+      "lng": 141.4372778350539,
+      "status": "inside",
+      "codes": [
+        "03506"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03506-vertex",
+      "lat": 40.270800027,
+      "lng": 141.373640999,
+      "status": "boundary",
+      "codes": [
+        "03213",
+        "03501",
+        "03506"
+      ],
+      "strictBoundaryCodes": [
+        "03213",
+        "03501",
+        "03506"
+      ]
+    },
+    {
+      "label": "03507-interior",
+      "lat": 40.3320822385,
+      "lng": 141.6775236044252,
+      "status": "inside",
+      "codes": [
+        "03507"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03507-vertex",
+      "lat": 40.216186532,
+      "lng": 141.633333333,
+      "status": "boundary",
+      "codes": [
+        "03207",
+        "03507"
+      ],
+      "strictBoundaryCodes": [
+        "03207",
+        "03507"
+      ]
+    },
+    {
+      "label": "03507-hole-13",
+      "lat": 40.3677857795,
+      "lng": 141.75612312883163,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03507-island",
+      "lat": 40.4463081845,
+      "lng": 141.6861740106229,
+      "status": "inside",
+      "codes": [
+        "03507"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03524-interior",
+      "lat": 40.141324031500005,
+      "lng": 141.2621749668424,
+      "status": "inside",
+      "codes": [
+        "03524"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "03524-vertex",
+      "lat": 40.25,
+      "lng": 141.268150389,
+      "status": "boundary",
+      "codes": [
+        "03213",
+        "03524"
+      ],
+      "strictBoundaryCodes": [
+        "03213",
+        "03524"
+      ]
+    },
+    {
+      "label": "grid-0",
+      "lat": 39.2158876599261,
+      "lng": 140.3439061047397,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-1",
+      "lat": 40.32678228998079,
+      "lng": 140.2636109450353,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-2",
+      "lat": 39.379136800493455,
+      "lng": 142.22873926688195,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-3",
+      "lat": 38.98738121540098,
+      "lng": 142.12899244386887,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-4",
+      "lat": 38.71880531834734,
+      "lng": 141.32617542265422,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-5",
+      "lat": 38.91252777535186,
+      "lng": 140.83463136389327,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-6",
+      "lat": 40.21389217904263,
+      "lng": 140.80605035033796,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-7",
+      "lat": 39.07125104971778,
+      "lng": 141.9730190910641,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-8",
+      "lat": 39.674014765246426,
+      "lng": 140.99235065362612,
+      "status": "inside",
+      "codes": [
+        "03301"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-9",
+      "lat": 39.877155036804474,
+      "lng": 141.81241372772325,
+      "status": "inside",
+      "codes": [
+        "03483"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-10",
+      "lat": 38.765928379925064,
+      "lng": 141.6656890245184,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-11",
+      "lat": 39.873015110687795,
+      "lng": 141.7066596045272,
+      "status": "inside",
+      "codes": [
+        "03483"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-12",
+      "lat": 40.500433244700346,
+      "lng": 141.03481006728458,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-13",
+      "lat": 39.29715836774909,
+      "lng": 142.05495138204427,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-14",
+      "lat": 40.42331933451592,
+      "lng": 140.9475500487582,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-15",
+      "lat": 39.51556989730951,
+      "lng": 141.77531364795703,
+      "status": "inside",
+      "codes": [
+        "03482"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-16",
+      "lat": 40.43991149632493,
+      "lng": 140.36566479477327,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-17",
+      "lat": 40.097307759174726,
+      "lng": 141.73992075296474,
+      "status": "inside",
+      "codes": [
+        "03207"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-18",
+      "lat": 39.46874345118809,
+      "lng": 141.94690985916844,
+      "status": "inside",
+      "codes": [
+        "03482"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-19",
+      "lat": 39.75112108671037,
+      "lng": 141.97773219260566,
+      "status": "inside",
+      "codes": [
+        "03202"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-20",
+      "lat": 40.0251561673557,
+      "lng": 142.31797419830968,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-21",
+      "lat": 40.16824977446805,
+      "lng": 141.28747103338372,
+      "status": "inside",
+      "codes": [
+        "03524"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-22",
+      "lat": 40.43597761530057,
+      "lng": 142.09801598302383,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-23",
+      "lat": 38.89637860925598,
+      "lng": 141.6931776509879,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-24",
+      "lat": 38.90334726669177,
+      "lng": 140.67308240015927,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-25",
+      "lat": 39.98301170601339,
+      "lng": 140.43197309035153,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-26",
+      "lat": 40.06491946974723,
+      "lng": 141.0701016963495,
+      "status": "inside",
+      "codes": [
+        "03214"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-27",
+      "lat": 39.628168094671075,
+      "lng": 142.15834022324464,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-28",
+      "lat": 39.41699933430634,
+      "lng": 140.42319882173433,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-29",
+      "lat": 40.299588825786984,
+      "lng": 140.40374514812103,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-30",
+      "lat": 39.29290210333509,
+      "lng": 141.06384843815076,
+      "status": "inside",
+      "codes": [
+        "03206"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-31",
+      "lat": 38.856293535846675,
+      "lng": 141.31643843404765,
+      "status": "inside",
+      "codes": [
+        "03209"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-32",
+      "lat": 38.94837581146903,
+      "lng": 141.24296364838096,
+      "status": "inside",
+      "codes": [
+        "03209"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-33",
+      "lat": 40.24892918568759,
+      "lng": 141.31529431378323,
+      "status": "inside",
+      "codes": [
+        "03213"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-34",
+      "lat": 39.569691563308396,
+      "lng": 141.7852470002877,
+      "status": "inside",
+      "codes": [
+        "03202"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-35",
+      "lat": 39.02384307008725,
+      "lng": 141.79552950633706,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-36",
+      "lat": 39.57694374959254,
+      "lng": 140.4663929320305,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-37",
+      "lat": 38.854334952533605,
+      "lng": 140.89791995159925,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-38",
+      "lat": 38.753289612946176,
+      "lng": 140.89140516328482,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-39",
+      "lat": 39.73686219814197,
+      "lng": 141.8309592434911,
+      "status": "inside",
+      "codes": [
+        "03483"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-40",
+      "lat": 40.268574991298834,
+      "lng": 142.03581426897247,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-41",
+      "lat": 39.06025661215203,
+      "lng": 141.71216945565027,
+      "status": "inside",
+      "codes": [
+        "03203"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-42",
+      "lat": 39.368071948559816,
+      "lng": 141.6150254187518,
+      "status": "inside",
+      "codes": [
+        "03208"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-43",
+      "lat": 39.73324479233077,
+      "lng": 140.42503334468037,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-44",
+      "lat": 40.208483324913004,
+      "lng": 141.75308703598355,
+      "status": "inside",
+      "codes": [
+        "03207"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-45",
+      "lat": 39.22076524804027,
+      "lng": 141.84839621769143,
+      "status": "inside",
+      "codes": [
+        "03211"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-46",
+      "lat": 40.17736649379388,
+      "lng": 141.33030819540988,
+      "status": "inside",
+      "codes": [
+        "03524"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-47",
+      "lat": 38.69297736021214,
+      "lng": 141.80336990434978,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-48",
+      "lat": 39.29228338450219,
+      "lng": 141.92946262080454,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-49",
+      "lat": 39.398400832766896,
+      "lng": 141.10480270910364,
+      "status": "inside",
+      "codes": [
+        "03205"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-50",
+      "lat": 40.0955588579844,
+      "lng": 142.2992925476253,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-51",
+      "lat": 39.423984951857356,
+      "lng": 140.320203928213,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-52",
+      "lat": 40.22441861099215,
+      "lng": 141.0490259862959,
+      "status": "inside",
+      "codes": [
+        "03213"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-53",
+      "lat": 38.67604333638447,
+      "lng": 142.0865040681189,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-54",
+      "lat": 38.73142958815433,
+      "lng": 140.8572052309263,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-55",
+      "lat": 40.5351707401747,
+      "lng": 142.09810449145658,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-56",
+      "lat": 39.73828908735294,
+      "lng": 140.89916444302506,
+      "status": "inside",
+      "codes": [
+        "03301"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-57",
+      "lat": 40.03528213049555,
+      "lng": 141.04691835853347,
+      "status": "inside",
+      "codes": [
+        "03214"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-58",
+      "lat": 38.752591420701464,
+      "lng": 140.522521776152,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-59",
+      "lat": 40.184766932506435,
+      "lng": 140.8171228018694,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-60",
+      "lat": 38.77724854919122,
+      "lng": 140.30396955909168,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-61",
+      "lat": 39.32844916179541,
+      "lng": 141.36702279047657,
+      "status": "inside",
+      "codes": [
+        "03208"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-62",
+      "lat": 40.05749458582315,
+      "lng": 140.9025123641692,
+      "status": "inside",
+      "codes": [
+        "03214"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-63",
+      "lat": 40.46672916632194,
+      "lng": 140.26221298236732,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-64",
+      "lat": 40.42270220792524,
+      "lng": 140.66778400203276,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-65",
+      "lat": 39.925749487915255,
+      "lng": 141.78196002166482,
+      "status": "inside",
+      "codes": [
+        "03484"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-66",
+      "lat": 38.72581833353598,
+      "lng": 141.94114567092234,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-67",
+      "lat": 39.379847356528444,
+      "lng": 141.61140074891355,
+      "status": "inside",
+      "codes": [
+        "03208"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-68",
+      "lat": 39.0976964633324,
+      "lng": 140.61499690415286,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-69",
+      "lat": 40.15670192918953,
+      "lng": 140.9658793888563,
+      "status": "inside",
+      "codes": [
+        "03214"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-70",
+      "lat": 40.27059977628413,
+      "lng": 141.9650851257322,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-71",
+      "lat": 39.22222736096314,
+      "lng": 140.45711802312172,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-72",
+      "lat": 39.57932162814024,
+      "lng": 141.41828356731517,
+      "status": "inside",
+      "codes": [
+        "03201"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-73",
+      "lat": 39.94195273909888,
+      "lng": 140.5037011248653,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-74",
+      "lat": 39.68154098995468,
+      "lng": 141.87803346216845,
+      "status": "inside",
+      "codes": [
+        "03202"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-75",
+      "lat": 40.52613147892746,
+      "lng": 140.97365347284858,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-76",
+      "lat": 39.03444177809819,
+      "lng": 141.49985774711948,
+      "status": "inside",
+      "codes": [
+        "03210"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-77",
+      "lat": 39.76719687430341,
+      "lng": 140.47714329953553,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-78",
+      "lat": 38.85213232805739,
+      "lng": 141.85257701495468,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-79",
+      "lat": 39.49841400092974,
+      "lng": 141.67684803447963,
+      "status": "inside",
+      "codes": [
+        "03202"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-80",
+      "lat": 40.306891540650504,
+      "lng": 142.0890407766333,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-81",
+      "lat": 40.22806697752383,
+      "lng": 140.27687943489988,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-82",
+      "lat": 40.290115771790425,
+      "lng": 141.125453675726,
+      "status": "inside",
+      "codes": [
+        "03213"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-83",
+      "lat": 40.27165501820928,
+      "lng": 141.96775928184948,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-84",
+      "lat": 40.30517242881889,
+      "lng": 140.43775072495802,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-85",
+      "lat": 40.52294796254498,
+      "lng": 141.28340762297614,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-86",
+      "lat": 39.328508760122716,
+      "lng": 142.1271767488907,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-87",
+      "lat": 40.42323145401766,
+      "lng": 141.58442297878432,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-88",
+      "lat": 38.83604690536015,
+      "lng": 140.55435115008441,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-89",
+      "lat": 39.48679600494199,
+      "lng": 141.78263074690707,
+      "status": "inside",
+      "codes": [
+        "03461"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-90",
+      "lat": 39.2835347433001,
+      "lng": 140.6952960018017,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-91",
+      "lat": 39.82456803204259,
+      "lng": 141.3777760645277,
+      "status": "inside",
+      "codes": [
+        "03201"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-92",
+      "lat": 39.34493044085125,
+      "lng": 142.20662444474326,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-93",
+      "lat": 39.805131292192144,
+      "lng": 141.59832680579254,
+      "status": "inside",
+      "codes": [
+        "03483"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-94",
+      "lat": 39.357354250589225,
+      "lng": 140.78148505612305,
+      "status": "inside",
+      "codes": [
+        "03366"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-95",
+      "lat": 39.15087102867769,
+      "lng": 141.9551138345274,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-96",
+      "lat": 38.69609601583612,
+      "lng": 141.81046596788656,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-97",
+      "lat": 39.846698231348284,
+      "lng": 141.0699369433319,
+      "status": "inside",
+      "codes": [
+        "03216"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-98",
+      "lat": 40.393146848345275,
+      "lng": 140.680354386155,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-99",
+      "lat": 39.32220169457404,
+      "lng": 142.34313978730157,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-100",
+      "lat": 40.45477356737007,
+      "lng": 141.289397177041,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-101",
+      "lat": 39.750751804895025,
+      "lng": 141.0673849042074,
+      "status": "inside",
+      "codes": [
+        "03216"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-102",
+      "lat": 39.57314670074144,
+      "lng": 141.44994395761853,
+      "status": "inside",
+      "codes": [
+        "03202"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-103",
+      "lat": 38.713163144894004,
+      "lng": 140.76727559891611,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-104",
+      "lat": 39.35051419934432,
+      "lng": 141.81430329180475,
+      "status": "inside",
+      "codes": [
+        "03211"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-105",
+      "lat": 39.22600706425201,
+      "lng": 140.58248729412946,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-106",
+      "lat": 40.222782025821154,
+      "lng": 141.0394284822155,
+      "status": "inside",
+      "codes": [
+        "03213"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-107",
+      "lat": 39.70351976255132,
+      "lng": 141.09753391812893,
+      "status": "inside",
+      "codes": [
+        "03201"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-108",
+      "lat": 40.19993629483889,
+      "lng": 140.85294962235287,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-109",
+      "lat": 39.00619637829808,
+      "lng": 141.88040513857368,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-110",
+      "lat": 39.049862500211354,
+      "lng": 140.8064379465385,
+      "status": "inside",
+      "codes": [
+        "03215"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-111",
+      "lat": 38.76244651820955,
+      "lng": 141.66467067857553,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-112",
+      "lat": 38.98316677611261,
+      "lng": 142.152655987453,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-113",
+      "lat": 39.43120536292478,
+      "lng": 140.44336437417928,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-114",
+      "lat": 39.79312304509843,
+      "lng": 141.81947807033504,
+      "status": "inside",
+      "codes": [
+        "03483"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-115",
+      "lat": 39.96577038271581,
+      "lng": 140.9496581028684,
+      "status": "inside",
+      "codes": [
+        "03214"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-116",
+      "lat": 40.12735315220718,
+      "lng": 142.20747749547348,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-117",
+      "lat": 39.89482522290204,
+      "lng": 142.27461291240957,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-118",
+      "lat": 39.5981931496184,
+      "lng": 141.04704720914265,
+      "status": "inside",
+      "codes": [
+        "03301"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-119",
+      "lat": 40.330638690875105,
+      "lng": 140.34352420585046,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-120",
+      "lat": 40.49875483440991,
+      "lng": 142.32269135270926,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-121",
+      "lat": 40.012603558458736,
+      "lng": 140.63742724016274,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-122",
+      "lat": 39.91626346769721,
+      "lng": 142.0396831297317,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-123",
+      "lat": 38.715086415189205,
+      "lng": 141.34395550958791,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-124",
+      "lat": 39.26763114620929,
+      "lng": 140.92097481910054,
+      "status": "inside",
+      "codes": [
+        "03206"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-125",
+      "lat": 39.42977557035637,
+      "lng": 141.38096585648915,
+      "status": "inside",
+      "codes": [
+        "03208"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-126",
+      "lat": 39.703939518447704,
+      "lng": 140.76333624422588,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-127",
+      "lat": 38.98830173162813,
+      "lng": 142.00319827312362,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-128",
+      "lat": 38.860322052528744,
+      "lng": 140.61988242970546,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-129",
+      "lat": 39.23300061825296,
+      "lng": 141.74077161276935,
+      "status": "inside",
+      "codes": [
+        "03211"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-130",
+      "lat": 39.25815789589597,
+      "lng": 140.99187698762282,
+      "status": "inside",
+      "codes": [
+        "03206"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-131",
+      "lat": 40.500116778016455,
+      "lng": 141.39219694440658,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-132",
+      "lat": 39.53927041844409,
+      "lng": 141.73118998595035,
+      "status": "inside",
+      "codes": [
+        "03202"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-133",
+      "lat": 39.44692271082559,
+      "lng": 141.70522447214762,
+      "status": "inside",
+      "codes": [
+        "03202"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-134",
+      "lat": 40.23790917690749,
+      "lng": 140.51592948098772,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-135",
+      "lat": 39.25679743309816,
+      "lng": 142.1796650793802,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-136",
+      "lat": 39.81196190789841,
+      "lng": 141.0877931326719,
+      "status": "inside",
+      "codes": [
+        "03216"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-137",
+      "lat": 38.65266040083706,
+      "lng": 141.61922505096723,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-138",
+      "lat": 40.36946107040592,
+      "lng": 141.67373983439253,
+      "status": "inside",
+      "codes": [
+        "03507"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-139",
+      "lat": 38.92155067690945,
+      "lng": 140.52061469014893,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-140",
+      "lat": 40.49393327745036,
+      "lng": 140.55807730278366,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-141",
+      "lat": 40.23502658420823,
+      "lng": 140.3904615784041,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-142",
+      "lat": 39.94407749389692,
+      "lng": 141.9826036685057,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-143",
+      "lat": 39.27144217095907,
+      "lng": 141.72489443446085,
+      "status": "inside",
+      "codes": [
+        "03211"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-144",
+      "lat": 38.86271657992311,
+      "lng": 141.5575263066926,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-145",
+      "lat": 40.02268659061556,
+      "lng": 140.27553618980642,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-146",
+      "lat": 39.5253685793809,
+      "lng": 141.10976043470313,
+      "status": "inside",
+      "codes": [
+        "03321"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-147",
+      "lat": 40.014694996040184,
+      "lng": 141.50477380099954,
+      "status": "inside",
+      "codes": [
+        "03302"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-148",
+      "lat": 39.888862840914,
+      "lng": 141.63771725940234,
+      "status": "inside",
+      "codes": [
+        "03483"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-149",
+      "lat": 39.44268028174389,
+      "lng": 140.67654010198117,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-150",
+      "lat": 38.86018614580706,
+      "lng": 141.4622952220094,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-151",
+      "lat": 39.44130907551582,
+      "lng": 140.27172473518968,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-152",
+      "lat": 38.72254446769389,
+      "lng": 141.9698313981383,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-153",
+      "lat": 40.299999565464375,
+      "lng": 141.52309250468372,
+      "status": "inside",
+      "codes": [
+        "03501"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-154",
+      "lat": 39.64691648736888,
+      "lng": 140.36358251838323,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-155",
+      "lat": 39.32072224375056,
+      "lng": 141.16728034396183,
+      "status": "inside",
+      "codes": [
+        "03206"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-156",
+      "lat": 39.96375135616649,
+      "lng": 141.2655740861612,
+      "status": "inside",
+      "codes": [
+        "03303"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-157",
+      "lat": 39.445046418365735,
+      "lng": 141.13049972847904,
+      "status": "inside",
+      "codes": [
+        "03205"
+      ],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-158",
+      "lat": 38.68914294451277,
+      "lng": 140.40687302267455,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    },
+    {
+      "label": "grid-159",
+      "lat": 40.44960947260296,
+      "lng": 142.32519352710224,
+      "status": "outside",
+      "codes": [],
+      "strictBoundaryCodes": []
+    }
+  ]
+}

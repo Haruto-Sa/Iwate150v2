@@ -88,6 +88,7 @@ export default async function SpotDetailPage({ params }: PageProps) {
   const relatedSpots = spots.filter((item) => item.city_id === spot.city_id && item.id !== spot.id).slice(0, 3);
   const imageUrl = getImageUrl(spot.image_thumb_path ?? spot.image_path ?? null);
   const jsonLd = buildSpotJsonLd(spot);
+  const shareUrl = spot.isSample ? spot.reference_url : `${SITE_URL}${getSpotHref(spot)}`;
 
   return (
     <div className="space-y-8">
@@ -96,20 +97,20 @@ export default async function SpotDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
-      <section className="overflow-hidden rounded-[32px] border border-emerald-900/10 bg-white shadow-sm">
-        <div className="relative aspect-[3/2] max-h-[32rem] w-full bg-emerald-100"><TravelImage src={imageUrl} alt={spot.name} sizes="(max-width: 1152px) 100vw, 1152px" /></div>
+      <section className="overflow-hidden rounded-[32px] border border-app-line/10 bg-app-surface shadow-sm">
+        {imageUrl && <div className="relative aspect-[3/2] max-h-[32rem] w-full bg-app-surface-tint"><TravelImage src={imageUrl} alt={spot.name} sizes="(max-width: 1152px) 100vw, 1152px" /></div>}
         <div className="space-y-5 p-5 sm:p-8">
           <div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-emerald-700">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-app-accent-ink">
               <span>{city?.name ?? "岩手県"}</span>
               {genre && <span>{genre.name}</span>}
             </div>
-            <h1 className="mt-2 font-display text-3xl leading-relaxed text-emerald-950 sm:text-4xl">{spot.name}</h1>
+            <h1 className="mt-2 font-display text-3xl leading-relaxed text-app-ink-strong sm:text-4xl">{spot.name}</h1>
           </div>
-          <p className="max-w-3xl text-sm leading-8 text-emerald-900/85">{spot.description}</p>
+          <p className="max-w-3xl text-sm leading-8 text-app-ink/85">{spot.description}</p>
           <div className="flex flex-wrap items-center gap-3 [&>a]:mt-0 [&>button]:mt-0">
-            <FavoriteToggleButton spotId={spot.id} />
-            <ShareButton title={spot.name} text={`${spot.name}を発見！`} url={`${SITE_URL}${getSpotHref(spot)}`} />
+            <FavoriteToggleButton spotId={spot.id} isSample={spot.isSample} />
+            {shareUrl && <ShareButton title={spot.name} text={spot.name} url={shareUrl} />}
             <Link href="/camera" className="action-link action-link-secondary"><Camera className="h-4 w-4 shrink-0" aria-hidden="true" />写真を撮る</Link>
           </div>
           <SpotLocation spot={spot} />
@@ -118,16 +119,16 @@ export default async function SpotDetailPage({ params }: PageProps) {
 
       {relatedSpots.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-2xl font-semibold text-[#0f1c1a]">同じエリアのスポット</h2>
+          <h2 className="text-2xl font-semibold text-app-ink-strong">同じエリアのスポット</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {relatedSpots.map((item) => (
               <Link
                 key={item.id}
                 href={getSpotHref(item)}
-                className="rounded-[24px] border border-emerald-900/10 bg-white p-5 shadow-sm transition hover:border-emerald-300"
+                className="rounded-[24px] border border-app-line/10 bg-app-surface p-5 shadow-sm transition hover:border-app-line-soft"
               >
-                <p className="text-sm font-semibold text-[#0f1c1a]">{item.name}</p>
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-emerald-900/70">{item.description}</p>
+                <p className="text-sm font-semibold text-app-ink-strong">{item.name}</p>
+                <p className="mt-2 line-clamp-3 text-sm leading-6 text-app-ink-muted">{item.description}</p>
               </Link>
             ))}
           </div>

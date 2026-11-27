@@ -9,7 +9,8 @@ export const characters: Character[] = [
       "岩手名物・わんこそばをモチーフにした「わんこ兄弟」の一人。おそばのように気長なのんびり屋で、岩手の魅力を広めるために旅をする元気なキャラクター。",
     model_path: "models/wanko1.obj",
     mtl_path: "models/wanko1.mtl",
-    thumbnail: "images/other/wanko.png",
+    thumbnail: "/assets/characters/previews/sobacchi.png",
+    source_url: "https://iwatetabi.jp/wanko/introduction",
     tags: ["わんこそば", "公式キャラ"],
     renderProfile: {
       scaleMultiplier: 1.08,
@@ -32,7 +33,8 @@ export const characters: Character[] = [
     // 既存の形状・UVに部位別の配色を焼き込み、両画面で同じローカル素材を使う。
     model_path: "/assets/characters/karin/karin.obj",
     mtl_path: "/assets/characters/karin/karin.mtl",
-    thumbnail: "images/cities/Tono_icon.jpg",
+    thumbnail: "/assets/characters/previews/karin.png",
+    source_url: "https://www.city.tono.iwate.jp/index.cfm/25,41085,238,673,html",
     tags: ["カッパ", "伝承"],
     renderProfile: {
       scaleMultiplier: 1.05,
@@ -50,10 +52,11 @@ export const characters: Character[] = [
     name: "ケロ平",
     region: "平泉",
     description:
-      "平泉のカエル戯画をモチーフにした世界遺産平泉PRキャラクター。平和と共生の理念を伝えるためSNSやイベントで活動中。",
+      "平泉のカエル戯画をモチーフにした世界遺産平泉PRキャラクター。柳之御所遺跡から出土した木片の絵がもとになっている。",
     model_path: "models/kerohira1.obj",
     mtl_path: "models/kerohira1.mtl",
-    thumbnail: "images/cities/Hiraizumi_icon.jpg",
+    thumbnail: "/assets/characters/previews/kerohira.png",
+    source_url: "https://www.pref.iwate.jp/kensei/seisaku/manga/1011952.html",
     tags: ["世界遺産", "PR"],
     renderProfile: {
       scaleMultiplier: 0.9,
@@ -74,7 +77,8 @@ export const characters: Character[] = [
       "普代村の特産品「塩蔵昆布」をモチーフにしたキャラクター。海の恵みをPRするためイベントやSNSで活躍。",
     model_path: "models/enzo.obj",
     mtl_path: "models/enzo.mtl",
-    thumbnail: "images/cities/Hudai_icon.jpg",
+    thumbnail: "/assets/characters/previews/enzo.png",
+    source_url: "https://www.zck.or.jp/site/local-mascot/32839.html",
     tags: ["三陸", "昆布"],
     renderProfile: {
       scaleMultiplier: 1.15,
@@ -95,7 +99,8 @@ export const characters: Character[] = [
       "世界遺産「御所野遺跡」のPRキャラクター。5000年前の森の妖精として町内外のイベントに参加し情報を発信している。",
     // legacy の埋め込みテクスチャ付きモデルを同梱し、Storage の有無によらず色を復元する。
     model_path: "/assets/characters/goshodon.fbx",
-    thumbnail: "images/cities/Ichinohe_icon.jpg",
+    thumbnail: "/assets/characters/previews/goshodon.png",
+    source_url: "https://www.town.ichinohe.iwate.jp/soshikikarasagasu/sekaiisanka/sekaiisan/goshodon/index.html",
     tags: ["縄文", "遺跡"],
     renderProfile: {
       scaleMultiplier: 0.88,

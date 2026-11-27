@@ -1,0 +1,495 @@
+{
+  "commit": "404b373ba7a2dae06aac3ba91dbbcd6bea3fca0a",
+  "recordedAt": "2026-10-23T19:48:11.053Z",
+  "scope": "Desktop engine/device profiles; public still-image canvas stream; CPU render submission, not GPU completion or physical device. One sample per condition.",
+  "measurement": "Snapshot immediately after all five models first submitted visible frames, before recording or camera restart. Elapsed time includes sequential model selection by automation.",
+  "results": [
+    {
+      "environment": "iphone",
+      "initialMeasurement": {
+        "marks": [
+          {
+            "name": "camera:start",
+            "time": 453
+          },
+          {
+            "name": "camera:playing",
+            "time": 578
+          },
+          {
+            "name": "renderer:initialize:start",
+            "time": 578
+          },
+          {
+            "name": "renderer:initialize:end",
+            "time": 640
+          },
+          {
+            "name": "urls:start",
+            "time": 640
+          },
+          {
+            "name": "urls:end",
+            "time": 641
+          },
+          {
+            "name": "face:initialize:start",
+            "time": 642
+          },
+          {
+            "name": "renderer:first-submit:start",
+            "time": 705
+          },
+          {
+            "name": "renderer:first-submit:end",
+            "time": 707
+          },
+          {
+            "name": "sobacchi:selected",
+            "time": 797
+          },
+          {
+            "name": "sobacchi:load:start",
+            "time": 798
+          },
+          {
+            "name": "sobacchi:material-parse:start",
+            "time": 854
+          },
+          {
+            "name": "sobacchi:material-parse:end",
+            "time": 854
+          },
+          {
+            "name": "sobacchi:parse:start",
+            "time": 855
+          },
+          {
+            "name": "sobacchi:parse:end",
+            "time": 927
+          },
+          {
+            "name": "sobacchi:object-ready",
+            "time": 927
+          },
+          {
+            "name": "enzo:selected",
+            "time": 1023
+          },
+          {
+            "name": "enzo:load:start",
+            "time": 1025
+          },
+          {
+            "name": "enzo:material-parse:start",
+            "time": 1050
+          },
+          {
+            "name": "enzo:material-parse:end",
+            "time": 1050
+          },
+          {
+            "name": "enzo:parse:start",
+            "time": 1050
+          },
+          {
+            "name": "enzo:parse:end",
+            "time": 1073
+          },
+          {
+            "name": "enzo:object-ready",
+            "time": 1073
+          },
+          {
+            "name": "karin:selected",
+            "time": 1099
+          },
+          {
+            "name": "karin:load:start",
+            "time": 1100
+          },
+          {
+            "name": "karin:material-parse:start",
+            "time": 1189
+          },
+          {
+            "name": "karin:material-parse:end",
+            "time": 1189
+          },
+          {
+            "name": "karin:parse:start",
+            "time": 1190
+          },
+          {
+            "name": "karin:parse:end",
+            "time": 1400
+          },
+          {
+            "name": "kerohira:selected",
+            "time": 1402
+          },
+          {
+            "name": "kerohira:load:start",
+            "time": 1403
+          },
+          {
+            "name": "face:initialize:end",
+            "time": 1406
+          },
+          {
+            "name": "face:ready",
+            "time": 1406
+          },
+          {
+            "name": "face:first-send",
+            "time": 1408
+          },
+          {
+            "name": "karin:object-ready",
+            "time": 1422
+          },
+          {
+            "name": "goshodon:selected",
+            "time": 1492
+          },
+          {
+            "name": "goshodon:load:start",
+            "time": 1493
+          },
+          {
+            "name": "goshodon:parse:start",
+            "time": 1546
+          },
+          {
+            "name": "goshodon:parse:end",
+            "time": 2024
+          },
+          {
+            "name": "kerohira:material-parse:start",
+            "time": 2045
+          },
+          {
+            "name": "kerohira:material-parse:end",
+            "time": 2045
+          },
+          {
+            "name": "kerohira:parse:start",
+            "time": 2045
+          },
+          {
+            "name": "kerohira:parse:end",
+            "time": 2453
+          },
+          {
+            "name": "kerohira:object-ready",
+            "time": 2453
+          },
+          {
+            "name": "face:first-result",
+            "time": 2464
+          },
+          {
+            "name": "face:first-detected",
+            "time": 2464
+          },
+          {
+            "name": "face:first-send-end",
+            "time": 2464
+          },
+          {
+            "name": "goshodon:object-ready",
+            "time": 2465
+          },
+          {
+            "name": "sobacchi:visible-submit:start",
+            "time": 2475
+          },
+          {
+            "name": "enzo:visible-submit:start",
+            "time": 2475
+          },
+          {
+            "name": "karin:visible-submit:start",
+            "time": 2475
+          },
+          {
+            "name": "kerohira:visible-submit:start",
+            "time": 2475
+          },
+          {
+            "name": "goshodon:visible-submit:start",
+            "time": 2475
+          },
+          {
+            "name": "sobacchi:visible-submit:end",
+            "time": 2616
+          },
+          {
+            "name": "enzo:visible-submit:end",
+            "time": 2616
+          },
+          {
+            "name": "karin:visible-submit:end",
+            "time": 2616
+          },
+          {
+            "name": "kerohira:visible-submit:end",
+            "time": 2616
+          },
+          {
+            "name": "goshodon:visible-submit:end",
+            "time": 2616
+          }
+        ],
+        "measuredAt": 2675
+      },
+      "allFiveVisibleSubmissionElapsedMs": 2163
+    },
+    {
+      "environment": "android",
+      "initialMeasurement": {
+        "marks": [
+          {
+            "name": "camera:start",
+            "time": 228.09999999403954
+          },
+          {
+            "name": "camera:playing",
+            "time": 297.69999998807907
+          },
+          {
+            "name": "renderer:initialize:start",
+            "time": 297.69999998807907
+          },
+          {
+            "name": "renderer:initialize:end",
+            "time": 319.5
+          },
+          {
+            "name": "urls:start",
+            "time": 319.5
+          },
+          {
+            "name": "urls:end",
+            "time": 319.89999997615814
+          },
+          {
+            "name": "face:initialize:start",
+            "time": 320.19999998807907
+          },
+          {
+            "name": "renderer:first-submit:start",
+            "time": 431.69999998807907
+          },
+          {
+            "name": "renderer:first-submit:end",
+            "time": 433
+          },
+          {
+            "name": "sobacchi:selected",
+            "time": 516.0999999940395
+          },
+          {
+            "name": "sobacchi:load:start",
+            "time": 517.5999999940395
+          },
+          {
+            "name": "sobacchi:material-parse:start",
+            "time": 582
+          },
+          {
+            "name": "sobacchi:material-parse:end",
+            "time": 582.5999999940395
+          },
+          {
+            "name": "sobacchi:parse:start",
+            "time": 583
+          },
+          {
+            "name": "sobacchi:parse:end",
+            "time": 690.5999999940395
+          },
+          {
+            "name": "sobacchi:object-ready",
+            "time": 690.6999999880791
+          },
+          {
+            "name": "enzo:selected",
+            "time": 752.5
+          },
+          {
+            "name": "enzo:load:start",
+            "time": 753.3999999761581
+          },
+          {
+            "name": "enzo:material-parse:start",
+            "time": 774.5999999940395
+          },
+          {
+            "name": "enzo:material-parse:end",
+            "time": 774.7999999821186
+          },
+          {
+            "name": "enzo:parse:start",
+            "time": 774.8999999761581
+          },
+          {
+            "name": "enzo:parse:end",
+            "time": 811
+          },
+          {
+            "name": "enzo:object-ready",
+            "time": 811
+          },
+          {
+            "name": "karin:selected",
+            "time": 859.6999999880791
+          },
+          {
+            "name": "karin:load:start",
+            "time": 860.2999999821186
+          },
+          {
+            "name": "face:initialize:end",
+            "time": 874.6999999880791
+          },
+          {
+            "name": "face:ready",
+            "time": 874.7999999821186
+          },
+          {
+            "name": "face:first-send",
+            "time": 884.7999999821186
+          },
+          {
+            "name": "kerohira:selected",
+            "time": 915.6999999880791
+          },
+          {
+            "name": "kerohira:load:start",
+            "time": 916.1999999880791
+          },
+          {
+            "name": "karin:material-parse:start",
+            "time": 1033.8999999761581
+          },
+          {
+            "name": "karin:material-parse:end",
+            "time": 1034.0999999940395
+          },
+          {
+            "name": "karin:parse:start",
+            "time": 1035.0999999940395
+          },
+          {
+            "name": "karin:parse:end",
+            "time": 1326.5999999940395
+          },
+          {
+            "name": "goshodon:selected",
+            "time": 8888.699999988079
+          },
+          {
+            "name": "goshodon:load:start",
+            "time": 8889.399999976158
+          },
+          {
+            "name": "karin:object-ready",
+            "time": 9001.799999982119
+          },
+          {
+            "name": "face:first-result",
+            "time": 9048.09999999404
+          },
+          {
+            "name": "face:first-detected",
+            "time": 9048.199999988079
+          },
+          {
+            "name": "face:first-send-end",
+            "time": 9048.299999982119
+          },
+          {
+            "name": "sobacchi:visible-submit:start",
+            "time": 9049.5
+          },
+          {
+            "name": "enzo:visible-submit:start",
+            "time": 9049.5
+          },
+          {
+            "name": "karin:visible-submit:start",
+            "time": 9049.5
+          },
+          {
+            "name": "sobacchi:visible-submit:end",
+            "time": 9114.299999982119
+          },
+          {
+            "name": "enzo:visible-submit:end",
+            "time": 9114.299999982119
+          },
+          {
+            "name": "karin:visible-submit:end",
+            "time": 9114.299999982119
+          },
+          {
+            "name": "goshodon:parse:start",
+            "time": 9769.399999976158
+          },
+          {
+            "name": "goshodon:parse:end",
+            "time": 10063.399999976158
+          },
+          {
+            "name": "goshodon:object-ready",
+            "time": 10272.799999982119
+          },
+          {
+            "name": "kerohira:material-parse:start",
+            "time": 10281.699999988079
+          },
+          {
+            "name": "kerohira:material-parse:end",
+            "time": 10282
+          },
+          {
+            "name": "kerohira:parse:start",
+            "time": 10282.09999999404
+          },
+          {
+            "name": "kerohira:parse:end",
+            "time": 10899.699999988079
+          },
+          {
+            "name": "kerohira:object-ready",
+            "time": 10900.199999988079
+          },
+          {
+            "name": "kerohira:visible-submit:start",
+            "time": 10907.199999988079
+          },
+          {
+            "name": "goshodon:visible-submit:start",
+            "time": 10907.199999988079
+          },
+          {
+            "name": "kerohira:visible-submit:end",
+            "time": 10962.199999988079
+          },
+          {
+            "name": "goshodon:visible-submit:end",
+            "time": 10962.199999988079
+          }
+        ],
+        "measuredAt": 11604.09999999404
+      },
+      "allFiveVisibleSubmissionElapsedMs": 10734.1
+    }
+  ],
+  "limits": [
+    "One sample per engine; not a comparative runtime improvement or physical-device measurement.",
+    "CPU render submission does not prove GPU completion.",
+    "Earlier approximately 50-second claim used a post-restart page timestamp and is invalid."
+  ]
+}

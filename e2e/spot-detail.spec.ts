@@ -12,7 +12,7 @@ test("所在地・保存・共有を表示し、現在地を要求せずルー�
   await page.goto("/spots/1");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("盛岡城跡公園");
   await expect(page.getByTitle("盛岡城跡公園", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "ログインして保存" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "サンプル（保存対象外）" })).toBeDisabled();
   await expect(page.getByRole("link", { name: "地図を広げる" })).toHaveAttribute("href", "/map?focus=1");
   await page.getByRole("button", { name: "ルート検索", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "外部サイトへ移動します" });

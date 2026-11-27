@@ -89,3 +89,6 @@ supabase/*.sql
 
 # Local private implementation plans
 /plan/
+
+# Generated version-checked MediaPipe worker bundle
+/public/mediapipe/face_mesh/face_mesh.js

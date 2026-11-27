@@ -22,7 +22,7 @@ export function TravelImage({
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (!src || src === failedSrc) {
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#e9edde] text-emerald-700">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-app-surface-tint text-app-accent-ink">
         <Mountain className="h-9 w-9" strokeWidth={1} aria-hidden="true" />
         <span className="text-[11px] tracking-wider">写真準備中</span>
       </div>

@@ -1,0 +1,108 @@
+import { expect, test } from "./fixtures";
+import { characters } from "../src/lib/characters";
+
+test.use({ serviceWorkers: "block" });
+
+for (const character of characters) test(`${character.name}のプレビュー・紹介元を320pxで操作できる`, async ({ page }, info) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto("/character");
+    const select = page.getByRole("button", { name: `${character.name} ${character.region}`, exact: true });
+    await select.click();
+    await expect(select).toHaveAttribute("aria-pressed", "true");
+    const preview = page.getByRole("img", { name: character.name, exact: true });
+    await expect(preview).toBeVisible();
+    await expect.poll(() => preview.evaluate(image => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true);
+    expect(await preview.getAttribute("src")).toContain(encodeURIComponent(character.thumbnail!));
+    await page.getByRole("button", { name: "紹介元を見る", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "外部サイトへ移動します" });
+    await expect(dialog.getByRole("link", { name: "外部サイトを開く" })).toHaveAttribute("href", character.source_url!);
+    await dialog.getByRole("button", { name: "キャンセル" }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.getByText("リセット", { exact: true }).evaluate(element => element.getBoundingClientRect().height <= Number.parseFloat(getComputedStyle(element).lineHeight) + 1)).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: info.outputPath("character-previews.png"), fullPage: true });
+});
+
+test("モデル失敗時も別キャラクターへ置換せず再試行できる", async ({ page }) => {
+  const requested: string[] = [];
+  await page.route(/\.(?:obj|mtl|fbx)(?:\?|$)/, route => {
+    requested.push(new URL(route.request().url()).pathname);
+    return route.abort();
+  });
+  await page.goto("/character");
+  await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toBeVisible({ timeout: 20000 });
+  requested.length = 0;
+  await page.getByRole("button", { name: "カリンちゃん 遠野", exact: true }).click();
+  await expect(page.getByRole("img", { name: "カリンちゃん", exact: true })).toBeVisible();
+  await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toBeVisible({ timeout: 20000 });
+  expect(requested.length).toBeGreaterThan(0);
+  expect(requested.every(path => path.startsWith("/assets/characters/karin/"))).toBe(true);
+  const before = requested.length;
+  await page.getByRole("button", { name: "再試行", exact: true }).click();
+  await expect.poll(() => requested.length).toBeGreaterThan(before);
+});
+
+test("カリンの画像がモデルより遅れても描画色を変えない", async ({ page }) => {
+  const renders: string[] = [];
+  for (const imageFirst of [true, false]) {
+    let loaded = false;
+    let modelReady!: () => void;
+    const ready = new Promise<void>(resolve => { modelReady = resolve; });
+    const listener = async (message: import("@playwright/test").ConsoleMessage) => {
+      if (!message.text().startsWith("[CharacterViewer] candidate load succeeded")) return;
+      const info = await message.args()[1]?.jsonValue();
+      if (info?.characterId === "karin") { loaded = true; modelReady(); }
+    };
+    page.on("console", listener);
+    await page.addInitScript(() => {
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src")!;
+      Object.defineProperty(HTMLImageElement.prototype, "src", {
+        ...descriptor,
+        set(value: string) {
+          if (value.includes("karin-color.png")) this.addEventListener("load", () => {
+            document.documentElement.dataset.karinTextureLoaded = "true";
+          }, { once: true });
+          descriptor.set!.call(this, value);
+        },
+      });
+    });
+    await page.route("**/assets/characters/karin/karin-color.png", async route => {
+      const response = await route.fetch();
+      if (!imageFirst) await ready;
+      await route.fulfill({ response });
+    });
+    await page.route("**/assets/characters/karin/karin.obj", async route => {
+      const response = await route.fetch();
+      if (imageFirst) await page.waitForFunction(() => document.documentElement.dataset.karinTextureLoaded === "true");
+      await route.fulfill({ response });
+    });
+    await page.goto("/character");
+    await page.getByRole("button", { name: "カリンちゃん 遠野", exact: true }).click();
+    await expect.poll(async () => page.getByText("3Dモデルを読み込み中...", { exact: true }).count()).toBe(0);
+    await page.waitForFunction(() => document.documentElement.dataset.karinTextureLoaded === "true");
+    await expect.poll(() => loaded).toBe(true);
+    await expect(page.getByText("モデルを表示できませんでした", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "リセット", exact: true }).click();
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    const frame = await page.locator("canvas").evaluate(canvas => new Promise<{ url: string; painted: number }>(resolve => requestAnimationFrame(() => {
+      const source = canvas as HTMLCanvasElement;
+      const copy = document.createElement("canvas");
+      copy.width = source.width;
+      copy.height = source.height;
+      const context = copy.getContext("2d")!;
+      context.drawImage(source, 0, 0);
+      const pixels = context.getImageData(0, 0, copy.width, copy.height).data;
+      let painted = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index + 3] > 0 && Math.abs(pixels[index] - 240) + Math.abs(pixels[index + 1] - 242) + Math.abs(pixels[index + 2] - 239) > 40) painted++;
+      }
+      resolve({ url: copy.toDataURL(), painted: painted / (copy.width * copy.height) });
+    })));
+    expect(frame.painted).toBeGreaterThan(0.01);
+    renders.push(frame.url);
+    page.off("console", listener);
+    await page.unrouteAll({ behavior: "wait" });
+  }
+  expect(renders[0].length).toBeGreaterThan(1000);
+  expect(renders[1]).toBe(renders[0]);
+});

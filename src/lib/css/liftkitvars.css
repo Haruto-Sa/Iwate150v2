@@ -308,12 +308,7 @@
   --caplineBoxHeight: calc(var(--capline-font-size) * var(--capline-line-height));
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-
-  :root {
+:root[data-theme="dark"] {
     --lk-onprimary: var(--dark__onprimary_lkv);
     --lk-primarycontainer: var(--dark__primarycontainer_lkv);
     --lk-onprimarycontainer: var(--dark__onprimarycontainer_lkv);
@@ -374,5 +369,4 @@
     --lk-outline: var(--dark__outline_lkv);
     --lk-error: var(--dark__error_lkv);
     --lk-primary: var(--dark__primary_lkv);
-  }
 }

@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    groups:
+      next:
+        patterns:
+          - next
+          - eslint-config-next
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+      serwist:
+        patterns:
+          - serwist
+          - "@serwist/*"
+      tailwind:
+        patterns:
+          - tailwindcss
+          - "@tailwindcss/*"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 2

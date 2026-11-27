@@ -1,5 +1,8 @@
 "use client";
 
+import { extractFileStem, toLocalAssetUrl, buildUniqueCandidates } from "@/lib/modelAssets";
+
+import { ConfirmedExternalLink } from "@/components/ui/ExternalNavigation";
 import { PageHeading } from "@/components/ui/PageHeading";
 
 import { useEffect, useMemo, useState } from "react";
@@ -9,88 +12,15 @@ import { Image as ImageIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { CharacterViewer } from "@/components/character/CharacterViewer";
 import { getImageUrl } from "@/lib/storage";
-import { resolveClientSignedStorageUrl, resolveClientStorageUrl } from "@/lib/storageSignedClient";
+import { resolveClientSignedStorageUrl } from "@/lib/storageSignedClient";
 
-/** サムネイル Storage URL 解決のタイムアウト（ミリ秒） */
-const STORAGE_RESOLVE_TIMEOUT_MS = 20_000;
 /** Character の signed URL 解決タイムアウト（ミリ秒） */
 const CHARACTER_SIGNED_RESOLVE_TIMEOUT_MS = 5_000;
-/** 個別モデル読み込み失敗時に使う既定ローカルOBJ */
-const DEFAULT_FALLBACK_MODEL_PATH = "models/wanko1.obj";
-/** 個別モデル読み込み失敗時に使う既定ローカルMTL */
-const DEFAULT_FALLBACK_MTL_PATH = "models/wanko1.mtl";
-
 type SignedCharacterAssets = {
+  characterId: string | null;
   modelUrl: string | null;
   mtlUrl: string | null;
 };
-
-/**
- * URL/パスから拡張子なしファイル名（小文字）を取り出す。
- *
- * @param url - URL またはパス
- * @returns ファイル名（拡張子なし）
- * @example
- * const stem = extractFileStem("/models/wanko1.obj?token=abc");
- */
-function extractFileStem(url: string): string | null {
-  const stripped = url.split("?")[0]?.split("#")[0] ?? url;
-  const segment = stripped.split("/").pop();
-  if (!segment) return null;
-  const decoded = decodeURIComponent(segment);
-  const dotIndex = decoded.lastIndexOf(".");
-  const stem = dotIndex > 0 ? decoded.slice(0, dotIndex) : decoded;
-  return stem.toLowerCase();
-}
-
-/**
- * 候補URL配列を重複なく組み立てる。
- *
- * @param values - URL候補
- * @returns 重複除去済みURL配列
- * @example
- * const urls = buildUniqueCandidates([localUrl]);
- */
-function buildUniqueCandidates(values: Array<string | null | undefined>): string[] {
-  return [...new Set(values.filter((value): value is string => Boolean(value)))];
-}
-
-/**
- * Storage相対パスからローカルpublic参照URLを作成する。
- *
- * @param path - `models/...` 形式のパス
- * @returns `/models/...` 形式のURL
- * @example
- * const local = toLocalAssetUrl("models/goshodon.obj");
- */
-function toLocalAssetUrl(path: string | null | undefined): string | null {
-  if (!path) return null;
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  return path.startsWith("/") ? path : `/${path}`;
-}
-
-/**
- * サムネイル画像のみタイムアウト付きで Storage URL を解決する。
- *
- * @param path - Storage path
- * @returns 解決済みURL。失敗/タイムアウト時は null
- * @example
- * const url = await resolveThumbnailWithTimeout("images/other/wanko.png");
- */
-function resolveThumbnailWithTimeout(
-  path: string | null | undefined,
-): Promise<string | null> {
-  if (!path) return Promise.resolve(null);
-  return Promise.race([
-    resolveClientStorageUrl(path, "image"),
-    new Promise<null>((resolve) =>
-      setTimeout(() => {
-        console.warn(`[character] thumbnail resolve timeout for ${path}`);
-        resolve(null);
-      }, STORAGE_RESOLVE_TIMEOUT_MS),
-    ),
-  ]);
-}
 
 /**
  * Character 用の signed URL をタイムアウト付きで解決する。
@@ -148,8 +78,8 @@ async function resolveCharacterSignedAssetWithTimeout(
  */
 export default function CharacterPage() {
   const [selectedId, setSelectedId] = useState<string | null>(characters[0]?.id ?? null);
-  const [resolvedThumbnailUrl, setResolvedThumbnailUrl] = useState<string | null>(null);
   const [signedAssets, setSignedAssets] = useState<SignedCharacterAssets>({
+    characterId: null,
     modelUrl: null,
     mtlUrl: null,
   });
@@ -163,31 +93,13 @@ export default function CharacterPage() {
     let cancelled = false;
     if (!selected) return;
 
-    resolveThumbnailWithTimeout(selected.thumbnail)
-      .then((url) => {
-        if (cancelled) return;
-        setResolvedThumbnailUrl(url);
-      })
-      .catch((error) => {
-        console.warn("[character] thumbnail resolve failed", error);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selected]);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!selected) return;
-
     Promise.all([
       resolveCharacterSignedAssetWithTimeout(selected.id, selected.model_path, "model"),
       resolveCharacterSignedAssetWithTimeout(selected.id, selected.mtl_path, "mtl"),
     ])
       .then(([modelUrl, mtlUrl]) => {
         if (cancelled) return;
-        setSignedAssets({ modelUrl, mtlUrl });
+        setSignedAssets({ characterId: selected.id, modelUrl, mtlUrl });
       })
       .catch((error) => {
         console.warn("[character] signed asset resolve failed", { characterId: selected.id, error });
@@ -202,26 +114,24 @@ export default function CharacterPage() {
     () => {
       if (!selected) return [];
       return buildUniqueCandidates([
-        signedAssets.modelUrl,
+        signedAssets.characterId === selected.id ? signedAssets.modelUrl : null,
         toLocalAssetUrl(selected.model_path),
-        toLocalAssetUrl(DEFAULT_FALLBACK_MODEL_PATH),
       ]);
     },
-    [selected, signedAssets.modelUrl],
+    [selected, signedAssets],
   );
   const mtlCandidates = useMemo(
     () => {
       if (!selected) return [];
       return buildUniqueCandidates([
-        signedAssets.mtlUrl,
+        signedAssets.characterId === selected.id ? signedAssets.mtlUrl : null,
         toLocalAssetUrl(selected.mtl_path),
-        toLocalAssetUrl(DEFAULT_FALLBACK_MTL_PATH),
       ]);
     },
-    [selected, signedAssets.mtlUrl],
+    [selected, signedAssets],
   );
   const thumbnailUrl = selected
-    ? resolvedThumbnailUrl ?? getImageUrl(selected.thumbnail)
+    ? getImageUrl(selected.thumbnail)
     : null;
 
   useEffect(() => {
@@ -262,10 +172,10 @@ export default function CharacterPage() {
       <PageHeading title="キャラクター"
       />
 
-      <section className="rounded-3xl border border-emerald-900/10 bg-white p-4 sm:p-5">
+      <section className="rounded-3xl border border-app-line/10 bg-app-surface p-4 sm:p-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,24rem)_1fr] lg:items-start">
           <div className="mx-auto w-full max-w-sm space-y-3 lg:mx-0">
-            <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-emerald-900/10 bg-gradient-to-b from-[#eef3f1] to-emerald-50">
+            <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-app-line/10 bg-gradient-to-b from-app-surface-soft to-app-surface-soft">
               <CharacterViewer
                 characterId={selected.id}
                 modelCandidates={modelCandidates}
@@ -283,35 +193,41 @@ export default function CharacterPage() {
           <div className="min-w-0 space-y-4">
             <div className="flex items-start gap-3">
               {thumbnailUrl ? (
-                <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-emerald-900/10 bg-white">
-                  <Image src={thumbnailUrl} alt={selected.name} fill className="object-cover" />
+                <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-app-line/10 bg-app-surface">
+                  <Image src={thumbnailUrl} alt={selected.name} fill className="object-contain" />
                 </div>
               ) : (
-                <div className="grid h-16 w-16 place-items-center rounded-lg border border-emerald-900/10 bg-emerald-50 text-emerald-700">
+                <div className="grid h-16 w-16 place-items-center rounded-lg border border-app-line/10 bg-app-surface-soft text-app-accent-ink">
                   <ImageIcon className="h-4 w-4" />
                 </div>
               )}
 
               <div className="space-y-1">
-                <p className="break-words text-base font-semibold leading-tight text-emerald-950">
+                <p className="break-words text-base font-semibold leading-tight text-app-ink-strong">
                   {selected.name}
                 </p>
-                <p className="inline-flex items-center gap-1 text-xs text-emerald-900/70">
+                <p className="inline-flex items-center gap-1 text-xs text-app-ink-muted">
                   <MapPin className="h-3.5 w-3.5" />
                   <span className="break-words">{selected.region}</span>
                 </p>
               </div>
             </div>
 
-            <p className="break-words text-sm leading-relaxed text-emerald-900/85">
+            <p className="break-words text-sm leading-relaxed text-app-ink/85">
               {selected.description}
             </p>
+
+            {selected.source_url && (
+              <ConfirmedExternalLink href={selected.source_url} className="action-link action-link-secondary">
+                紹介元を見る
+              </ConfirmedExternalLink>
+            )}
 
             <div className="flex flex-wrap gap-2">
               {(selected.tags ?? []).map((tag) => (
                 <span
                   key={`${selected.id}-${tag}`}
-                  className="break-words rounded-full bg-emerald-50 px-2 py-1 text-[11px] uppercase tracking-wide text-emerald-900 ring-1 ring-emerald-200/60"
+                  className="break-words rounded-full bg-app-surface-soft px-2 py-1 text-[11px] uppercase tracking-wide text-app-ink ring-1 ring-app-line-soft/60"
                 >
                   {tag}
                 </span>
@@ -321,8 +237,8 @@ export default function CharacterPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-emerald-900/10 bg-white p-3 ring-1 ring-emerald-900/10">
-        <p className="mb-2 text-sm text-emerald-900/80">キャラクターを選ぶ</p>
+      <section className="rounded-2xl border border-app-line/10 bg-app-surface p-3 ring-1 ring-app-line/10">
+        <p className="mb-2 text-sm text-app-ink/80">キャラクターを選ぶ</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {characters.map((character) => {
             const active = character.id === selected.id;

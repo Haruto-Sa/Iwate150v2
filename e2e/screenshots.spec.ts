@@ -35,7 +35,7 @@ for (const width of [320, 390, 1440]) {
           page.getByTitle("龍泉洞（対象スポット）", { exact: true }),
         ).toBeVisible();
         await expect(
-          page.getByRole("heading", { name: "市町村ごとの対象と進捗" }),
+          page.getByRole("heading", { name: "市町村から探す" }),
         ).toBeVisible();
       }
       await expect

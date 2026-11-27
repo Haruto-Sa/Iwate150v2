@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import { getPublicUrl, toStorageObjectPath } from "@/lib/storage";
+import { getPublicUrl, getSignedTtlSeconds, getStorageBucket, toStorageObjectPath } from "@/lib/storage";
 
 type AssetType = "image" | "model" | "generic";
 type StorageMode = "public" | "signed";
@@ -24,19 +24,6 @@ const memoryCache = new Map<string, SignedCacheEntry>();
 function getStorageMode(): StorageMode {
   const raw = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_MODE;
   return raw === "signed" ? "signed" : "public";
-}
-
-/**
- * signed URL の有効期限（秒）を取得する。
- *
- * @returns 3600〜86400 秒
- * @example
- * const expiresIn = getSignedTtlSeconds();
- */
-function getSignedTtlSeconds(): number {
-  const raw = Number(process.env.NEXT_PUBLIC_SUPABASE_SIGNED_URL_EXPIRES_IN ?? "21600");
-  if (!Number.isFinite(raw)) return 21600;
-  return Math.min(86400, Math.max(3600, Math.floor(raw)));
 }
 
 /**
@@ -148,11 +135,7 @@ export async function resolveClientSignedStorageUrl(
   // createSignedUrl がハングする場合に備えてタイムアウトを設定
   try {
     const result = await Promise.race([
-      supabase.storage.from(
-        process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ??
-          process.env.SUPABASE_STORAGE_BUCKET ??
-          "iwate150data"
-      ).createSignedUrl(objectPath, expiresIn),
+      supabase.storage.from(getStorageBucket()).createSignedUrl(objectPath, expiresIn),
       new Promise<{ data: null; error: Error }>((resolve) =>
         setTimeout(() => {
           console.warn(`[storageSignedClient] createSignedUrl timeout: ${objectPath}`);

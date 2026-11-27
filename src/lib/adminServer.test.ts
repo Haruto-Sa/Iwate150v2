@@ -3,8 +3,11 @@ import {
   AdminServerNotFoundError,
   createSpot,
   fetchAdminSpotsPage,
+  fetchAdminEventsPage,
   updateEvent,
 } from "@/lib/adminServer";
+
+vi.mock("server-only", () => ({}));
 
 const { mockGetServerAdminClient } = vi.hoisted(() => ({
   mockGetServerAdminClient: vi.fn(),
@@ -29,6 +32,18 @@ describe("adminServer", () => {
     expect(result.items[0]?.id).toBeGreaterThan(result.items[1]?.id ?? 0);
     expect(result.items[0]?.city?.name).toBeTruthy();
     expect(result.items[0]?.genre?.name).toBeTruthy();
+  });
+
+  it("管理一覧の既定20件とスポット・イベントの2ページ目を維持する", async () => {
+    mockGetServerAdminClient.mockReturnValue(null);
+    for (const fetchPage of [fetchAdminSpotsPage, fetchAdminEventsPage]) {
+      const all = await fetchPage(1);
+      expect(all.pageSize).toBe(20);
+      expect(all.items.length).toBeGreaterThan(1);
+      const second = await fetchPage(2, 1);
+      expect(second.items).toEqual([all.items[1]]);
+      expect(second).toMatchObject({ page: 2, pageSize: 1, total: all.total, hasNext: all.total > 2 });
+    }
   });
 
   it("maps optional spot fields to nullable payload values on create", async () => {

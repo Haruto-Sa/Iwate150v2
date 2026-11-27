@@ -2,6 +2,7 @@
 
 import { useMenuLanguage } from "@/lib/menuLanguage";
 
+import { ColorThemeSelect } from "@/components/preferences/ColorThemeSelect";
 import { MenuLanguageSelect } from "@/components/preferences/MenuLanguageSelect";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -46,7 +47,7 @@ export function MoreMenu() {
         aria-expanded={open}
         aria-controls={open ? dialogId : undefined}
         onClick={() => setOpenPath(pathname)}
-        className={`tap-feedback flex min-h-11 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium text-emerald-950 ring-1 ring-emerald-900/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${active ? "bg-emerald-100" : "bg-white/70"}`}
+        className={`tap-feedback flex min-h-11 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium text-app-ink-strong ring-1 ring-app-line/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${active ? "bg-app-surface-tint" : "bg-app-surface/70"}`}
       >
         <MoreHorizontal aria-hidden="true" className="h-5 w-5" />{messages.more}
       </button>
@@ -90,7 +91,7 @@ function MoreMenuDialog({ id, onClose, restoreFocus }: {
       ref={dialogRef}
       aria-labelledby={titleId}
       onCancel={onClose}
-      className="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-md overflow-y-auto rounded-[2rem] border border-emerald-100 bg-white/95 p-5 text-[#0f1c1a] shadow-2xl backdrop:bg-emerald-950/40 backdrop:backdrop-blur-sm"
+      className="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-md overflow-y-auto rounded-[2rem] border border-app-line-soft bg-app-surface/95 p-5 text-app-ink-strong shadow-2xl backdrop:bg-emerald-950/40 backdrop:backdrop-blur-sm"
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 id={titleId} className="font-display text-2xl">{messages.more}</h2>
@@ -102,20 +103,20 @@ function MoreMenuDialog({ id, onClose, restoreFocus }: {
         {MORE_MENU_ITEMS.map((item) => {
           const Icon = navIcons[item.icon];
           return (
-            <Link key={item.href} href={item.href} onClick={onClose} className="flex items-center gap-4 rounded-2xl border border-emerald-900/10 bg-emerald-50/70 px-4 py-4">
-              <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-emerald-700" />
+            <Link key={item.href} href={item.href} onClick={onClose} className="flex items-center gap-4 rounded-2xl border border-app-line/10 bg-app-surface-soft/70 px-4 py-4">
+              <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-app-accent-ink" />
               <span>
                 <span className="block font-medium">{messages[item.messageKey]}</span>
               </span>
             </Link>
           );
         })}
-        <Link href={user ? FAVORITES_PATH : PUBLIC_LOGIN_PATH} onClick={onClose} className="block rounded-2xl border border-emerald-900/10 px-4 py-4 text-sm text-emerald-900">
+        <Link href={user ? FAVORITES_PATH : PUBLIC_LOGIN_PATH} onClick={onClose} className="block rounded-2xl border border-app-line/10 px-4 py-4 text-sm text-app-ink">
           {user ? messages.account : messages.login}
         </Link>
         {user && <Button variant="outline" className="w-full" onClick={() => { void signOut(); onClose(); }}>{messages.logout}</Button>}
       </nav>
-      <div className="mt-5 border-t border-emerald-900/10 pt-4"><MenuLanguageSelect /></div>
+      <div className="mt-5 space-y-4 border-t border-app-line/10 pt-4"><ColorThemeSelect /><MenuLanguageSelect /></div>
     </dialog>, document.body
   );
 }

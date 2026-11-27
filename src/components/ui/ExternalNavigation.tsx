@@ -45,7 +45,7 @@ export function useExternalNavigation(description?: string) {
     requestNavigation,
     confirmation: (
       <>
-        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+        {error && <p role="alert" className="text-sm text-app-danger">{error}</p>}
         {destination && (
           <ExternalNavigationDialog destination={destination} opener={opener} description={description} onClose={() => setDestination(null)} />
         )}
@@ -101,14 +101,14 @@ function ExternalNavigationDialog({ destination, opener, description, onClose }:
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
       onCancel={onClose}
-      className="m-auto w-[calc(100%-2rem)] max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[2rem] border border-emerald-100 bg-white/95 p-6 text-[#0f1c1a] shadow-2xl backdrop:bg-emerald-950/40 backdrop:backdrop-blur-sm"
+      className="m-auto w-[calc(100%-2rem)] max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[2rem] border border-app-line-soft bg-app-surface/95 p-6 text-app-ink-strong shadow-2xl backdrop:bg-emerald-950/40 backdrop:backdrop-blur-sm"
     >
-      <ExternalLink aria-hidden="true" className="mb-4 h-6 w-6 text-emerald-700" />
+      <ExternalLink aria-hidden="true" className="mb-4 h-6 w-6 text-app-accent-ink" />
       <h2 id={titleId} className="text-xl font-semibold">外部サイトへ移動します</h2>
-      <p id={descriptionId} className="mt-3 text-sm text-emerald-900/80">
+      <p id={descriptionId} className="mt-3 text-sm text-app-ink/80">
         {description ?? "新しいタブで外部サイトを開きます。端末によっては地図アプリが起動する場合があります。"}
       </p>
-      <p className="mt-4 break-all rounded-xl bg-emerald-50 px-4 py-3 text-sm">{destination.hostname}</p>
+      <p className="mt-4 break-all rounded-xl bg-app-surface-soft px-4 py-3 text-sm">{destination.hostname}</p>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
         <Button autoFocus variant="outline" onClick={onClose}>キャンセル</Button>
         <a

@@ -69,10 +69,10 @@ describe("Headerのその他メニュー", () => {
   it("その他のCharacterを強調しStampは主要導線として扱う", () => {
     mockPathname.mockReturnValue("/character");
     const { rerender } = render(<Header />);
-    expect(screen.getByRole("button", { name: "その他" }).className).toContain("bg-emerald-100");
+    expect(screen.getByRole("button", { name: "その他" }).className).toContain("bg-app-surface-tint");
     mockPathname.mockReturnValue("/stamps");
     rerender(<Header />);
-    expect(screen.getByRole("button", { name: "その他" }).className).not.toContain("bg-emerald-100");
+    expect(screen.getByRole("button", { name: "その他" }).className).not.toContain("bg-app-surface-tint");
   });
 
   it("開いているメニューをルート変更時に閉じる", async () => {

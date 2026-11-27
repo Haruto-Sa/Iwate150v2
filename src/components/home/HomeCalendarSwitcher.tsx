@@ -23,7 +23,7 @@ export function HomeCalendarSwitcher({ events }: Props) {
   return (
     <section id="home-calendar" className="scroll-mt-28 space-y-5">
       <SectionTitle label="カレンダー" />
-      <div className="inline-flex gap-1 rounded-full border border-emerald-900/10 bg-white p-1 shadow-sm">
+      <div className="inline-flex gap-1 rounded-full border border-app-line/10 bg-app-surface p-1 shadow-sm">
         <Button
           variant={view === "modern" ? "primary" : "ghost"}
           size="sm"

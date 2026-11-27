@@ -1,3 +1,4 @@
+import officialSpots from "@/data/official-spots.json";
 import { City, Event, Favorite, Genre, Spot, StampCatalog } from "./types";
 
 /**
@@ -16,7 +17,7 @@ function buildRelativeDate(offsetDays: number): string {
 }
 
 // Mock fallback data used when Supabase environment variables are missing.
-export const mockCities: City[] = [
+const baseMockCities: City[] = [
   {
     id: 1,
     name: "盛岡市",
@@ -38,6 +39,12 @@ export const mockCities: City[] = [
     region: "沿岸",
     image_path: "images/cities/Iwaizumi_icon.jpg",
   },
+];
+
+export const mockCities: City[] = [
+  ...baseMockCities,
+  ...officialSpots.filter((spot, index, all) => !baseMockCities.some(city => city.id === spot.mockCityId) && all.findIndex(other => other.mockCityId === spot.mockCityId) === index)
+    .map(spot => ({ id: spot.mockCityId, name: spot.city, name_kana: spot.cityKana, region: spot.region, image_path: null })),
 ];
 
 export const mockGenres: Genre[] = [
@@ -97,7 +104,12 @@ export const mockSpots: Spot[] = [
     model_path: "models/wanko1.obj",
     reference_url: null,
   },
-];
+  ...officialSpots.map(spot => ({
+    id: spot.mockId, name: spot.name, description: spot.description,
+    city_id: spot.mockCityId, genre_id: spot.mockGenreId, lat: spot.lat, lng: spot.lng,
+    image_path: null, image_thumb_path: null, model_path: null, reference_url: spot.referenceUrl,
+  })),
+].map(spot => ({ ...spot, isSample: true }));
 
 export const mockEvents: Event[] = [
   {

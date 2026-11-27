@@ -43,7 +43,9 @@ test("操作の準備前は検索条件を変更させず、準備後の入力�
 
 test("歴史文化館に施設入場者数の年度・単位・公式出典を表示する", async ({ page }, testInfo) => {
   await page.goto("/search");
-  await page.getByRole("textbox", { name: "スポット・イベントのキーワード" }).fill("もりおか歴史文化館");
+  const keyword = page.getByRole("textbox", { name: "スポット・イベントのキーワード" });
+  await keyword.fill("もりおか歴史文化館");
+  await expect(keyword).toHaveValue("もりおか歴史文化館");
   const card = page.getByRole("article").filter({ has: page.getByRole("heading", { name: "もりおか歴史文化館", exact: true }) });
   await expect(page.getByRole("article")).toHaveCount(1);
   await expect(card.getByText("2024年度 入場者数", { exact: true })).toBeVisible();

@@ -30,3 +30,7 @@ Node 22、production buildを使い、Chromium/WebKitのアクセシビリティ
 この検査は初期表示の自動チェックであり、WCAG全体への適合宣言ではない。画像・重なりを含む背景でのコントラストはincompleteとして記録され、手動確認が必要。カメラの字幕検査もincompleteとなるが、対象は音声なしのライブカメラプレビューである。スクリーンリーダー、200%ズーム、実機セーフエリア、実際の共有先への受信は未検証。
 
 関連ファイル: e2e/public-accessibility.spec.ts、playwright.config.ts、src/components/ui/ShareButton.tsx、src/app/character/page.tsx、src/app/not-found.tsx、src/components/ui/SpotCard.tsx。Supabaseテーブル・設定の変更はない。
+
+## CIの実行単位
+
+WebKitは検査追加後、個別157件が成功したものの全体10分の上限で5件が未実行となったため、Playwrightの2シャードに分割する。変更時点の`--list --reporter=json`で、全164件が96件と68件に分かれ、重複・欠落がないことを確認した。個別の制限時間、全体10分、各ジョブ1ワーカー、ルール・期待値は変更しない。必須`playwright`チェックは全6ジョブの成功を要求する。

@@ -12,223 +12,343 @@ import {
 } from "@/lib/supabaseClient";
 import type { Spot } from "@/lib/types";
 
-type FavoritesState = {
-  favoriteIds: number[];
-  favoriteSpots: Spot[];
-  isReady: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
-  isFavorite: (spotId: number) => boolean;
-  toggleFavorite: (spotId: number) => Promise<boolean>;
-};
+const LEGACY_OWNER_KEY = `${GUEST_FAVORITES_KEY}:sync-owner`;
+const IMPORT_BATCH_SIZE = 100;
 
 /**
- * localStorage から guest favorites を読む。
- *
- * @returns spot id 配列
- * @example
- * readGuestFavoriteIds();
+ * アカウントごとの旧保存取り込み記録キーを返す。
+ * @param identity - 認証ユーザーID
+ * @returns 端末バックアップと独立したキー
+ * @example legacyImportedKey("user-A");
  */
-function readGuestFavoriteIds(): number[] {
-  if (typeof window === "undefined") return [];
+function legacyImportedKey(identity: string): string {
+  return `${GUEST_FAVORITES_KEY}:imported:${encodeURIComponent(identity)}`;
+}
+
+/**
+ * 確認済みの取り込みIDを読む。破損した記録は候補を隠す根拠にしない。
+ * @param identity - 認証ユーザーID
+ * @returns このアカウントで取り込み済みのID
+ * @example readImportedIds("user-A");
+ */
+function readImportedIds(identity: string): number[] {
   try {
-    const raw = window.localStorage.getItem(GUEST_FAVORITES_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return [...new Set(parsed.filter((value): value is number => Number.isInteger(value) && value > 0))];
+    const values: unknown = JSON.parse(
+      window.localStorage.getItem(legacyImportedKey(identity)) ?? "[]",
+    );
+    return Array.isArray(values)
+      ? values.filter((id): id is number => Number.isSafeInteger(id) && id > 0)
+      : [];
   } catch {
     return [];
   }
 }
 
+type FavoritesState = {
+  favoriteIds: number[];
+  favoriteSpots: Spot[];
+  sampleSpots: Spot[];
+  legacySpots: Spot[];
+  hasOtherLegacyOwner: boolean;
+  isReady: boolean;
+  isMutating: boolean;
+  loadFailed: boolean;
+  error: string | null;
+  notice: string | null;
+  isAuthenticated: boolean;
+  isFavorite: (spotId: number) => boolean;
+  toggleFavorite: (spotId: number) => Promise<boolean>;
+  importLegacyFavorites: () => Promise<void>;
+  reload: () => void;
+};
+
 /**
- * guest favorites を localStorage へ保存する。
- *
- * @param spotIds - 保存する spot id 配列
- * @returns なし
- * @example
- * writeGuestFavoriteIds([1, 3, 9]);
+ * 以前の端末保存を読み取る。サンプルとは別扱いにし、読込だけでは書換えない。
+ * @returns 保存IDと旧同期先。ストレージを読めない場合は空
+ * @example const previous = readLegacyFavorites();
  */
-function writeGuestFavoriteIds(spotIds: number[]): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(GUEST_FAVORITES_KEY, JSON.stringify([...new Set(spotIds)]));
-  if (!spotIds.length) window.localStorage.removeItem(`${GUEST_FAVORITES_KEY}:sync-owner`);
+function readLegacyFavorites(): { ids: number[]; owner: string | null } {
+  try {
+    const raw = window.localStorage.getItem(GUEST_FAVORITES_KEY);
+    const values: unknown = raw ? JSON.parse(raw) : [];
+    return {
+      ids: Array.isArray(values)
+        ? [
+            ...new Set(
+              values.filter(
+                (id): id is number => Number.isSafeInteger(id) && id > 0,
+              ),
+            ),
+          ]
+        : [],
+      owner: window.localStorage.getItem(LEGACY_OWNER_KEY),
+    };
+  } catch {
+    return { ids: [], owner: null };
+  }
 }
 
 /**
- * spot 配列を favoriteIds の順序にそろえる。
- *
- * @param spots - 全スポット配列
- * @param favoriteIds - お気に入りの spot id 配列
- * @returns favoriteIds 順に並べ替えたスポット配列
- * @example
- * sortFavoriteSpotsByIds(spots, [4, 1]);
+ * 指定IDの順序で公開スポット情報を並べる。
+ * @param spots - 公開スポット
+ * @param ids - 表示順のID
+ * @returns 公開情報の見つかったスポット
+ * @example selectSpots(spots, [4, 1]);
  */
-function sortFavoriteSpotsByIds(spots: Spot[], favoriteIds: number[]): Spot[] {
-  const favoriteIdSet = new Set(favoriteIds);
-  const spotMap = new Map(spots.map((spot) => [spot.id, spot] as const));
-  return favoriteIds
-    .filter((spotId) => favoriteIdSet.has(spotId))
-    .map((spotId) => spotMap.get(spotId) ?? null)
-    .filter((spot): spot is Spot => spot !== null);
+function selectSpots(spots: Spot[], ids: number[]): Spot[] {
+  const byId = new Map(spots.map((spot) => [spot.id, spot]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((spot): spot is Spot => Boolean(spot));
 }
 
 /**
- * お気に入りの保存先を抽象化する。
- *
- * 未ログイン時は localStorage、ログイン時は Supabase を使い、
- * ログイン検知時は guest favorites を自動でマージする。
- *
- * @returns favorites 状態と操作
- * @example
- * const favorites = useFavorites();
+ * サンプル、本人の保存、以前の端末保存を分けて扱う。
+ * ゲストの操作では保存せず、ログインだけでも旧データを自動送信しない。
+ * @returns 本人の一覧、読み取り専用のサンプル、明示操作と状態
+ * @example const favorites = useFavorites();
  */
 export function useFavorites(): FavoritesState {
   const { user, status } = useAuthSession();
+  const identity = status === "authenticated" ? (user?.id ?? null) : null;
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
-  const [favoriteSpots, setFavoriteSpots] = useState<Spot[]>([]);
-  const [isReady, setIsReady] = useState(false);
+  const [spots, setSpots] = useState<Spot[]>([]);
+  const [legacyIds, setLegacyIds] = useState<number[]>([]);
+  const [importedIds, setImportedIds] = useState<number[]>([]);
+  const [hasOtherLegacyOwner, setHasOtherLegacyOwner] = useState(false);
+  const [loadedIdentity, setLoadedIdentity] = useState<
+    string | null | undefined
+  >(undefined);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadedIdentity, setLoadedIdentity] = useState<string | null | undefined>(undefined);
-  const identity = user?.id ?? null;
-  const activeIdentity = useRef(identity);
-  const busy = useRef(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
   const generation = useRef(0);
-
-  useEffect(() => {
-    activeIdentity.current = identity;
-    generation.current += 1;
-    busy.current = false;
-  }, [identity]);
+  const busy = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
+    generation.current += 1;
+    busy.current = false;
+    setIsMutating(false);
+    setLoading(true);
+    setLoadFailed(false);
+    setError(null);
+    setNotice(null);
+    setFavoriteIds([]);
+    setSpots([]);
+    setLegacyIds([]);
+    setImportedIds([]);
+    setHasOtherLegacyOwner(false);
 
     /**
-     * お気に入り一覧を読み込む。
-     *
-     * @returns なし
-     * @example
-     * await loadFavorites();
+     * 本人APIと公開情報を読み込む。ゲストでは公開情報のみ読む。
+     * @returns 読み込み完了
+     * @example await load();
      */
-    async function loadFavorites(): Promise<void> {
+    async function load(): Promise<void> {
       if (status === "loading") return;
-
-      setIsReady(false);
-      setError(null);
-      setFavoriteIds([]);
-      setFavoriteSpots([]);
       try {
-        const guestIds = readGuestFavoriteIds();
-        let ids = guestIds;
+        const [records, publicSpots] = await Promise.all([
+          identity ? fetchUserFavorites(identity) : Promise.resolve([]),
+          fetchSpots(),
+        ]);
+        if (cancelled) return;
+        setFavoriteIds([...new Set(records.map((record) => record.spot_id))]);
+        setSpots(publicSpots);
         if (identity) {
-          try {
-            const ownerKey = `${GUEST_FAVORITES_KEY}:sync-owner`;
-            const owner = window.localStorage.getItem(ownerKey);
-            if (guestIds.length && (!owner || owner === identity)) {
-              // 応答消失後に別の利用者へ再送しないよう、送信前に同期先を固定する。
-              window.localStorage.setItem(ownerKey, identity);
-              const snapshot = window.localStorage.getItem(GUEST_FAVORITES_KEY);
-              const persisted = await mergeFavorites(identity, guestIds.slice(0, 100));
-              if (cancelled) return;
-              // 同期中の端末操作を上書きしない。変更があれば次回再試行する。
-              if (window.localStorage.getItem(GUEST_FAVORITES_KEY) === snapshot &&
-                  window.localStorage.getItem(ownerKey) === identity) {
-                const confirmed = new Set(persisted);
-                const remaining = guestIds.filter((id) => !confirmed.has(id));
-                if (remaining.length) writeGuestFavoriteIds(remaining);
-                else {
-                  window.localStorage.removeItem(GUEST_FAVORITES_KEY);
-                  window.localStorage.removeItem(ownerKey);
-                }
-              }
-              if (guestIds.some((id) => !persisted.includes(id))) {
-                setError("未同期のお気に入りは端末に保持しています。再読み込みで再試行できます。");
-              }
-            } else if (guestIds.length) {
-              setError("別のアカウントへの未同期データは端末に保持しています。元のアカウントで再試行してください。");
-            }
-          } catch {
-            if (!cancelled) setError("端末のお気に入りを同期できませんでした。未同期データは保持しています。");
-          }
-          if (cancelled) return;
-          ids = (await fetchUserFavorites(identity)).map((favorite) => favorite.spot_id);
-        }
-        const spots = await fetchSpots();
-        if (!cancelled) {
-          setFavoriteIds(ids);
-          setFavoriteSpots(sortFavoriteSpotsByIds(spots, ids));
+          const previous = readLegacyFavorites();
+          const otherOwner = Boolean(
+            previous.owner && previous.owner !== identity,
+          );
+          setHasOtherLegacyOwner(otherOwner && previous.ids.length > 0);
+          setLegacyIds(otherOwner ? [] : previous.ids);
+          setImportedIds(readImportedIds(identity));
         }
       } catch {
-        if (!cancelled) setError("お気に入りを取得・保存できませんでした。未同期データは端末に保持しています。再読み込みしてお試しください。");
+        if (!cancelled) {
+          setLoadFailed(true);
+          setError(
+            "お気に入りを読み込めませんでした。時間をおいて、もう一度お試しください。",
+          );
+        }
       } finally {
-        if (!cancelled) { setLoadedIdentity(identity); setIsReady(true); }
+        if (!cancelled) {
+          setLoadedIdentity(identity);
+          setLoading(false);
+        }
       }
     }
-
-    loadFavorites();
+    void load();
     return () => {
       cancelled = true;
+      generation.current += 1;
     };
-  }, [status, identity]);
+  }, [identity, status, revision]);
+
+  const isReady =
+    status !== "loading" && !loading && loadedIdentity === identity;
+  const visibleIds = isReady && identity ? favoriteIds : [];
+  const legacySpots =
+    isReady && identity
+      ? selectSpots(
+          spots,
+          legacyIds.filter(
+            (id) => !favoriteIds.includes(id) && !importedIds.includes(id),
+          ),
+        ).slice(0, IMPORT_BATCH_SIZE)
+      : [];
 
   /**
-   * 指定スポットがお気に入り済みか返す。
-   *
-   * @param spotId - spot id
-   * @returns お気に入り済みなら true
-   * @example
-   * isFavorite(10);
+   * 本人が保存済みかを返す。サンプルを保存済みとは判定しない。
+   * @param spotId - スポットID
+   * @returns 本人の保存状態
+   * @example isFavorite(10);
    */
   function isFavorite(spotId: number): boolean {
-    return loadedIdentity === identity && favoriteIds.includes(spotId);
+    return visibleIds.includes(spotId);
   }
 
   /**
-   * お気に入りをトグルする。
-   *
-   * @param spotId - spot id
-   * @returns トグル後の状態
-   * @example
-   * await toggleFavorite(10);
+   * 本人の保存を変更する。ゲストや読込失敗時はAPIへ送信しない。
+   * @param spotId - スポットID
+   * @returns 確認できた保存状態
+   * @example await toggleFavorite(10);
    */
   async function toggleFavorite(spotId: number): Promise<boolean> {
-    const wasFavorite = favoriteIds.includes(spotId);
-    if (busy.current || loadedIdentity !== identity || !isReady) return wasFavorite;
+    const wasFavorite = visibleIds.includes(spotId);
+    if (!identity || !isReady || loadFailed || busy.current) return wasFavorite;
     busy.current = true;
-    const operationGeneration = generation.current;
-    const nextIsFavorite = !wasFavorite;
+    setIsMutating(true);
+    const operation = generation.current;
     try {
       setError(null);
-      if (identity) {
-        if (nextIsFavorite) {
-          if (!await addFavorite(identity, spotId)) throw new Error("Save not confirmed");
-        } else if (!await removeFavorite(identity, spotId)) throw new Error("Delete not confirmed");
-      } else {
-        const current = readGuestFavoriteIds();
-        writeGuestFavoriteIds(nextIsFavorite ? [...current, spotId] : current.filter((id) => id !== spotId));
-      }
-      const spots = nextIsFavorite ? await fetchSpots() : [];
-      if (activeIdentity.current !== identity || generation.current !== operationGeneration) return wasFavorite;
-      const nextIds = nextIsFavorite ? [...new Set([...favoriteIds, spotId])] : favoriteIds.filter((id) => id !== spotId);
-      setFavoriteIds(nextIds);
-      if (nextIsFavorite) setFavoriteSpots(sortFavoriteSpotsByIds(spots, nextIds));
-      else setFavoriteSpots((current) => current.filter((spot) => spot.id !== spotId));
-      return nextIsFavorite;
+      setNotice(null);
+      const saved = wasFavorite
+        ? await removeFavorite(identity, spotId)
+        : await addFavorite(identity, spotId);
+      if (!saved) throw new Error("Save not confirmed");
+      if (generation.current !== operation) return wasFavorite;
+      setFavoriteIds((current) =>
+        wasFavorite
+          ? current.filter((id) => id !== spotId)
+          : [...new Set([...current, spotId])],
+      );
+      return !wasFavorite;
     } catch {
-      if (activeIdentity.current === identity && generation.current === operationGeneration) setError("お気に入りを保存できませんでした。再試行してください。");
+      if (generation.current === operation)
+        setError("お気に入りを保存できませんでした。再試行してください。");
       return wasFavorite;
-    } finally { if (generation.current === operationGeneration) busy.current = false; }
+    } finally {
+      if (generation.current === operation) {
+        busy.current = false;
+        setIsMutating(false);
+      }
+    }
+  }
+
+  /**
+   * 表示して確認した旧端末保存だけを本人の一覧に追加する。
+   * 旧データは成功・失敗にかかわらず保持し、1回100件まで処理する。
+   * @returns 追加処理の完了
+   * @example await importLegacyFavorites();
+   */
+  async function importLegacyFavorites(): Promise<void> {
+    if (
+      !identity ||
+      !isReady ||
+      loadFailed ||
+      busy.current ||
+      !legacySpots.length
+    )
+      return;
+    busy.current = true;
+    setIsMutating(true);
+    const operation = generation.current;
+    try {
+      setError(null);
+      setNotice(null);
+      const latest = readLegacyFavorites();
+      if (latest.owner && latest.owner !== identity)
+        throw new Error("Different owner");
+      const alreadyImported = readImportedIds(identity);
+      const approved = legacySpots
+        .map((spot) => spot.id)
+        .filter(
+          (id) => latest.ids.includes(id) && !alreadyImported.includes(id),
+        );
+      if (!approved.length) throw new Error("Device data changed");
+      // 応答が消失しても別アカウントに再送しない。元の保存内容は変更しない。
+      window.localStorage.setItem(LEGACY_OWNER_KEY, identity);
+      const persisted = await mergeFavorites(identity, approved);
+      const confirmed = approved.filter((id) => persisted.includes(id));
+      const imported = [
+        ...new Set([...readImportedIds(identity), ...confirmed]),
+      ];
+      let recorded = true;
+      try {
+        // 応答中にアカウントが切り替わっても、元の本人に紐づく記録だけ残す。
+        window.localStorage.setItem(
+          legacyImportedKey(identity),
+          JSON.stringify(imported),
+        );
+      } catch {
+        recorded = false;
+      }
+      if (generation.current !== operation) return;
+      setImportedIds((current) => [...new Set([...current, ...imported])]);
+      setFavoriteIds((current) => [...new Set([...current, ...confirmed])]);
+      setLegacyIds(latest.ids);
+      setNotice(
+        `${confirmed.length}件をこのアカウントに追加しました。端末の元データも保持しています。`,
+      );
+      if (confirmed.length !== approved.length)
+        setError(
+          "追加できなかった保存があります。内容を確認して再試行してください。",
+        );
+      if (!recorded)
+        setError(
+          "追加結果は確認できましたが、端末の取り込み記録を保存できませんでした。再読込後に候補が再表示される場合があります。",
+        );
+    } catch {
+      if (generation.current === operation)
+        setError(
+          "端末の保存を追加できませんでした。元データは保持しています。",
+        );
+    } finally {
+      if (generation.current === operation) {
+        busy.current = false;
+        setIsMutating(false);
+      }
+    }
+  }
+
+  /**
+   * 本人の一覧またはサンプルを再取得する。
+   * @returns なし
+   * @example reload();
+   */
+  function reload(): void {
+    setRevision((current) => current + 1);
   }
 
   return {
-    favoriteIds: loadedIdentity === identity ? favoriteIds : [],
-    favoriteSpots: loadedIdentity === identity ? favoriteSpots : [],
-    isReady: isReady && loadedIdentity === identity,
-    error: loadedIdentity === identity ? error : null,
-    isAuthenticated: Boolean(user),
+    favoriteIds: visibleIds,
+    favoriteSpots: selectSpots(spots, visibleIds),
+    sampleSpots: isReady && !identity ? spots.slice(0, 3) : [],
+    legacySpots,
+    hasOtherLegacyOwner: isReady && Boolean(identity) && hasOtherLegacyOwner,
+    isReady,
+    isMutating: isReady && isMutating,
+    loadFailed: isReady && loadFailed,
+    error: isReady ? error : null,
+    notice: isReady ? notice : null,
+    isAuthenticated: Boolean(identity),
     isFavorite,
     toggleFavorite,
+    importLegacyFavorites,
+    reload,
   };
 }

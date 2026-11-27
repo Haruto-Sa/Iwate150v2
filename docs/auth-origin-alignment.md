@@ -2,7 +2,7 @@
 
 ## この変更
 
-Auth.js beta.32は`AUTH_URL ?? NEXTAUTH_URL`を認証URLに使うが、個人APIは`AUTH_URL`のみを参照していた。互換変数`NEXTAUTH_URL`だけを設定した環境では、認証URLと更新APIの送信元判定が一致しなかった。個人APIも同じ優先順位に揃える。
+Auth.js beta.32は`AUTH_URL ?? NEXTAUTH_URL`を認証URLに使うが、個人APIは`AUTH_URL`のみを参照していた。互換変数`NEXTAUTH_URL`だけを設定した環境では、認証URLと更新APIの送信元判定が一致しなかった。個人APIと管理APIが利用する共通ガード `apiGuards.assertSameOrigin` を同じ優先順位に揃える。
 
 | 設定 | 個人APIの比較基準 |
 | --- | --- |
@@ -28,6 +28,6 @@ AUTH_URLが空文字のときにNEXTAUTH_URLを再採用しない点もAuth.js�
 
 変更前は新規ケースのうち3件失敗、変更後は成功。未設定時のrequest URL fallback、`trustHost: true`、URLのscheme/path等の厳密検証、本番での設定必須化はIssue #35の残件。Host偽装による実環境の侵害を再現したという主張ではない。
 
-PR #49ではOrigin処理が`apiGuards.assertSameOrigin`へ移動する。統合時は本変更の優先順位と回帰ケースを共通ガードへ移す必要がある。こちらはPR #62を基底とし、#49の共通化がこの修正を上書きしないようにレビューする。
+PR #49の共通化を維持して統合済み。`privateUserApi`は引き続き共通ガードを呼び、優先順位の修正は`apiGuards.assertSameOrigin`へ適用する。個人APIの回帰テストは実route handlerを通してこのガードを検証する。不正URL時の表中の503は個人APIの応答であり、管理APIでは既存のエラー応答規則に従って更新を拒否する。
 
 最終検証: 単体148件、型検査、本番ビルド、Chromium E2E19件成功。lintエラー0・既存警告7。独立セキュリティレビューで、この限定差分にブロッカーなし。

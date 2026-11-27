@@ -933,7 +933,7 @@ export function CameraCapture() {
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white shadow-2xl sm:aspect-[16/10]">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-emerald-900/10 bg-white sm:aspect-[16/10]">
         <video
           ref={videoRef}
           className="h-full w-full object-cover"
@@ -962,11 +962,11 @@ export function CameraCapture() {
         )}
 
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          {status !== "ready" && (
+          {status === "starting" && (
             <div className="flex flex-col items-center gap-2 rounded-2xl bg-white/80 px-4 py-3 text-center shadow-lg">
               <Sparkles className="h-6 w-6 text-[#0f3a3a]" />
               <p className="text-sm text-[#0f1c1a]">
-                {status === "starting" ? "旅のカメラ体験を準備しています…" : "カメラを許可して体験を始めましょう"}
+                カメラを準備中…
               </p>
             </div>
           )}
@@ -992,7 +992,7 @@ export function CameraCapture() {
                 onClick={() => {
                   void startCamera();
                 }}
-                variant="glass"
+                variant="outline"
                 className="pointer-events-auto h-12 px-4 text-sm"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -1039,6 +1039,7 @@ export function CameraCapture() {
                 }
               }}
               disabled={isDisabled}
+              aria-pressed={active}
               className="gap-2"
             >
               {active ? <Check className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
@@ -1046,11 +1047,10 @@ export function CameraCapture() {
             </Button>
           );
         })}
-        <span className="text-xs text-emerald-900/70">いっしょに写すガイドは最大 5 つまで選べます</span>
+        <span className="text-xs text-emerald-900/70">最大5体</span>
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-emerald-900/75">撮影すると、そのまま編集画面へ進みます</p>
         <Button
           onClick={handleCapture}
           className="h-11 px-5 text-base"
@@ -1068,7 +1068,7 @@ export function CameraCapture() {
       )}
       {selectedModels.length > 0 && selectedModelsLoading && (
         <div className="rounded-xl border border-sky-200/60 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-          ガイドを読み込んでいます。はじめての表示時は少しだけ時間がかかることがあります。
+          キャラクターを読み込み中…
         </div>
       )}
       {selectedModelErrors.length > 0 && (

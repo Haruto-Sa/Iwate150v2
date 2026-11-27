@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/ui/PageHeading";
 import { pickFeaturedSpots } from "@/lib/featuredSpots";
 import { fetchCities, fetchEvents, fetchGenres, fetchSpots } from "@/lib/supabaseClient";
 import { SearchSurface } from "@/components/search/SearchSurface";
@@ -10,7 +11,17 @@ export const metadata = buildPageMetadata({
   path: "/search",
 });
 
-export default async function SearchPage() {
+/**
+ * エリア・ジャンルとキーワードから旅先を探す。
+ * @param props.searchParams - 初期タブを指定するURLクエリ
+ * @returns 初期候補を含む検索ページ
+ * @example <SearchPage />
+ */
+export default async function SearchPage({ searchParams }: {
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
+  const { tab } = await searchParams;
+  const initialTab = tab === "event" ? "event" : "spot";
   const [cities, genres, spots, events] = await Promise.all([
     fetchCities(),
     fetchGenres(),
@@ -20,10 +31,10 @@ export default async function SearchPage() {
   const defaultSpots = pickFeaturedSpots(spots, 8);
   return (
     <div className="space-y-8">
-      <div className="rounded-2xl border border-emerald-900/10 bg-white p-4 text-sm text-emerald-900/80 ring-1 ring-emerald-900/10 shadow-sm">
-        気になるキーワード、エリア、ジャンルから、行きたい場所やイベントを見つけられます。
-      </div>
+      <PageHeading title="検索" />
       <SearchSurface
+        key={initialTab}
+        initialTab={initialTab}
         cities={cities}
         genres={genres}
         defaultSpots={defaultSpots}

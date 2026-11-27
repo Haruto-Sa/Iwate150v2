@@ -974,7 +974,7 @@ export function CameraCapture() {
 
         {status === "ready" && detection && selectedModelsReady && selectedModels.length > 0 && (
           <div
-            className="absolute rounded-full bg-gradient-to-br from-emerald-300 to-amber-200 px-3 py-1 text-xs font-semibold text-app-ink-strong shadow-lg transition"
+            className="absolute rounded-full bg-gradient-to-br from-emerald-300 to-amber-200 px-3 py-1 text-xs font-semibold text-[#0f1c1a] shadow-lg transition"
             style={{
               left: `${(detection.x + detection.width / 2) * 100}%`,
               top: `${detection.y * 100 - 4}%`,

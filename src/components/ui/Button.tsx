@@ -22,6 +22,8 @@ type Props = DetailedHTMLProps<
 > & {
   variant?: Variant;
   size?: Size;
+  /** アイコンだけの正方形ボタン。aria-label または aria-labelledby を指定する。 */
+  iconOnly?: boolean;
 };
 
 /**
@@ -51,6 +53,7 @@ function mapLkVariant(variant: Variant): "fill" | "outline" | "text" {
  *
  * @param props.variant - ボタンバリアント（primary / ghost / glass / outline）。デフォルト "primary"
  * @param props.size - ボタンサイズ（sm / md / lg）。デフォルト "md"
+ * @param props.iconOnly - アイコンだけの場合に44px以上の正方形に揃える
  * @param props.className - 追加 Tailwind クラス
  * @param props.children - ボタン内容（テキスト・アイコンなどの ReactNode）
  * @returns Button コンポーネント
@@ -61,6 +64,7 @@ function mapLkVariant(variant: Variant): "fill" | "outline" | "text" {
 export function Button({
   variant = "primary",
   size = "md",
+  iconOnly = false,
   className = "",
   children,
   disabled,
@@ -90,6 +94,8 @@ export function Button({
 
   return (
     <button
+      data-ui-button="true"
+      data-ui-icon-only={iconOnly || undefined}
       data-lk-component="button"
       data-lk-button-variant={lkVariant}
       data-lk-button-size={size}

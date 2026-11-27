@@ -55,6 +55,7 @@ test("インストール案内はナビより上に開き、閉じると元の�
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     localStorage.setItem("onboarding_completed", "true");
+    localStorage.setItem("voja_page_guide:/search", "true");
     localStorage.setItem("voja_install_prompt_visits", "2");
   });
   await page.goto("/search");
@@ -107,6 +108,7 @@ test("初回メニューから直接写真撮影へ進み、次の訪問では�
   await menu.getByRole("link", { name: "写真を撮る", exact: true }).click();
   await expect(page).toHaveURL(/\/camera$/);
   await expect(menu).toHaveCount(0);
+  await page.getByRole("dialog", { name: "カメラの使い方" }).getByRole("button", { name: "撮影を始める", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "カメラ" })).toBeVisible();
   await page.reload();
   await expect(menu).toHaveCount(0);

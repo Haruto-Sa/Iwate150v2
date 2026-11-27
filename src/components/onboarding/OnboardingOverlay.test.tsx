@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { OnboardingOverlay } from "@/components/onboarding/OnboardingOverlay";
 import { ONBOARDING_COMPLETED_KEY } from "@/lib/config";
@@ -52,4 +52,30 @@ describe("OnboardingOverlay", () => {
     render(<OnboardingOverlay />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+  it("PCでもページ単位で表示し、閉じた後ヘルプから再表示できる", async () => {
+    window.resizeTo(1280, 800);
+    mockUsePathname.mockReturnValue("/camera");
+    localStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
+    render(<OnboardingOverlay />);
+    expect(screen.getByRole("dialog", { name: "カメラの使い方" })).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "撮影を始める" }));
+    expect(localStorage.getItem("voja_page_guide:/camera")).toBe("true");
+    expect(localStorage.getItem("voja_page_guide:/search")).toBeNull();
+    expect(screen.getByRole("button", { name: "使い方" })).toHaveFocus();
+    await userEvent.click(screen.getByRole("button", { name: "使い方" }));
+    fireEvent(screen.getByRole("dialog"), new Event("cancel", { cancelable: true }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "使い方" })).toHaveFocus();
+  });
+
+  it("経路が変わると次のページの案内を表示する", async () => {
+    mockUsePathname.mockReturnValue("/search");
+    const view = render(<OnboardingOverlay />);
+    await userEvent.click(screen.getByRole("button", { name: "閉じる" }));
+    mockUsePathname.mockReturnValue("/favorites");
+    view.rerender(<OnboardingOverlay />);
+    expect(screen.getByRole("dialog", { name: "お気に入りの使い方" })).toBeVisible();
+    expect(screen.getByText(/ログイン後/)).toBeVisible();
+  });
+
 });

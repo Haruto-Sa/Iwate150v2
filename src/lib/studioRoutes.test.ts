@@ -64,6 +64,17 @@ for (const item of cases) describe(item.name, () => {
     expect((await item.handler(request(), context)).status).toBe(403);
     expect(item.db).not.toHaveBeenCalled();
   });
+  it("JWTの古い管理者ロールより現在のDB権限を優先する", async () => {
+    state.auth.mockResolvedValue({ user: { id: "admin", role: "admin" } });
+    state.profile.mockResolvedValue({ role: "user" });
+    expect((await item.handler(request(), context)).status).toBe(403);
+    expect(item.db).not.toHaveBeenCalled();
+  });
+  it("JWTが一般ユーザーでもDBで昇格済みなら操作できる", async () => {
+    state.auth.mockResolvedValue({ user: { id: "admin", role: "user" } });
+    expect((await item.handler(request(), context)).status).toBe(item.status);
+    expect(item.db).toHaveBeenCalledOnce();
+  });
   it("DB内部のエラー文を公開しない", async () => {
     item.db.mockRejectedValue(new Error("private DB constraint users_email_key secret@example.com"));
     const response = await item.handler(request(), context);

@@ -52,3 +52,23 @@ test("歴史文化館に施設入場者数の年度・単位・公式出典を�
   await expect(card.getByText("観光客入込数", { exact: true })).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("morioka-statistic.png"), fullPage: true });
 });
+
+
+test("編集おすすめを来訪統計と区別して表示する", async ({ page }, testInfo) => {
+  await page.goto("/search");
+  const keyword = page.getByRole("textbox", { name: "スポット・イベントのキーワード" });
+  for (const name of ["御所野遺跡", "鉄の歴史館", "奥州宇宙遊学館"]) {
+    await keyword.fill(name);
+    await expect(page.getByRole("article")).toHaveCount(1);
+    const card = page.getByRole("article").filter({ has: page.getByRole("heading", { name, exact: true }) });
+    await expect(card.getByText("編集おすすめ", { exact: true })).toBeVisible();
+    await expect(card.getByText(/観光客入込数|入場者数|0人/)).toHaveCount(0);
+  }
+  await page.getByRole("article").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("editorial-pick.png") });
+  await keyword.fill("龍泉洞");
+  await expect(page.getByRole("heading", { name: "龍泉洞", exact: true })).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(1);
+  await expect(page.getByRole("article").getByText("編集おすすめ", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("145,201人", { exact: true })).toBeVisible();
+});

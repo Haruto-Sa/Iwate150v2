@@ -20,6 +20,20 @@ describe("StudioSpotsManager", () => {
     vi.restoreAllMocks();
   });
 
+  it("同じ編集対象では入力を保持し、同じIDの更新データではフォームを更新する", async () => {
+    const editingSpot = { id: 7, name: "元のスポット", description: "説明", city_id: 1, genre_id: 1, lat: 39.7, lng: 141.1, image_thumb_path: null, image_path: null, model_path: null, reference_url: null };
+    const props = { items: [], total: 0, page: 1, pageSize: 20, hasNext: false,
+      cities: [{ id: 1, name: "盛岡市" }], genres: [{ id: 1, name: "歴史" }], editingSpot };
+    const { rerender } = render(<StudioSpotsManager {...props} />);
+    const user = userEvent.setup();
+    await user.clear(screen.getByLabelText("名称"));
+    await user.type(screen.getByLabelText("名称"), "編集中");
+    rerender(<StudioSpotsManager {...props} total={1} />);
+    expect(screen.getByLabelText("名称")).toHaveValue("編集中");
+    rerender(<StudioSpotsManager {...props} editingSpot={{ ...editingSpot, name: "更新済み" }} />);
+    expect(screen.getByLabelText("名称")).toHaveValue("更新済み");
+  });
+
   it("switches between edit and create form values", () => {
     const { rerender } = render(
       <StudioSpotsManager

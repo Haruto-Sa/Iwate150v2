@@ -35,7 +35,6 @@ export function useCaptureTimer(ready: boolean, onCapture: () => boolean) {
   useLayoutEffect(() => {
     latest.current = { ready, onCapture };
     // 外部の撮影予約を同期的に破棄し、次のpaintで古い取消操作を残さない。
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!ready) cancel();
   }, [ready, onCapture, cancel]);
 
